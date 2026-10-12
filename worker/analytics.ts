@@ -3,6 +3,7 @@ import { Client } from 'pg';
 import { getVerifiedAdminMfaIdentity } from './admin-mfa';
 import { getEdgeCounts } from './cloudflare-edge.js';
 import { SWEEP_CTES, SWEEP_EVENT_FILTER } from './sweep-exclusion.js';
+import { EVENT_ACTOR_COUNTABLE_SQL, VISITOR_LINK_JOINS_SQL, VISITOR_LINK_COUNTABLE_SQL } from './tracking-exclusion.js';
 
 const HEADERS = {
   'content-type': 'application/json; charset=utf-8',
@@ -102,8 +103,9 @@ async function analytics(db, env) {
              END)::int AS visitors
         FROM public.interaction_events e
         LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+      ${VISITOR_LINK_JOINS_SQL}
        WHERE e.created_at>=GREATEST(${windowStartSql}, ${baselineSql})
-         AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')${SWEEP_EVENT_FILTER}
+         AND ${EVENT_ACTOR_COUNTABLE_SQL} ${VISITOR_LINK_COUNTABLE_SQL}${SWEEP_EVENT_FILTER}
        GROUP BY 1
     )
     SELECT to_char(days.day,'YYYY-MM-DD') AS date,
@@ -127,8 +129,9 @@ async function analytics(db, env) {
       count(DISTINCT e.user_id) FILTER (WHERE e.actor_type='registered')::int AS registered_users
       FROM public.interaction_events e
       LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+      ${VISITOR_LINK_JOINS_SQL}
      WHERE e.created_at>=GREATEST(${windowStartSql}, ${baselineSql})
-       AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')${SWEEP_EVENT_FILTER}
+       AND ${EVENT_ACTOR_COUNTABLE_SQL} ${VISITOR_LINK_COUNTABLE_SQL}${SWEEP_EVENT_FILTER}
   `) : { rows:[{ page_views:0,clicks:0,unique_visitors:0,anonymous_visitors:0,registered_users:0 }] };
 
   const languageUsagePromise = interactionReady && languageReady ? db.query(`
@@ -153,9 +156,10 @@ async function analytics(db, env) {
              count(DISTINCT e.visitor_id) FILTER (WHERE e.actor_type='anonymous')::int AS anonymous_visitors
         FROM public.interaction_events e
         LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+      ${VISITOR_LINK_JOINS_SQL}
        WHERE e.created_at>=GREATEST(${windowStartSql}, ${baselineSql})
          AND e.language IN ('en','es','fr','it','de')
-         AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')${SWEEP_EVENT_FILTER}
+         AND ${EVENT_ACTOR_COUNTABLE_SQL} ${VISITOR_LINK_COUNTABLE_SQL}${SWEEP_EVENT_FILTER}
        GROUP BY e.language
     )
     SELECT desired.language,desired.label,
@@ -201,9 +205,10 @@ async function analytics(db, env) {
              count(DISTINCT e.session_id) FILTER (WHERE e.event_type='click')::int AS engaged_sessions
         FROM public.interaction_events e
         LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+      ${VISITOR_LINK_JOINS_SQL}
        WHERE e.created_at>=GREATEST(${windowStartSql}, ${baselineSql})
          AND e.traffic_source IN ('facebook','instagram','threads','tiktok','x','youtube','linkedin','pinterest','direct','other')
-         AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')${SWEEP_EVENT_FILTER}
+         AND ${EVENT_ACTOR_COUNTABLE_SQL} ${VISITOR_LINK_COUNTABLE_SQL}${SWEEP_EVENT_FILTER}
        GROUP BY e.traffic_source
     )
     SELECT desired.source,desired.label,
@@ -231,30 +236,34 @@ async function analytics(db, env) {
     SELECT count(*)::int AS events
       FROM public.interaction_events e
       LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+      ${VISITOR_LINK_JOINS_SQL}
      WHERE e.created_at>=GREATEST(${windowStartSql}, ${baselineSql})
        AND e.traffic_source IS NULL
-       AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+       AND ${EVENT_ACTOR_COUNTABLE_SQL} ${VISITOR_LINK_COUNTABLE_SQL}
   ` : `
     SELECT count(*)::int AS events
       FROM public.interaction_events e
       LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+      ${VISITOR_LINK_JOINS_SQL}
      WHERE e.created_at>=GREATEST(${windowStartSql}, ${baselineSql})
-       AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+       AND ${EVENT_ACTOR_COUNTABLE_SQL} ${VISITOR_LINK_COUNTABLE_SQL}
   `) : { rows:[{ events:0 }] };
 
   const languageUnknownPromise = interactionReady ? db.query(languageReady ? `
     SELECT count(*)::int AS events
       FROM public.interaction_events e
       LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+      ${VISITOR_LINK_JOINS_SQL}
      WHERE e.created_at>=GREATEST(${windowStartSql}, ${baselineSql})
        AND (e.language IS NULL OR e.language NOT IN ('en','es','fr','it','de'))
-       AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+       AND ${EVENT_ACTOR_COUNTABLE_SQL} ${VISITOR_LINK_COUNTABLE_SQL}
   ` : `
     SELECT count(*)::int AS events
       FROM public.interaction_events e
       LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+      ${VISITOR_LINK_JOINS_SQL}
      WHERE e.created_at>=GREATEST(${windowStartSql}, ${baselineSql})
-       AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+       AND ${EVENT_ACTOR_COUNTABLE_SQL} ${VISITOR_LINK_COUNTABLE_SQL}
   `) : { rows:[{ events:0 }] };
 
   const featureDailyAllPromise = interactionReady ? db.query(`
@@ -272,9 +281,10 @@ async function analytics(db, env) {
              END)::int AS users
         FROM public.interaction_events e
         LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+      ${VISITOR_LINK_JOINS_SQL}
        WHERE e.created_at>=GREATEST(${windowStartSql}, ${baselineSql})
          AND e.feature IS NOT NULL
-         AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')${SWEEP_EVENT_FILTER}
+         AND ${EVENT_ACTOR_COUNTABLE_SQL} ${VISITOR_LINK_COUNTABLE_SQL}${SWEEP_EVENT_FILTER}
        GROUP BY 1
     )
     SELECT to_char(days.day,'YYYY-MM-DD') AS date,
@@ -307,9 +317,10 @@ async function analytics(db, env) {
            count(DISTINCT e.user_id) FILTER (WHERE e.actor_type='registered')::int AS registered_users
       FROM public.interaction_events e
       LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+      ${VISITOR_LINK_JOINS_SQL}
      WHERE e.created_at>=GREATEST(${windowStartSql}, ${baselineSql})
        AND e.feature IS NOT NULL
-       AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')${SWEEP_EVENT_FILTER}
+       AND ${EVENT_ACTOR_COUNTABLE_SQL} ${VISITOR_LINK_COUNTABLE_SQL}${SWEEP_EVENT_FILTER}
      GROUP BY e.feature
      ORDER BY activity DESC,e.feature ASC
      LIMIT 50
@@ -321,9 +332,10 @@ async function analytics(db, env) {
            e.traffic_source,e.language,e.control_type,e.control_key,e.destination
       FROM public.interaction_events e
       LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+      ${VISITOR_LINK_JOINS_SQL}
      WHERE e.event_type='click'
        AND e.created_at>=GREATEST(${windowStartSql}, ${baselineSql})
-       AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')${SWEEP_EVENT_FILTER}
+       AND ${EVENT_ACTOR_COUNTABLE_SQL} ${VISITOR_LINK_COUNTABLE_SQL}${SWEEP_EVENT_FILTER}
      ORDER BY e.created_at DESC
      LIMIT 50
   `) : { rows:[] };

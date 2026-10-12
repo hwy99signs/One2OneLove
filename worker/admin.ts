@@ -1,6 +1,13 @@
 // @ts-nocheck
 import { Client } from 'pg';
 import { SWEEP_CTES, SWEEP_EVENT_FILTER } from './sweep-exclusion.js';
+import {
+  accountCountableSql,
+  eventActorCountableSql,
+  EVENT_ACTOR_COUNTABLE_SQL,
+  VISITOR_LINK_JOINS_SQL,
+  VISITOR_LINK_COUNTABLE_SQL,
+} from './tracking-exclusion.js';
 import { getVerifiedAdminMfaIdentity } from './admin-mfa';
 
 // Credit-era member state (owner rules, 2026-10-10): there are no plans or
@@ -605,7 +612,7 @@ async function visitorRegistry(db, rangeDays = 30) {
           (array_agg(e.user_id ORDER BY e.created_at DESC) FILTER (WHERE e.user_id IS NOT NULL))[1] AS latest_event_user_id
         FROM public.interaction_events e
         LEFT JOIN neon_auth."user" event_auth ON event_auth.id=e.user_id
-        WHERE (e.user_id IS NULL OR COALESCE(event_auth.role,'user') <> 'admin')
+        WHERE ${eventActorCountableSql('e','event_auth')}
           AND ($1::int IS NULL OR e.created_at >= now() - make_interval(days => $1::int))${SWEEP_EVENT_FILTER}
         GROUP BY e.visitor_id
       ), resolved AS (
@@ -643,7 +650,7 @@ async function visitorRegistry(db, rangeDays = 30) {
       LEFT JOIN neon_auth."user" a ON a.id=r.resolved_user_id
       LEFT JOIN purchases p ON p.user_id=r.resolved_user_id
       LEFT JOIN public.visitor_presence vp ON vp.visitor_id=r.visitor_id
-      WHERE r.resolved_user_id IS NULL OR COALESCE(a.role,'user') <> 'admin'
+      WHERE r.resolved_user_id IS NULL OR ${accountCountableSql('a')}
       ORDER BY r.last_seen DESC
     `, [rangeDays]),
     db.query(`
@@ -652,7 +659,7 @@ async function visitorRegistry(db, rangeDays = 30) {
           FROM public.interaction_events e
           LEFT JOIN public.visitor_identity_links vil ON vil.visitor_id=e.visitor_id
           LEFT JOIN neon_auth."user" a ON a.id=COALESCE(e.user_id,vil.user_id)
-         WHERE (COALESCE(a.role,'user') <> 'admin' OR COALESCE(e.user_id,vil.user_id) IS NULL)${SWEEP_EVENT_FILTER}
+         WHERE (COALESCE(e.user_id,vil.user_id) IS NULL OR ${accountCountableSql('a')})${SWEEP_EVENT_FILTER}
       ), resolved_visitors AS (
         -- Same identity resolution as the registry list (owner-approved
         -- 2026-10-09): a visitor counts as signed up when EITHER a formal
@@ -668,9 +675,10 @@ async function visitorRegistry(db, rangeDays = 30) {
       ), active_visitors AS (
         SELECT DISTINCT e.visitor_id
           FROM public.interaction_events e
-          LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+          LEFT JOIN public.visitor_identity_links vil ON vil.visitor_id=e.visitor_id
+          LEFT JOIN neon_auth."user" a ON a.id=COALESCE(e.user_id,vil.user_id)
          WHERE e.created_at >= now()-interval '5 minutes'
-           AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')${SWEEP_EVENT_FILTER}
+           AND (COALESCE(e.user_id,vil.user_id) IS NULL OR ${accountCountableSql('a')})${SWEEP_EVENT_FILTER}
       ), buyers AS (
         SELECT DISTINCT tt.user_id
           FROM public.o2ol_token_transactions tt
@@ -1120,8 +1128,9 @@ async function clickAnalytics(db, env) {
         count(*) FILTER (WHERE event_type='page_view' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS page_views_30d
       FROM public.interaction_events e
       LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+      ${VISITOR_LINK_JOINS_SQL}
       WHERE e.created_at >= $1::timestamptz
-        AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')${SWEEP_EVENT_FILTER}
+        AND ${EVENT_ACTOR_COUNTABLE_SQL} ${VISITOR_LINK_COUNTABLE_SQL}${SWEEP_EVENT_FILTER}
     `,[baseline]),
     db.query(`
       WITH ${SWEEP_CTES}
@@ -1132,9 +1141,10 @@ async function clickAnalytics(db, env) {
              count(*) FILTER (WHERE access_type='subscribed')::int AS subscribed
         FROM public.interaction_events e
         LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+      ${VISITOR_LINK_JOINS_SQL}
        WHERE e.event_type='click'
          AND e.created_at>=GREATEST($1::timestamptz,now()-interval '30 days')
-         AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')${SWEEP_EVENT_FILTER}
+         AND ${EVENT_ACTOR_COUNTABLE_SQL} ${VISITOR_LINK_COUNTABLE_SQL}${SWEEP_EVENT_FILTER}
        GROUP BY route
        ORDER BY clicks DESC,route ASC
        LIMIT 15
@@ -1148,9 +1158,10 @@ async function clickAnalytics(db, env) {
              count(*) FILTER (WHERE access_type='subscribed')::int AS subscribed
         FROM public.interaction_events e
         LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+      ${VISITOR_LINK_JOINS_SQL}
        WHERE e.event_type='click'
          AND e.created_at>=GREATEST($1::timestamptz,now()-interval '30 days')
-         AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')${SWEEP_EVENT_FILTER}
+         AND ${EVENT_ACTOR_COUNTABLE_SQL} ${VISITOR_LINK_COUNTABLE_SQL}${SWEEP_EVENT_FILTER}
        GROUP BY COALESCE(feature,'Unclassified')
        ORDER BY clicks DESC,feature ASC
        LIMIT 15
@@ -1184,10 +1195,11 @@ async function featureUsage(db, env) {
         e.created_at AS occurred_at
       FROM public.interaction_events e
       LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+      ${VISITOR_LINK_JOINS_SQL}
       WHERE e.feature IS NOT NULL
         AND e.event_type IN ('page_view','action')
         AND e.created_at >= $1::timestamptz
-        AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')${SWEEP_EVENT_FILTER}
+        AND ${EVENT_ACTOR_COUNTABLE_SQL} ${VISITOR_LINK_COUNTABLE_SQL}${SWEEP_EVENT_FILTER}
       UNION ALL
   ` : '';
 
@@ -1272,9 +1284,10 @@ async function topFeatureActivity(db, env) {
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS d30
     FROM public.interaction_events e
     LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+      ${VISITOR_LINK_JOINS_SQL}
     WHERE e.feature='Date Ideas'
       AND e.event_type='page_view'
-      AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')${SWEEP_EVENT_FILTER}
+      AND ${EVENT_ACTOR_COUNTABLE_SQL} ${VISITOR_LINK_COUNTABLE_SQL}${SWEEP_EVENT_FILTER}
   `);
   const dateSaved = await windowCounts(`
     SELECT
@@ -1304,9 +1317,10 @@ async function topFeatureActivity(db, env) {
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS d30
     FROM public.interaction_events e
     LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+      ${VISITOR_LINK_JOINS_SQL}
     WHERE e.feature=$2
       AND e.event_type='page_view'
-      AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')${SWEEP_EVENT_FILTER}
+      AND ${EVENT_ACTOR_COUNTABLE_SQL} ${VISITOR_LINK_COUNTABLE_SQL}${SWEEP_EVENT_FILTER}
   `,[feature]);
 
   const routedTop = async (feature,prefix) => {
@@ -1315,10 +1329,11 @@ async function topFeatureActivity(db, env) {
         SELECT substring(e.control_key from $3) AS name,e.created_at
           FROM public.interaction_events e
           LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+      ${VISITOR_LINK_JOINS_SQL}
          WHERE e.feature=$2
            AND e.event_type='action'
            AND e.control_key LIKE $4
-           AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')${SWEEP_EVENT_FILTER}
+           AND ${EVENT_ACTOR_COUNTABLE_SQL} ${VISITOR_LINK_COUNTABLE_SQL}${SWEEP_EVENT_FILTER}
         UNION ALL
         SELECT substring(e.route from $3) AS name,e.created_at
           FROM public.feature_usage_events e
@@ -1376,9 +1391,10 @@ async function topFeatureActivity(db, env) {
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS d30
     FROM public.interaction_events e
     LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+      ${VISITOR_LINK_JOINS_SQL}
     WHERE e.event_type='page_view'
       AND e.feature IN ('Communication Practice','Podcasts','Articles','LGBTQ+ Support','Couple Activities','Relationship Quizzes')
-      AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')${SWEEP_EVENT_FILTER}
+      AND ${EVENT_ACTOR_COUNTABLE_SQL} ${VISITOR_LINK_COUNTABLE_SQL}${SWEEP_EVENT_FILTER}
       AND e.created_at>=GREATEST($1::timestamptz,now()-interval '30 days')
     GROUP BY e.feature ORDER BY d30 DESC,name ASC LIMIT 5
   `,[baseline]);
@@ -1523,11 +1539,16 @@ export async function handleAdminRequest(request, env, url) {
         const result = await db.query(`
           WITH ${SWEEP_CTES}
           SELECT count(*)::int AS online_now,
-                 count(*) FILTER (WHERE user_id IS NOT NULL)::int AS members_online,
-                 count(*) FILTER (WHERE user_id IS NULL)::int AS guests_online
-            FROM public.visitor_presence
-           WHERE last_ping_at >= now() - interval '90 seconds'
-             AND visitor_id NOT IN (SELECT visitor_id FROM sweep_visitors)`);
+                 count(*) FILTER (WHERE vp.user_id IS NOT NULL)::int AS members_online,
+                 count(*) FILTER (WHERE vp.user_id IS NULL)::int AS guests_online
+            FROM public.visitor_presence vp
+            LEFT JOIN neon_auth."user" a ON a.id=vp.user_id
+            LEFT JOIN public.visitor_identity_links vil ON vil.visitor_id=vp.visitor_id
+            LEFT JOIN neon_auth."user" va ON va.id=vil.user_id
+           WHERE vp.last_ping_at >= now() - interval '90 seconds'
+             AND vp.visitor_id NOT IN (SELECT visitor_id FROM sweep_visitors)
+             AND (vp.user_id IS NULL OR ${accountCountableSql('a')})
+             AND (vil.user_id IS NULL OR ${accountCountableSql('va')})`);
         const presenceRow = result.rows[0] || {};
         return json({ ok:true, onlineNow: presenceRow.online_now || 0, membersOnline: presenceRow.members_online || 0, guestsOnline: presenceRow.guests_online || 0, generatedAt: new Date().toISOString() });
       }
