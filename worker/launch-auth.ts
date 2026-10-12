@@ -1,5 +1,14 @@
 // @ts-nocheck
 import { Client } from 'pg';
+import {
+  USERNAME_FORMAT_MESSAGE,
+  USERNAME_LOOKUP_SQL,
+  USERNAME_REQUIRED_MESSAGE,
+  USERNAME_TAKEN_CODE,
+  USERNAME_TAKEN_MESSAGE,
+  isValidUsername,
+  usernameTakenByOtherAccount,
+} from './username-rules.js';
 
 const JSON_HEADERS = {
   'content-type': 'application/json; charset=utf-8',
@@ -140,9 +149,9 @@ function launchIdentityReady(readiness, env) {
   return { emailReady, phoneReady, ready: emailReady };
 }
 
-function registrationContext(body) {
+function registrationContext(body, { requireUsername = true } = {}) {
   const quickAccount = body.quickAccount === true;
-  const username = clean(body.username, 40, quickAccount);
+  const username = clean(body.username, 40, false);
   const name = quickAccount ? username : clean(body.name, 200, true);
   const email = clean(body.email, 320, true)?.toLowerCase();
   const countryRaw = clean(body.country, 2, !quickAccount);
@@ -163,8 +172,17 @@ function registrationContext(body) {
   const visitorId = clean(body.visitorId, 120, false);
 
   if (!/^\S+@\S+\.\S+$/.test(email || '')) throw new Error('Please enter a valid email address.');
-  if (quickAccount && !/^[A-Za-z0-9._-]{3,40}$/.test(username || '')) {
-    throw new Error('Username must be 3–40 characters using letters, numbers, periods, underscores, or hyphens.');
+  // Username (owner, 2026-10-12): required on EVERY launch sign-up — the
+  // quick gate always required one, and the full /SignUp form now does too,
+  // because the admin counting rule and the founding giveaway run on
+  // usernames. One rule set (worker/username-rules.js) for both surfaces.
+  // The email-verification recovery path passes requireUsername:false so a
+  // signup started by an older form (no username field) can still finish
+  // verifying instead of being stranded mid-flow.
+  if (!username) {
+    if (requireUsername) throw new Error(USERNAME_REQUIRED_MESSAGE);
+  } else if (!isValidUsername(username)) {
+    throw new Error(USERNAME_FORMAT_MESSAGE);
   }
   if (!quickAccount && !/^[A-Z]{2}$/.test(country || '')) throw new Error('Please select a valid country.');
   if (!new Set(['en', 'es', 'fr', 'it', 'de']).has(preferredLanguage)) throw new Error('Please select one of the supported One2OneLove languages.');
@@ -436,15 +454,15 @@ async function registerLaunchUser(request, env) {
   const password = String(body.password || '');
   if (password.length < 8) return fail('Password must contain at least 8 characters.');
 
-  if (registration.quickAccount && registration.username) {
+  if (registration.username) {
     const taken = await withDb(env, async db => {
       const row = (await db.query(
-        `SELECT u.email FROM public.users u WHERE lower(u.username)=lower($1) LIMIT 1`,
+        USERNAME_LOOKUP_SQL,
         [registration.username],
       )).rows[0] || null;
-      return row && String(row.email || '').toLowerCase() !== registration.email ? row : null;
+      return usernameTakenByOtherAccount(row, registration.email) ? row : null;
     });
-    if (taken) return fail('That username is already taken. Please choose another.',409,'username_taken');
+    if (taken) return fail(USERNAME_TAKEN_MESSAGE, 409, USERNAME_TAKEN_CODE);
   }
 
   const upstream = await authPost(request, env, '/sign-up/email', {
@@ -538,7 +556,7 @@ async function verifyLaunchEmail(request, env) {
   let registration = null;
   if (body.signupContext && typeof body.signupContext === 'object') {
     try {
-      registration = registrationContext({ ...body.signupContext, email });
+      registration = registrationContext({ ...body.signupContext, email }, { requireUsername: false });
     } catch (error) {
       return fail(error?.message || 'Registration details are invalid.', 400, 'invalid_registration');
     }
