@@ -591,7 +591,10 @@ async function members(db) {
      ORDER BY COALESCE(u.created_at,a."createdAt") DESC`);
   return result.rows;
 }
-async function visitorRegistry(db, rangeDays = 30) {
+async function visitorRegistry(db, rangeDays = 30, env) {
+  // Owner marker (2026-10-12): registry traffic reads start at the analytics
+  // baseline — activity before the marker is not counted or listed.
+  const baseline = analyticsBaselineDate(env);
   await db.query(`CREATE TABLE IF NOT EXISTS public.visitor_presence (visitor_id text PRIMARY KEY, user_id uuid, route text, last_ping_at timestamptz NOT NULL DEFAULT now())`);
   const [visitorsResult,funnelResult,sweepExcludedResult] = await Promise.all([
     db.query(`
@@ -613,6 +616,7 @@ async function visitorRegistry(db, rangeDays = 30) {
         FROM public.interaction_events e
         LEFT JOIN neon_auth."user" event_auth ON event_auth.id=e.user_id
         WHERE ${eventActorCountableSql('e','event_auth')}
+          AND e.created_at >= $2::timestamptz
           AND ($1::int IS NULL OR e.created_at >= now() - make_interval(days => $1::int))${SWEEP_EVENT_FILTER}
         GROUP BY e.visitor_id
       ), resolved AS (
@@ -652,14 +656,15 @@ async function visitorRegistry(db, rangeDays = 30) {
       LEFT JOIN public.visitor_presence vp ON vp.visitor_id=r.visitor_id
       WHERE r.resolved_user_id IS NULL OR ${accountCountableSql('a')}
       ORDER BY r.last_seen DESC
-    `, [rangeDays]),
+    `, [rangeDays, baseline]),
     db.query(`
       WITH ${SWEEP_CTES}, visitor_ids AS (
         SELECT DISTINCT e.visitor_id
           FROM public.interaction_events e
           LEFT JOIN public.visitor_identity_links vil ON vil.visitor_id=e.visitor_id
           LEFT JOIN neon_auth."user" a ON a.id=COALESCE(e.user_id,vil.user_id)
-         WHERE (COALESCE(e.user_id,vil.user_id) IS NULL OR ${accountCountableSql('a')})${SWEEP_EVENT_FILTER}
+         WHERE (COALESCE(e.user_id,vil.user_id) IS NULL OR ${accountCountableSql('a')})
+           AND e.created_at >= $1::timestamptz${SWEEP_EVENT_FILTER}
       ), resolved_visitors AS (
         -- Same identity resolution as the registry list (owner-approved
         -- 2026-10-09): a visitor counts as signed up when EITHER a formal
@@ -678,6 +683,7 @@ async function visitorRegistry(db, rangeDays = 30) {
           LEFT JOIN public.visitor_identity_links vil ON vil.visitor_id=e.visitor_id
           LEFT JOIN neon_auth."user" a ON a.id=COALESCE(e.user_id,vil.user_id)
          WHERE e.created_at >= now()-interval '5 minutes'
+           AND e.created_at >= $1::timestamptz
            AND (COALESCE(e.user_id,vil.user_id) IS NULL OR ${accountCountableSql('a')})${SWEEP_EVENT_FILTER}
       ), buyers AS (
         SELECT DISTINCT tt.user_id
@@ -703,7 +709,7 @@ async function visitorRegistry(db, rangeDays = 30) {
             AND COALESCE(a.role,'user') <> 'admin')::bigint AS paid_activity_cents,
         (SELECT count(*) FROM public.users u LEFT JOIN neon_auth."user" a ON a.id=u.id
           WHERE COALESCE(a.role,'user') <> 'admin' AND COALESCE(u.marketing_email_opt_in,false)=true)::int AS promo_opt_ins
-    `),
+    `, [baseline]),
     db.query(`
       WITH ${SWEEP_CTES}
       SELECT count(*)::int AS excluded FROM sweep_visitors
@@ -1473,7 +1479,7 @@ async function dashboard(db, env, registryRangeDays = 30) {
   await ensureChatModerationSchema(db);
   await ensureO2OLShowVotingSchema(db);
   const [summary,userRows,applicationRows,moderationRows,billingData,loveNoteData,featureData,clickData,topFeatureData,chatRoomData,systemData,visitorData,supportData,ageRangeData] = await Promise.all([
-    overview(db),members(db),applications(db),moderation(db),billing(db),loveNotes(db),featureUsage(db,env),clickAnalytics(db,env),topFeatureActivity(db,env),chatRoomAnalytics(db),system(db),visitorRegistry(db,registryRangeDays),supportFeedback(db),ageRanges(db),
+    overview(db),members(db),applications(db),moderation(db),billing(db),loveNotes(db),featureUsage(db,env),clickAnalytics(db,env),topFeatureActivity(db,env),chatRoomAnalytics(db),system(db),visitorRegistry(db,registryRangeDays,env),supportFeedback(db),ageRanges(db),
   ]);
   return { summary,members:userRows,applications:applicationRows,moderation:moderationRows,billing:billingData,loveNotes:loveNoteData,featureUsage:featureData,clickAnalytics:clickData,topFeatureActivity:topFeatureData,chatRoom:chatRoomData,system:systemData,visitorRegistry:visitorData,supportFeedback:supportData,ageRanges:ageRangeData };
 }
