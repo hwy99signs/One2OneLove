@@ -146,7 +146,14 @@ export async function handleGameAccessRequest(request,env,url){
 
 const GAME_FILES={pests:'/games-src/pests.html',scrabluko:'/games-src/scrabluko.html'};
 export async function handleGameFileRequest(request,env,url){
-  const game=Object.keys(GAME_FILES).find(g=>url.pathname===GAME_FILES[g]);
+  // The static-asset layer canonicalizes HTML URLs by stripping the
+  // extension (Workers Assets html_handling): /games-src/scrabluko.html
+  // redirects to /games-src/scrabluko. Accept BOTH forms here — with
+  // only the .html form recognized, every authorized game load bounced
+  // to the extensionless URL and died on this line as "Game not
+  // found." (click-pass diagnostic, 2026-10-12: final iframe URL was
+  // extensionless in every failing load).
+  const game=Object.keys(GAME_FILES).find(g=>url.pathname===GAME_FILES[g]||url.pathname===GAME_FILES[g].replace(/\.html$/,''));
   if(!game)return new Response('Game not found.',{status:404});
   const auth=await authSession(request,env);
   if(!auth)return new Response('Sign in with a verified One2OneLove account to play.',{status:403});
@@ -157,7 +164,16 @@ export async function handleGameFileRequest(request,env,url){
       return Boolean(await activePass(db,auth.user.id,game));
     });
     if(!allowed)return new Response('This game needs an active play pass. Open the game page to unlock it.',{status:403});
-    const asset=await env.ASSETS.fetch(request),headers=new Headers(asset.headers);
+    // Fetch the asset at its canonical extensionless URL so the asset
+    // layer serves the file directly; follow any redirect internally
+    // rather than handing it to the iframe (a bounced iframe lands on
+    // the bare path and must still pass the checks above).
+    const assetUrl=new URL(GAME_FILES[game].replace(/\.html$/,''),url);
+    let asset=await env.ASSETS.fetch(new Request(assetUrl.toString(),{method:'GET',headers:{accept:'text/html'}}));
+    for(let hop=0;hop<3&&asset.status>=300&&asset.status<400&&asset.headers.get('location');hop++){
+      asset=await env.ASSETS.fetch(new Request(new URL(asset.headers.get('location'),url).toString(),{method:'GET',headers:{accept:'text/html'}}));
+    }
+    const headers=new Headers(asset.headers);
     headers.set('cache-control','private, no-store');
     return new Response(asset.body,{status:asset.status,headers});
   }catch(error){
