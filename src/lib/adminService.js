@@ -40,6 +40,16 @@ export async function getMemberActivity(memberId) {
   return getFreshAdminJson(`/api/admin/members/${encodeURIComponent(memberId)}/activity`);
 }
 
+export async function grantVerificationGameCredit(memberId) {
+  const response = await fetch(`/api/admin/members/${encodeURIComponent(memberId)}/verification-game-credit`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { accept: 'application/json', 'content-type': 'application/json' },
+    body: JSON.stringify({}),
+  });
+  return parseJson(response);
+}
+
 
 export async function manageMemberAccount(memberId, action, reason = '') {
   const response = await fetch(`/api/admin/members/${encodeURIComponent(memberId)}/${encodeURIComponent(action)}`, {
