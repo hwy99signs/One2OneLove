@@ -28,6 +28,7 @@ const translations = {
     unavailable: 'Phone verification is not available yet. Please try again after phone verification is enabled.',
     signOut: 'Sign Out Instead',
     doorNote: 'Member features stay locked until your phone is verified. Verify now, or sign out and browse as a guest.',
+    bonusTitle:'You received $5.00 in FREE Game Credits!',bonusWhere:'Your bonus is waiting in your Credit wallet. You can open it any time with the BUY CREDIT button at the top of the site, or from your Profile. On that page your bonus sits at the very top, labeled "O2OL Bonus Game Credits", right under your $ Credit.',bonusHow:'When you play any One2OneLove game, your Game Credits are spent first — before any paid Credit.',bonusExpires:'Use them by {date}: unused Game Credits expire on that date.',bonusSee:'See My $5.00 Bonus',bonusPlay:'Play a Game Now',bonusContinue:'Continue',
   },
   es: {
     title: 'Verifica Tu Teléfono',
@@ -47,6 +48,7 @@ const translations = {
     unavailable: 'La verificación telefónica aún no está disponible. Inténtalo cuando se habilite.',
     signOut: 'Cerrar Sesión',
     doorNote: 'Las funciones para miembros permanecerán bloqueadas hasta que verifiques tu teléfono. Verifícalo ahora, o cierra sesión y navega como invitado.',
+    bonusTitle:'¡Recibiste $5.00 en Créditos de Juego GRATIS!',bonusWhere:'Tu bono te espera en tu billetera de Crédito. Puedes abrirla cuando quieras con el botón COMPRAR CRÉDITO en la parte superior del sitio, o desde tu Perfil. En esa página tu bono está arriba de todo, con la etiqueta "O2OL Bonus Game Credits", justo debajo de tu $ Crédito.',bonusHow:'Cuando juegas cualquier juego de One2OneLove, tus Créditos de Juego se gastan primero, antes que cualquier Crédito pagado.',bonusExpires:'Úsalos antes del {date}: los Créditos de Juego no utilizados vencen en esa fecha.',bonusSee:'Ver Mi Bono de $5.00',bonusPlay:'Jugar Ahora',bonusContinue:'Continuar',
   },
   fr: {
     title: 'Vérifiez Votre Téléphone',
@@ -66,6 +68,7 @@ const translations = {
     unavailable: 'La vérification téléphonique n’est pas encore disponible. Réessayez lorsqu’elle sera activée.',
     signOut: 'Se Déconnecter',
     doorNote: 'Les fonctions pour membres restent verrouillées jusqu’à la vérification de votre téléphone. Vérifiez maintenant, ou déconnectez-vous et naviguez en invité.',
+    bonusTitle:'Vous avez reçu 5,00 $ en Crédits de Jeu GRATUITS !',bonusWhere:'Votre bonus vous attend dans votre portefeuille de Crédit. Vous pouvez l’ouvrir à tout moment avec le bouton ACHETER DU CRÉDIT en haut du site, ou depuis votre Profil. Sur cette page, votre bonus se trouve tout en haut, sous l’étiquette « O2OL Bonus Game Credits », juste sous votre Crédit $.',bonusHow:'Quand vous jouez à un jeu One2OneLove, vos Crédits de Jeu sont dépensés en premier, avant tout Crédit payé.',bonusExpires:'Utilisez-les avant le {date} : les Crédits de Jeu non utilisés expirent à cette date.',bonusSee:'Voir Mon Bonus de 5,00 $',bonusPlay:'Jouer Maintenant',bonusContinue:'Continuer',
   },
   it: {
     title: 'Verifica il Tuo Telefono',
@@ -85,6 +88,7 @@ const translations = {
     unavailable: 'La verifica telefonica non è ancora disponibile. Riprova quando sarà abilitata.',
     signOut: 'Esci',
     doorNote: 'Le funzioni per i membri restano bloccate finché il tuo telefono non è verificato. Verificalo ora, oppure esci e naviga come ospite.',
+    bonusTitle:'Hai ricevuto $5,00 in Crediti di Gioco GRATIS!',bonusWhere:'Il tuo bonus ti aspetta nel tuo portafoglio di Credito. Puoi aprirlo quando vuoi con il pulsante ACQUISTA CREDITO in cima al sito, o dal tuo Profilo. In quella pagina il tuo bonus è in alto, con l’etichetta "O2OL Bonus Game Credits", proprio sotto il tuo Credito $.',bonusHow:'Quando giochi a qualsiasi gioco One2OneLove, i tuoi Crediti di Gioco vengono spesi per primi, prima di qualsiasi Credito pagato.',bonusExpires:'Usali entro il {date}: i Crediti di Gioco non utilizzati scadono in quella data.',bonusSee:'Vedi Il Mio Bonus di $5,00',bonusPlay:'Gioca Ora',bonusContinue:'Continua',
   },
   de: {
     title: 'Telefonnummer Bestätigen',
@@ -104,6 +108,7 @@ const translations = {
     unavailable: 'Die Telefonbestätigung ist noch nicht verfügbar. Versuchen Sie es erneut, nachdem sie aktiviert wurde.',
     signOut: 'Stattdessen Abmelden',
     doorNote: 'Mitgliederfunktionen bleiben gesperrt, bis Ihr Telefon bestätigt ist. Bestätigen Sie jetzt, oder melden Sie sich ab und surfen Sie als Gast.',
+    bonusTitle:'Sie haben $5.00 in GRATIS Spiel-Credits erhalten!',bonusWhere:'Ihr Bonus wartet in Ihrer Credit-Wallet. Sie können sie jederzeit über die Schaltfläche CREDIT KAUFEN oben auf der Seite oder über Ihr Profil öffnen. Auf dieser Seite steht Ihr Bonus ganz oben, beschriftet mit „O2OL Bonus Game Credits", direkt unter Ihrem $ Credit.',bonusHow:'Wenn Sie ein One2OneLove-Spiel spielen, werden Ihre Spiel-Credits zuerst ausgegeben — vor jedem bezahlten Credit.',bonusExpires:'Nutzen Sie sie bis zum {date}: Nicht genutzte Spiel-Credits verfallen an diesem Datum.',bonusSee:'Meinen $5.00-Bonus Ansehen',bonusPlay:'Jetzt Ein Spiel Spielen',bonusContinue:'Weiter',
   },
 };
 
@@ -132,6 +137,7 @@ export default function VerifyPhone() {
   const [code, setCode] = useState('');
   const [phase, setPhase] = useState('phone');
   const [busy, setBusy] = useState(false);
+  const [bonus, setBonus] = useState(null);
 
   const verified = user?.phoneNumberVerified === true || user?.phone_number_verified === true;
   const required = user?.phone_verification_required === true;
@@ -139,6 +145,7 @@ export default function VerifyPhone() {
 
   useEffect(() => {
     if (isLoading) return;
+    if (bonus) return; // the bonus welcome panel is showing; it owns navigation
     if (!isAuthenticated || !user) {
       navigate(safeRedirect ? `/SignIn?redirect=${encodeURIComponent(safeRedirect)}` : '/SignIn', { replace: true });
       return;
@@ -186,8 +193,20 @@ export default function VerifyPhone() {
     setBusy(true);
     try {
       const verification = await verifyPhoneNumberOtp(normalized, code);
+      if (verification?.gameCreditBonus) {
+        // Owner-directed wayfinding (2026-10-12): the $5 announcement used
+        // to be a toast that faded in 8 seconds while the page navigated
+        // away — new members could not find their bonus anywhere. When
+        // the welcome bonus actually lands, hold a welcome panel that
+        // says where the bonus lives and takes the member straight to
+        // it. The panel owns navigation until the member picks a button.
+        setBonus(verification.gameCreditBonus);
+        toast.success(t.success);
+        try { await refreshUserProfile(); } catch { /* panel already holds the moment */ }
+        return;
+      }
       const refreshed = await refreshUserProfile();
-      toast.success(verification?.gameCreditBonus?.welcome || t.success,{duration:8000});
+      toast.success(t.success);
       navigate(nextRoute(refreshed || user, safeRedirect), { replace: true });
     } catch (error) {
       toast.error(error?.message || t.invalidCode);
@@ -196,10 +215,40 @@ export default function VerifyPhone() {
     }
   };
 
-  if (isLoading || !isAuthenticated || !user || !required || verified) {
+  if (!bonus && (isLoading || !isAuthenticated || !user || !required || verified)) {
     return (
       <div className="min-h-[60vh] grid place-items-center bg-white">
         <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
+      </div>
+    );
+  }
+
+  if (bonus) {
+    const expiryDate = bonus.expiresAt ? new Date(bonus.expiresAt).toLocaleDateString() : null;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 px-4 py-12">
+        <Card className="mx-auto max-w-xl shadow-2xl">
+          <CardContent className="p-8 text-center">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
+              <CheckCircle2 className="h-9 w-9 text-emerald-600" />
+            </div>
+            <h1 className="mb-3 text-3xl font-bold text-gray-900">{t.bonusTitle}</h1>
+            <p className="mb-4 text-gray-600">{t.bonusWhere}</p>
+            <p className="mb-4 text-gray-600">{t.bonusHow}</p>
+            {expiryDate && <p className="mb-8 font-semibold text-emerald-700">{t.bonusExpires.replace('{date}', expiryDate)}</p>}
+            <div className="space-y-3">
+              <Button type="button" onClick={() => navigate('/credit')} className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 py-6 text-white">
+                {t.bonusSee}
+              </Button>
+              <Button type="button" onClick={() => navigate('/cooperativegames')} className="w-full bg-gradient-to-r from-pink-500 to-purple-600 py-6 text-white">
+                {t.bonusPlay}
+              </Button>
+              <button type="button" onClick={() => navigate(nextRoute(user, safeRedirect), { replace: true })} className="w-full py-2 font-semibold text-gray-500 hover:text-gray-700">
+                {t.bonusContinue}
+              </button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
