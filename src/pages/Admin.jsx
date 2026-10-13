@@ -6,7 +6,7 @@ import {
   Menu, MessageSquareText, RefreshCw, Search, ShieldCheck, Sparkles, TrendingUp,
   UserCheck, UserX, Trash2, RotateCcw, Users, X,
 } from 'lucide-react';
-import { getAdminAnalytics, getAdminDashboard, getAdminPresence, getMemberActivity, manageMemberAccount, manageMemberAccountsBulk, grantMemberGameCredit } from '../lib/adminService';
+import { getAdminAnalytics, getAdminDashboard, getAdminPresence, getMemberActivity, grantVerificationGameCredit, manageMemberAccount, manageMemberAccountsBulk, grantMemberGameCredit } from '../lib/adminService';
 import { touchAdminMfa } from '../lib/adminMfaService';
 import GameEconomyPanel from '../components/admin/GameEconomyPanel';
 import {
@@ -508,6 +508,21 @@ export default function Admin() {
     }
   };
 
+  const handleBackfillVerificationCredit = async (member) => {
+    const memberName = member.username ? `@${member.username}` : member.email;
+    if (!window.confirm(`Give ${memberName} their one-time $5.00 verification Game Credit? They finished verifying before the Game Credit system launched, so it never fired. It expires 14 days from now, like the standard grant.`)) return;
+    setMemberDetailLoading(true);
+    setMemberDetailError('');
+    try {
+      const result = await grantVerificationGameCredit(member.id);
+      if (result?.alreadyGranted) window.alert('This member already received their verification Game Credit.');
+      await openMemberAccount(member);
+    } catch (err) {
+      setMemberDetailError(err?.message || 'Unable to grant the verification Game Credit.');
+      setMemberDetailLoading(false);
+    }
+  };
+
   const handleGrantGameCredit = async (member) => {
     if (member.auth_role === 'admin') return;
     const amountText = window.prompt('Game Credit amount in dollars (maximum $100.00):', '5.00');
@@ -914,7 +929,7 @@ export default function Admin() {
                   {(sa?.topFeatures || []).length>0&&<div className="mb-6"><h4 className="mb-2 text-sm font-black text-slate-900">Most-used features</h4><div className="flex flex-wrap gap-2">{sa.topFeatures.map(f=><Pill key={f.feature} tone="slate">{f.feature} · {number(f.events)}</Pill>)}</div></div>}
                   <div className="grid gap-6 xl:grid-cols-2">
                     <div><h4 className="mb-2 text-sm font-black text-slate-900">Credit activity</h4>{(d.creditActivity || []).length?<div className="max-h-96 space-y-2 overflow-y-auto pr-1">{d.creditActivity.map(item=><div key={item.id} className="rounded-xl bg-slate-50 p-3 text-sm"><div className="flex items-center justify-between gap-3"><div className="font-semibold">{creditActivityLabel(item)}</div><div className={cx('font-bold',Number(item.wallet_delta)<0?'text-slate-900':'text-emerald-700')}>{Number(item.wallet_delta)<0?'-':'+'}{money(Math.abs(Number(item.wallet_delta||0))/100)}</div></div><div className="mt-1 text-xs text-slate-400">{date(item.created_at)} · balance after {money(Number(item.balance_after||0)/100)}</div></div>)}</div>:<Empty>No Credit activity yet.</Empty>}</div>
-                    <div><h4 className="mb-2 text-sm font-black text-slate-900">Game Credit activity</h4>{(gc?.ledger || []).length?<div className="max-h-96 space-y-2 overflow-y-auto pr-1">{gc.ledger.map(item=><div key={item.id} className="rounded-xl bg-slate-50 p-3 text-sm"><div className="flex items-center justify-between gap-3"><div className="font-semibold capitalize">{String(item.kind||'').replace(/_/g,' ')}{item.game?` · ${item.game}`:''}</div><div className={cx('font-bold',Number(item.amount_cents)<0?'text-slate-900':'text-emerald-700')}>{Number(item.amount_cents)<0?'-':'+'}{money(Math.abs(Number(item.amount_cents||0))/100)}</div></div><div className="mt-1 text-xs text-slate-400">{date(item.created_at)}{item.expires_at?` · expires ${date(item.expires_at)}`:''}{item.note?` · ${item.note}`:''}</div></div>)}</div>:<Empty>No Game Credit activity yet.</Empty>}</div>
+                    <div><h4 className="mb-2 text-sm font-black text-slate-900">Game Credit activity</h4>{md.is_verified&&md.phone_verified&&gc&&gc.hasSignupBonus===false&&<div className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"><strong>Missing verification Game Credit.</strong><span className="ml-1">This member finished verifying before the Game Credit system launched, so their one-time $5.00 bonus never fired.</span><button type="button" onClick={()=>handleBackfillVerificationCredit(md)} className="ml-3 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-black text-white hover:bg-amber-700">Backfill $5.00</button></div>}{(gc?.ledger || []).length?<div className="max-h-96 space-y-2 overflow-y-auto pr-1">{gc.ledger.map(item=><div key={item.id} className="rounded-xl bg-slate-50 p-3 text-sm"><div className="flex items-center justify-between gap-3"><div className="font-semibold capitalize">{String(item.kind||'').replace(/_/g,' ')}{item.game?` · ${item.game}`:''}</div><div className={cx('font-bold',Number(item.amount_cents)<0?'text-slate-900':'text-emerald-700')}>{Number(item.amount_cents)<0?'-':'+'}{money(Math.abs(Number(item.amount_cents||0))/100)}</div></div><div className="mt-1 text-xs text-slate-400">{date(item.created_at)}{item.expires_at?` · expires ${date(item.expires_at)}`:''}{item.note?` · ${item.note}`:''}</div></div>)}</div>:<Empty>No Game Credit activity yet.</Empty>}</div>
                     <div><h4 className="mb-2 text-sm font-black text-slate-900">Unlocked content</h4>{(d.unlocks || []).length?<div className="max-h-96 space-y-2 overflow-y-auto pr-1">{d.unlocks.map((item,idx)=><div key={idx} className="rounded-xl bg-slate-50 p-3 text-sm"><div className="font-semibold">{item.feature_code}</div><div className="mt-1 break-words text-xs text-slate-500">{item.content_key}</div><div className="mt-1 text-xs text-slate-400">{date(item.unlocked_at)}{Number(item.tokens_charged||0)>0?` · ${money(Number(item.tokens_charged)/100)}`:''}</div></div>)}</div>:<Empty>Nothing unlocked yet.</Empty>}</div>
                     <div><h4 className="mb-2 text-sm font-black text-slate-900">Recent site activity</h4>{(sa?.recent || []).length?<div className="max-h-96 space-y-2 overflow-y-auto pr-1">{sa.recent.map((item,idx)=><div key={idx} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 p-3 text-sm"><div><span className="font-semibold capitalize">{String(item.event_type||'').replace(/_/g,' ')}</span><span className="text-slate-500"> · {item.feature||item.route||'—'}</span></div><div className="whitespace-nowrap text-xs text-slate-400">{date(item.created_at)}</div></div>)}</div>:<Empty>No site activity recorded yet.</Empty>}</div>
                   </div>

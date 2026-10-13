@@ -9,6 +9,7 @@ import {
   VISITOR_LINK_COUNTABLE_SQL,
 } from './tracking-exclusion.js';
 import { getVerifiedAdminMfaIdentity } from './admin-mfa';
+import { grantSignupGameCreditInTx, gameCreditWallet } from './game-economy';
 
 // Credit-era member state (owner rules, 2026-10-10): there are no plans or
 // tiers. A signup is a username+password credential account in
@@ -654,9 +655,9 @@ export async function memberActivity(db, userId) {
     tableReady('suggestions'),
   ]);
 
-  let gameCredit = { balanceCents: 0, nextExpiryAt: null, ledger: [] };
+  let gameCredit = { balanceCents: 0, nextExpiryAt: null, hasSignupBonus: false, ledger: [] };
   if (gameCreditReady) {
-    const [balanceResult, ledgerResult] = await Promise.all([
+    const [balanceResult, ledgerResult, bonusResult] = await Promise.all([
       db.query(`
         SELECT COALESCE(sum(remaining_cents),0)::int AS balance_cents, min(expires_at) AS next_expiry
           FROM public.o2ol_game_credit_ledger
@@ -667,10 +668,14 @@ export async function memberActivity(db, userId) {
           FROM public.o2ol_game_credit_ledger
          WHERE user_id=$1::uuid
          ORDER BY created_at DESC LIMIT 50`, [userId]),
+      db.query(`
+        SELECT EXISTS (SELECT 1 FROM public.o2ol_game_credit_ledger
+                        WHERE user_id=$1::uuid AND kind='signup_bonus') AS has_bonus`, [userId]),
     ]);
     gameCredit = {
       balanceCents: balanceResult.rows[0]?.balance_cents || 0,
       nextExpiryAt: balanceResult.rows[0]?.next_expiry || null,
+      hasSignupBonus: bonusResult.rows[0]?.has_bonus === true,
       ledger: ledgerResult.rows,
     };
   }
@@ -1720,6 +1725,25 @@ export async function handleAdminRequest(request, env, url) {
         const data = await memberActivity(db, activityMatch[1]);
         if (!data) return fail('Member not found.',404,'member_not_found');
         return json({ ok:true, generatedAt:new Date().toISOString(), ...data });
+      }
+
+      // Verification Game Credit backfill (owner-directed, 2026-10-12):
+      // members who finished verification BEFORE the Game Credit system
+      // launched never received the one-time $5.00 signup bonus, because
+      // it fires only inside the phone-verification flow. This grants the
+      // exact standard row (kind 'signup_bonus', system actor, 14-day
+      // expiry) through the same idempotent grant the verification flow
+      // uses, so it can never double-fire.
+      const backfillMatch = url.pathname.match(/^\/api\/admin\/members\/([0-9a-f-]{36})\/verification-game-credit$/i);
+      if (request.method === 'POST' && backfillMatch) {
+        const data = await memberActivity(db, backfillMatch[1]);
+        if (!data) return fail('Member not found.',404,'member_not_found');
+        if (!(data.member.is_verified && data.member.phone_verified)) {
+          return fail('This member has not finished email and phone verification.',400,'member_not_fully_verified');
+        }
+        const granted = await grantSignupGameCreditInTx(db, backfillMatch[1]);
+        const wallet = await gameCreditWallet(db, backfillMatch[1]);
+        return json({ ok:true, granted: !!granted, alreadyGranted: !granted, gameCredit: wallet });
       }
 
       const memberMatch = url.pathname.match(/^\/api\/admin\/members\/([0-9a-f-]{36})\/(suspend|delete|restore)$/i);
