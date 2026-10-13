@@ -591,6 +591,156 @@ async function members(db) {
      ORDER BY COALESCE(u.created_at,a."createdAt") DESC`);
   return result.rows;
 }
+// Member account view (owner-requested, 2026-10-12): from the members
+// search, open ONE account and see everything about it — profile facts,
+// Credit wallet + full Credit ledger, Game Credit, content unlocks,
+// site activity (signed-in events plus the activity of every browser
+// linked to the account), and any support tickets filed under the
+// member's email. Read-only; all-time (account records are not traffic
+// statistics, so the analytics baseline does not apply here).
+export async function memberActivity(db, userId) {
+  const memberResult = await db.query(`
+    SELECT COALESCE(a.id,u.id) AS id,
+           COALESCE(u.email,a.email) AS email,
+           COALESCE(NULLIF(u.name,''),NULLIF(a.name,''),split_part(a.email,'@',1)) AS name,
+           u.username,
+           COALESCE(u.marketing_email_opt_in,false) AS marketing_email_opt_in,
+           u.marketing_email_opt_in_at,
+           u.signup_visitor_id,
+           COALESCE(u.user_type,'regular') AS user_type,
+           u.relationship_status,u.location,u.age_range,
+           COALESCE(u.is_active,true) AS is_active,
+           (COALESCE(a."emailVerified",false)=true OR COALESCE(u.is_verified,false)=true) AS is_verified,
+           COALESCE((to_jsonb(u)->>'phone_number_verified')::boolean,false) AS phone_verified,
+           CASE
+             WHEN u.id IS NULL THEN 'Signup Pending'
+             WHEN ${CREDIT_PURCHASE_SQL('COALESCE(a.id,u.id)')} THEN 'Credit Buyer'
+             ELSE 'Member'
+           END AS subscription_plan,
+           COALESCE(u.created_at,a."createdAt") AS created_at,
+           COALESCE(u.updated_at,a."updatedAt",a."createdAt") AS updated_at,
+           COALESCE(a.role,'user') AS auth_role,
+           COALESCE(a.banned,false) AS banned,
+           a."banReason" AS ban_reason,
+           CASE
+             WHEN COALESCE(a."banReason",'') LIKE 'O2OL_DELETED:%' THEN 'deleted'
+             WHEN COALESCE(a."banReason",'') LIKE 'O2OL_SUSPENDED:%' OR COALESCE(a.banned,false)=true OR COALESCE(u.is_active,true)=false THEN 'suspended'
+             ELSE 'active'
+           END AS account_state
+      FROM neon_auth."user" a
+      FULL OUTER JOIN public.users u ON u.id=a.id
+     WHERE COALESCE(a.id,u.id)=$1::uuid`, [userId]);
+  const member = memberResult.rows[0] || null;
+  if (!member) return null;
+
+  const tableReady = async (name) => (await db.query(
+    `SELECT to_regclass($1) IS NOT NULL AS ready`, [`public.${name}`],
+  )).rows[0]?.ready === true;
+
+  const [wallet, creditActivity, gameCreditReady, unlocksReady, eventsReady, suggestionsReady] = await Promise.all([
+    db.query(`
+      SELECT balance,lifetime_purchased,lifetime_used,lifetime_granted,created_at,updated_at
+        FROM public.o2ol_token_wallets WHERE user_id=$1::uuid`, [userId]),
+    db.query(`
+      SELECT t.id,t.wallet_delta,t.balance_after,t.transaction_type,t.feature_code,t.package_code,
+             t.amount_cents,t.provider,t.created_at,fp.label AS feature_label
+        FROM public.o2ol_token_transactions t
+        LEFT JOIN public.o2ol_token_feature_prices fp ON fp.feature_code=t.feature_code
+       WHERE t.user_id=$1::uuid
+       ORDER BY t.created_at DESC LIMIT 100`, [userId]),
+    tableReady('o2ol_game_credit_ledger'),
+    tableReady('o2ol_token_content_unlocks'),
+    tableReady('interaction_events'),
+    tableReady('suggestions'),
+  ]);
+
+  let gameCredit = { balanceCents: 0, nextExpiryAt: null, ledger: [] };
+  if (gameCreditReady) {
+    const [balanceResult, ledgerResult] = await Promise.all([
+      db.query(`
+        SELECT COALESCE(sum(remaining_cents),0)::int AS balance_cents, min(expires_at) AS next_expiry
+          FROM public.o2ol_game_credit_ledger
+         WHERE user_id=$1::uuid AND COALESCE(remaining_cents,0)>0
+           AND (expires_at IS NULL OR expires_at>now())`, [userId]),
+      db.query(`
+        SELECT id,kind,amount_cents,remaining_cents,game,expires_at,created_at,actor,note
+          FROM public.o2ol_game_credit_ledger
+         WHERE user_id=$1::uuid
+         ORDER BY created_at DESC LIMIT 50`, [userId]),
+    ]);
+    gameCredit = {
+      balanceCents: balanceResult.rows[0]?.balance_cents || 0,
+      nextExpiryAt: balanceResult.rows[0]?.next_expiry || null,
+      ledger: ledgerResult.rows,
+    };
+  }
+
+  let unlocks = [];
+  if (unlocksReady) {
+    unlocks = (await db.query(`
+      SELECT feature_code,content_key,tokens_charged,unlocked_at
+        FROM public.o2ol_token_content_unlocks
+       WHERE user_id=$1::uuid
+       ORDER BY unlocked_at DESC LIMIT 100`, [userId])).rows;
+  }
+
+  let siteActivity = { totals: { events: 0, visits: 0, page_views: 0, clicks: 0, actions: 0, first_seen: null, last_seen: null }, topFeatures: [], recent: [], presence: [] };
+  if (eventsReady) {
+    const scope = `e.user_id=$1::uuid OR e.visitor_id IN (SELECT visitor_id FROM public.visitor_identity_links WHERE user_id=$1::uuid)`;
+    const [totals, topFeatures, recent, presence] = await Promise.all([
+      db.query(`
+        SELECT count(*)::int AS events,
+               count(DISTINCT e.session_id)::int AS visits,
+               count(*) FILTER (WHERE e.event_type='page_view')::int AS page_views,
+               count(*) FILTER (WHERE e.event_type='click')::int AS clicks,
+               count(*) FILTER (WHERE e.event_type='action')::int AS actions,
+               min(e.created_at) AS first_seen, max(e.created_at) AS last_seen
+          FROM public.interaction_events e WHERE ${scope}`, [userId]),
+      db.query(`
+        SELECT e.feature, count(*)::int AS events
+          FROM public.interaction_events e
+         WHERE (${scope}) AND e.feature IS NOT NULL
+         GROUP BY e.feature ORDER BY events DESC LIMIT 10`, [userId]),
+      db.query(`
+        SELECT e.event_type,e.route,e.feature,e.created_at
+          FROM public.interaction_events e
+         WHERE ${scope}
+         ORDER BY e.created_at DESC LIMIT 60`, [userId]),
+      db.query(`
+        SELECT vp.route, vp.last_ping_at
+          FROM public.visitor_presence vp
+         WHERE vp.user_id=$1::uuid
+            OR vp.visitor_id IN (SELECT visitor_id FROM public.visitor_identity_links WHERE user_id=$1::uuid)
+         ORDER BY vp.last_ping_at DESC LIMIT 5`, [userId]).catch(() => ({ rows: [] })),
+    ]);
+    siteActivity = {
+      totals: totals.rows[0] || siteActivity.totals,
+      topFeatures: topFeatures.rows,
+      recent: recent.rows,
+      presence: presence.rows,
+    };
+  }
+
+  let supportTickets = [];
+  if (suggestionsReady && member.email) {
+    supportTickets = (await db.query(`
+      SELECT id,name,email,suggestion_type,suggestion,status,created_at
+        FROM public.suggestions
+       WHERE lower(email)=lower($1)
+       ORDER BY created_at DESC LIMIT 20`, [member.email])).rows;
+  }
+
+  return {
+    member,
+    wallet: wallet.rows[0] || null,
+    creditActivity: creditActivity.rows,
+    gameCredit,
+    unlocks,
+    siteActivity,
+    supportTickets,
+  };
+}
+
 async function visitorRegistry(db, rangeDays = 30, env) {
   // Owner marker (2026-10-12): registry traffic reads start at the analytics
   // baseline — activity before the marker is not counted or listed.
@@ -1563,6 +1713,13 @@ export async function handleAdminRequest(request, env, url) {
         const body = await request.json().catch(() => ({}));
         const result = await manageMemberAccountsBulk(db, admin, body?.memberIds, String(body?.action || '').toLowerCase(), body?.reason || '');
         return json({ ok:true, ...result });
+      }
+
+      const activityMatch = url.pathname.match(/^\/api\/admin\/members\/([0-9a-f-]{36})\/activity$/i);
+      if (request.method === 'GET' && activityMatch) {
+        const data = await memberActivity(db, activityMatch[1]);
+        if (!data) return fail('Member not found.',404,'member_not_found');
+        return json({ ok:true, generatedAt:new Date().toISOString(), ...data });
       }
 
       const memberMatch = url.pathname.match(/^\/api\/admin\/members\/([0-9a-f-]{36})\/(suspend|delete|restore)$/i);
