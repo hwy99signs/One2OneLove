@@ -8,7 +8,12 @@
 // An identity is excluded when EITHER:
 //   (a) its neon_auth."user" role is 'admin' (the owner), or
 //   (b) its email is the Muse test account created 2026-10-12 to prove
-//       the sign-up counter (admin+o2oltest@erantpropertyservices.com).
+//       the sign-up counter (admin+o2oltest@erantpropertyservices.com), or
+//   (c) its email is one of the owner's own personal member accounts
+//       (TRACKING_HOUSEHOLD_EMAILS) — added 2026-10-12 evening after the
+//       owner reported "our presence" still showing on his dashboard:
+//       the admin-only rule missed every visit he made signed in as
+//       himself instead of as the admin.
 //
 // This module is the single source for that decision: the ingest drop
 // (worker/feature-usage.ts), the admin/analytics read-side filters
@@ -16,19 +21,37 @@
 // cleanup all derive from the helpers below so the rule cannot drift.
 
 export const TRACKING_TEST_ACCOUNT_EMAIL = 'admin+o2oltest@erantpropertyservices.com';
-export const TRACKING_EXCLUSION_CLEANUP_KEY = 'owner_tracking_cleanup_v1';
+// The owner's personal member accounts (he tests the site signed in as
+// himself, not only as the admin). Household traffic is his own presence,
+// never visitor truth. Account/Credit aggregates do NOT use this module's
+// predicate (they carry their own role-only filters), so these accounts
+// still exist as members everywhere it matters — only activity counting
+// (registry, funnel, site usage, feature activity, presence) skips them.
+export const TRACKING_HOUSEHOLD_EMAILS = [
+  'izoemotors@gmail.com',
+  'eranttrucking@gmail.com',
+];
+export const TRACKING_EXCLUDED_EMAILS = [
+  TRACKING_TEST_ACCOUNT_EMAIL,
+  ...TRACKING_HOUSEHOLD_EMAILS,
+];
+// v2 (2026-10-12 evening): the household widening — the same DELETE runs
+// once more under a new key so historic rows recorded by the owner's
+// personal accounts (and by browsers linked to them) are removed too.
+export const TRACKING_EXCLUSION_CLEANUP_KEY = 'owner_tracking_cleanup_v2';
 
 // Pure decision — unit-tested in tests/tracking-exclusion.test.js.
 export function isExcludedAccountIdentity(identity) {
   if (!identity || typeof identity !== 'object') return false;
   if (String(identity.role || '').trim().toLowerCase() === 'admin') return true;
-  return String(identity.email || '').trim().toLowerCase() === TRACKING_TEST_ACCOUNT_EMAIL;
+  return TRACKING_EXCLUDED_EMAILS.includes(String(identity.email || '').trim().toLowerCase());
 }
 
 // SQL predicate: TRUE when the neon_auth."user" row aliased `alias` is a
 // countable (non-excluded) account. Mirrors isExcludedAccountIdentity.
 export function accountCountableSql(alias) {
-  return `(COALESCE(${alias}.role,'user') <> 'admin' AND lower(COALESCE(${alias}.email,'')) <> '${TRACKING_TEST_ACCOUNT_EMAIL}')`;
+  const emailList = TRACKING_EXCLUDED_EMAILS.map((email) => `'${email}'`).join(',');
+  return `(COALESCE(${alias}.role,'user') <> 'admin' AND lower(COALESCE(${alias}.email,'')) NOT IN (${emailList}))`;
 }
 
 // SQL predicate for an interaction_events row: countable when it is
@@ -84,6 +107,42 @@ export async function resolveIdentityExcluded(db, { visitorId = null, userId = n
     } catch { /* defensive: never break ingest */ }
   }
   return false;
+}
+
+// Sign-in linking (owner-directed, 2026-10-12 evening): visitor_identity_
+// links were only ever written at sign-up, so a browser that signed in —
+// but never registered on that browser — could never be attributed to
+// its account, and its signed-out trail stayed counted forever (the
+// owner's laptop, locked out and anonymous, filled his own registry).
+// The ingest paths now upsert this link from any authenticated event or
+// presence ping. The guarded UPDATE keeps repeat pings write-light: the
+// row only changes when it points at a different account. Defensive like
+// the resolver: any failure returns false and never breaks ingest. This
+// also serves the owner's counting rule that returning members show
+// under their username instead of a visitor number.
+export async function linkVisitorToAccount(db, { visitorId = null, userId = null } = {}) {
+  if (!visitorId || !userId || !UUID_PATTERN.test(String(userId))) return false;
+  const visitor = String(visitorId).trim().slice(0, 64);
+  if (!visitor) return false;
+  try {
+    const ready = await db.query(
+      `SELECT to_regclass('public.visitor_identity_links') IS NOT NULL AS ready`,
+    );
+    if (!ready.rows[0]?.ready) return false;
+    await db.query(
+      `INSERT INTO public.visitor_identity_links(visitor_id,user_id,link_source,linked_at,updated_at)
+       VALUES($1,$2::uuid,'signed_in_activity',now(),now())
+       ON CONFLICT(visitor_id) DO UPDATE SET
+         user_id=EXCLUDED.user_id,
+         link_source=EXCLUDED.link_source,
+         updated_at=now()
+       WHERE public.visitor_identity_links.user_id IS DISTINCT FROM EXCLUDED.user_id`,
+      [visitor, String(userId)],
+    );
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 // One-time historic cleanup (owner-directed, 2026-10-12): delete the

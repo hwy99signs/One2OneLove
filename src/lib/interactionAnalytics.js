@@ -117,6 +117,14 @@ function visitorId() {
 // matching identity rule at ingest and in the admin reads, so an excluded
 // browser is dropped even if this client check is bypassed.
 const TRACKING_EXCLUDED_KEY = 'o2ol_tracking_excluded';
+// Mirrors TRACKING_EXCLUDED_EMAILS in worker/tracking-exclusion.js (the
+// server module is the authority; this copy only stops the traffic at the
+// source). Test account + the owner's personal member accounts.
+const TRACKING_EXCLUDED_EMAILS = new Set([
+  'admin+o2oltest@erantpropertyservices.com',
+  'izoemotors@gmail.com',
+  'eranttrucking@gmail.com',
+]);
 let publishedIdentityIsAdmin = false;
 
 function readTrackingExcludedFlag() {
@@ -152,10 +160,15 @@ export function isTrackingExcluded() {
 }
 
 // AuthContext publishes the signed-in identity here on every auth change.
-// An admin sign-in permanently excludes this browser (see above); a
-// non-admin or signed-out identity NEVER clears an exclusion already set.
+// An admin sign-in permanently excludes this browser (see above); so does
+// a sign-in by one of the owner's own accounts (his admin role, the agent
+// test account, or his personal member accounts — server-side the same
+// rule lives in worker/tracking-exclusion.js). A regular member sign-in
+// or a sign-out NEVER clears an exclusion already set.
 export function setAnalyticsIdentity(identity) {
-  if (String(identity?.role || '').trim().toLowerCase() !== 'admin') return;
+  const role = String(identity?.role || '').trim().toLowerCase();
+  const email = String(identity?.email || '').trim().toLowerCase();
+  if (role !== 'admin' && !TRACKING_EXCLUDED_EMAILS.has(email)) return;
   publishedIdentityIsAdmin = true;
   writeTrackingExcludedFlag();
   saveQueue([]);

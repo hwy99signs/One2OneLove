@@ -2,11 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   TRACKING_TEST_ACCOUNT_EMAIL,
+  TRACKING_HOUSEHOLD_EMAILS,
+  TRACKING_EXCLUSION_CLEANUP_KEY,
   isExcludedAccountIdentity,
   accountCountableSql,
   eventActorCountableSql,
   EVENT_ACTOR_COUNTABLE_SQL,
   VISITOR_LINK_COUNTABLE_SQL,
+  linkVisitorToAccount,
   resolveIdentityExcluded,
   runTrackingExclusionCleanupOnce,
 } from '../worker/tracking-exclusion.js';
@@ -24,6 +27,13 @@ test('the Muse test account email is excluded (any case/whitespace)', () => {
   assert.equal(isExcludedAccountIdentity({ email: ' Admin+O2OLTest@ErantPropertyServices.com ' }), true);
 });
 
+test("the owner's personal member accounts are excluded (household)", () => {
+  for (const email of TRACKING_HOUSEHOLD_EMAILS) {
+    assert.equal(isExcludedAccountIdentity({ role: 'user', email }), true);
+    assert.equal(isExcludedAccountIdentity({ role: 'user', email: ` ${email.toUpperCase()} ` }), true);
+  }
+});
+
 test('regular members and empty identities are NOT excluded', () => {
   assert.equal(isExcludedAccountIdentity({ role: 'user', email: 'member@example.com' }), false);
   assert.equal(isExcludedAccountIdentity({ role: 'user' }), false);
@@ -35,10 +45,16 @@ test('regular members and empty identities are NOT excluded', () => {
 
 // --- SQL fragments mirror the JS decision -----------------------------------
 
-test('accountCountableSql excludes admin role and the test email', () => {
+test('accountCountableSql excludes admin role and every excluded email', () => {
   const sql = accountCountableSql('a');
   assert.ok(sql.includes("COALESCE(a.role,'user') <> 'admin'"));
-  assert.ok(sql.includes(`lower(COALESCE(a.email,'')) <> '${TRACKING_TEST_ACCOUNT_EMAIL}'`));
+  assert.ok(sql.includes("lower(COALESCE(a.email,'')) NOT IN ("));
+  assert.ok(sql.includes(`'${TRACKING_TEST_ACCOUNT_EMAIL}'`));
+  for (const email of TRACKING_HOUSEHOLD_EMAILS) assert.ok(sql.includes(`'${email}'`));
+});
+
+test('the historic cleanup is armed at v2 for the household widening', () => {
+  assert.equal(TRACKING_EXCLUSION_CLEANUP_KEY, 'owner_tracking_cleanup_v2');
 });
 
 test('event actor predicate keeps anonymous rows countable', () => {
@@ -72,10 +88,13 @@ function fakeDb({ users = {}, links = {}, linksTableReady = true, failAll = fals
   };
 }
 
+const HOUSEHOLD_ID = '44444444-4444-4444-8444-444444444444';
+
 const USERS = {
   [ADMIN_ID]: { role: 'admin', email: 'owner@example.com' },
   [TEST_ID]: { role: 'user', email: TRACKING_TEST_ACCOUNT_EMAIL },
   [MEMBER_ID]: { role: 'user', email: 'member@example.com' },
+  [HOUSEHOLD_ID]: { role: 'user', email: TRACKING_HOUSEHOLD_EMAILS[0] },
 };
 
 test('resolver: signed-in admin and test account are excluded', async () => {
@@ -83,6 +102,46 @@ test('resolver: signed-in admin and test account are excluded', async () => {
   assert.equal(await resolveIdentityExcluded(db, { userId: ADMIN_ID }), true);
   assert.equal(await resolveIdentityExcluded(db, { userId: TEST_ID }), true);
   assert.equal(await resolveIdentityExcluded(db, { userId: MEMBER_ID }), false);
+});
+
+test('resolver: household accounts are excluded directly and by visitor link', async () => {
+  const db = fakeDb({ users: USERS, links: { 'visitor-household': HOUSEHOLD_ID } });
+  assert.equal(await resolveIdentityExcluded(db, { userId: HOUSEHOLD_ID }), true);
+  assert.equal(await resolveIdentityExcluded(db, { visitorId: 'visitor-household' }), true);
+});
+
+// --- Sign-in linking ---------------------------------------------------------
+
+test('link helper upserts a signed_in_activity link and stays defensive', async () => {
+  const calls = [];
+  const db = {
+    async query(sql, params = []) {
+      calls.push({ sql, params });
+      if (sql.includes('to_regclass')) return { rows: [{ ready: true }] };
+      return { rows: [] };
+    },
+  };
+  assert.equal(await linkVisitorToAccount(db, { visitorId: 'visitor-1', userId: MEMBER_ID }), true);
+  const upsert = calls.find((c) => c.sql.includes('INSERT INTO public.visitor_identity_links'));
+  assert.ok(upsert);
+  assert.ok(upsert.sql.includes("'signed_in_activity'"));
+  assert.ok(upsert.sql.includes('ON CONFLICT(visitor_id) DO UPDATE'));
+  assert.deepEqual(upsert.params, ['visitor-1', MEMBER_ID]);
+
+  assert.equal(await linkVisitorToAccount(db, { visitorId: 'visitor-1', userId: 'not-a-uuid' }), false);
+  assert.equal(await linkVisitorToAccount(db, { visitorId: '', userId: MEMBER_ID }), false);
+  assert.equal(await linkVisitorToAccount(db, {}), false);
+
+  const missingTableDb = {
+    async query(sql) {
+      if (sql.includes('to_regclass')) return { rows: [{ ready: false }] };
+      throw new Error('must not reach the upsert');
+    },
+  };
+  assert.equal(await linkVisitorToAccount(missingTableDb, { visitorId: 'v', userId: MEMBER_ID }), false);
+
+  const failingDb = { async query() { throw new Error('db down'); } };
+  assert.equal(await linkVisitorToAccount(failingDb, { visitorId: 'v', userId: MEMBER_ID }), false);
 });
 
 test('resolver: visitor linked to an excluded account is excluded', async () => {
@@ -123,6 +182,7 @@ test('cleanup deletes only excluded-identity rows (actor or link), exactly once'
   assert.ok(deleteSql.includes('vil.visitor_id=e.visitor_id'));
   assert.ok(deleteSql.includes('e.user_id IN'));
   assert.ok(deleteSql.includes(TRACKING_TEST_ACCOUNT_EMAIL));
+  for (const email of TRACKING_HOUSEHOLD_EMAILS) assert.ok(deleteSql.includes(email));
   assert.ok(!deleteSql.includes('DELETE FROM public.visitor_identity_links'));
   const callsAfterFirst = calls.length;
   const second = await runTrackingExclusionCleanupOnce(db);
@@ -169,5 +229,16 @@ test('client: admin identity excludes permanently; non-admin never sets or clear
   setAnalyticsIdentity({ role: 'user' }); // a later member sign-in must not clear it
   assert.equal(isTrackingExcluded(), true);
   setAnalyticsIdentity(null); // sign-out must not clear it either
+  assert.equal(isTrackingExcluded(), true);
+});
+
+test("client: the owner's own member accounts also exclude the browser", async () => {
+  // Fresh module instance (query suffix): the identity flag above is
+  // module-level state already set by the admin test.
+  const { isTrackingExcluded, setAnalyticsIdentity } = await import('../src/lib/interactionAnalytics.js?household=1');
+  installWindowStub('');
+  setAnalyticsIdentity({ role: 'user', email: 'member@example.com' });
+  assert.equal(isTrackingExcluded(), false);
+  setAnalyticsIdentity({ role: 'user', email: 'izoemotors@gmail.com' });
   assert.equal(isTrackingExcluded(), true);
 });

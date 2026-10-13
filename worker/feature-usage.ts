@@ -3,6 +3,7 @@ import { Client } from 'pg';
 import { deriveClickControlKey, deriveClickFeature } from './click-labels.js';
 import {
   isExcludedAccountIdentity,
+  linkVisitorToAccount,
   resolveIdentityExcluded,
   runTrackingExclusionCleanupOnce,
 } from './tracking-exclusion.js';
@@ -208,6 +209,16 @@ async function handleInteractionEvent(request, env) {
       return json({ ok:true, smoke:true, storageReady:true });
     }
 
+    // Sign-in linking (owner-directed, 2026-10-12 evening): tie this
+    // browser to the signed-in account BEFORE any exclusion return below,
+    // so an excluded account's browser is recognized — and its earlier
+    // signed-out trail stops counting — from its first authenticated
+    // event on. Runs for admin and household sessions too, deliberately:
+    // the link is what lets the read-side filters drop their history.
+    if (auth?.user?.id) {
+      await linkVisitorToAccount(db, { visitorId, userId: auth.user.id });
+    }
+
     let userId = null;
     let actorType = 'anonymous';
     let accessType = 'open_house';
@@ -342,6 +353,12 @@ export async function handlePresencePing(request, env) {
   const auth = await session(request, env, false);
   return withDb(env, async (db) => {
     await ensurePresenceSchema(db);
+    // Sign-in linking (see handleInteractionEvent): a browser that only
+    // idles on a page still ties itself to its account here, so the
+    // owner's devices stop counting as anonymous presence after sign-in.
+    if (auth?.user?.id) {
+      await linkVisitorToAccount(db, { visitorId, userId: auth.user.id });
+    }
     let userId = null;
     if (auth?.user?.id) {
       const identity = await db.query(
