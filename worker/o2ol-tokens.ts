@@ -96,7 +96,7 @@ async function ensureOwnerPricing(db){
     ['amora_response_long','Amora long reply',20,'response'],
     ['ai_content_generation','AI content generation',49,'action'],
     ['love_note_ai','Love Note AI generation',25,'action'],
-    ['love_note_template_unlock','Love Note template reveal',49,'note'],
+    ['love_note_template_unlock','Love Note template reveal',49,'item'],
     ['date_idea_unlock','Date Idea unlock',49,'item'],
     ['podcast_episode_unlock','Podcast episode unlock',199,'episode'],
     ['premium_content_unlock','Premium content unlock',299,'item'],
