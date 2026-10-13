@@ -286,6 +286,7 @@ export default function Admin() {
   const [votingPlatform,setVotingPlatform] = useState('all');
   const [registryRange,setRegistryRange] = useState('30d');
   const registryRangeRef = useRef('30d');
+  const memberDetailRef = useRef(null);
   const dataRef = useRef(null);
   const loadInFlightRef = useRef(false);
   const lastRefreshAtRef = useRef(0);
@@ -492,6 +493,11 @@ export default function Admin() {
     setMemberDetail({ member, data: null });
     setMemberDetailError('');
     setMemberDetailLoading(true);
+    // The account panel renders above the members table; bring it into
+    // view immediately so the tap visibly does something on any screen.
+    requestAnimationFrame(() => {
+      memberDetailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
     try {
       const payload = await getMemberActivity(member.id);
       setMemberDetail({ member, data: payload });
@@ -876,39 +882,7 @@ export default function Admin() {
                 {selectedMemberIds.length>0&&<button onClick={()=>setSelectedMemberIds([])} className="rounded-lg px-3 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100">Clear</button>}
               </div>
             </div>
-            <TableShell scrollHeight={800}><table className="min-w-full text-sm">
-              <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr>
-                <th className="w-10 px-4 py-3"><input type="checkbox" aria-label="Select all visible members" checked={allVisibleSelected} onChange={toggleVisibleSelection}/></th><th className="px-4 py-3">Member</th><th className="px-4 py-3">Type</th><th className="px-4 py-3">Credit</th><th className="px-4 py-3">Account</th><th className="px-4 py-3">Joined</th><th className="px-4 py-3 text-right">Actions</th>
-              </tr></thead>
-              <tbody className="divide-y divide-slate-100">{filteredMembers.map(m=>{
-                const state=m.account_state || (m.banned?'suspended':m.is_active===false?'suspended':'active');
-                const busy=memberActionId===m.id;
-                const protectedAdmin=m.auth_role==='admin';
-                const selected=selectedMemberIds.includes(m.id);
-                const signupState = !m.auth_ready ? 'Authentication record missing' : !m.profile_ready ? 'Profile recovery pending' : !m.is_verified ? 'Email verification pending' : (!protectedAdmin && !m.phone_verified ? 'Phone verification pending' : null);
-                return <tr key={m.id} className={selected?'bg-rose-50/40':''}>
-                  <td className="px-4 py-3">{protectedAdmin?<span className="text-slate-300">—</span>:<input type="checkbox" aria-label={`Select ${m.username?('@'+m.username):m.email}`} checked={selected} onChange={()=>setSelectedMemberIds(current=>selected?current.filter(id=>id!==m.id):[...current,m.id])}/>}</td>
-                  <td className="px-4 py-3"><button type="button" onClick={()=>openMemberAccount(m)} className="text-left font-semibold text-slate-900 underline decoration-rose-300 decoration-2 underline-offset-2 hover:text-rose-700" title="Open this account — see all activity">{m.username?('@'+m.username):(m.name||'Unnamed member')}</button>{m.username&&m.name&&m.name!==m.username&&<div className="text-xs text-slate-500">{m.name}</div>}<div className="text-xs text-slate-500">{m.email}</div><div className="mt-1 text-[11px] font-semibold text-slate-400">Promotional email: {m.marketing_email_opt_in?'Yes':'No'}</div>{m.location&&<div className="text-xs text-slate-400">{m.location}</div>}</td>
-                  <td className="px-4 py-3 text-slate-600">{m.user_type||'user'}{protectedAdmin&&<div className="mt-1"><Pill tone="purple">Protected Admin</Pill></div>}</td>
-                  <td className="px-4 py-3"><Pill tone={m.subscription_status==='credit_buyer'?'violet':'blue'}>{m.subscription_plan||'Member'}</Pill></td>
-                  <td className="px-4 py-3"><Pill tone={state==='active'?'green':state==='deleted'?'red':'amber'}>{state}</Pill>{signupState&&<div className="mt-1 max-w-xs text-xs font-semibold text-amber-700">{signupState}</div>}{m.ban_reason&&state!=='active'&&<div className="mt-1 max-w-xs text-xs text-slate-400">{String(m.ban_reason).replace(/^O2OL_(?:DELETED|SUSPENDED):\s*/,'')}</div>}</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-slate-500">{date(m.created_at)}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap justify-end gap-2">
-                      <button onClick={()=>openMemberAccount(m)} className="inline-flex items-center gap-1 rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-slate-700">View account</button>
-                      {protectedAdmin ? <span className="text-xs font-semibold text-slate-400">Protected</span> : <>
-                        <button disabled={busy} onClick={()=>handleGrantGameCredit(m)} className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-700 disabled:opacity-50">Grant Game Credit</button>
-                        {state==='active' ? <>
-                          <button disabled={busy} onClick={()=>handleMemberAction(m,'suspend')} className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs font-bold text-amber-700 disabled:opacity-50"><UserX size={14}/>Suspend</button>
-                          <button disabled={busy} onClick={()=>handleMemberAction(m,'delete')} className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-bold text-rose-700 disabled:opacity-50"><Trash2 size={14}/>Delete</button>
-                        </> : <button disabled={busy} onClick={()=>handleMemberAction(m,'restore')} className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-700 disabled:opacity-50">{busy?<Loader2 size={14} className="animate-spin"/>:<RotateCcw size={14}/>}Restore</button>}
-                      </>}
-                    </div>
-                  </td>
-                </tr>;
-              })}</tbody>
-            </table></TableShell>
-
+            <div ref={memberDetailRef} className="scroll-mt-6">
             {memberDetail && (()=>{
               const md=memberDetail.member, d=memberDetail.data, w=d?.wallet, gc=d?.gameCredit, sa=d?.siteActivity, totals=sa?.totals || {};
               const onlineNow=(sa?.presence || []).some(p=>Date.now()-new Date(p.last_ping_at).getTime()<90000);
@@ -948,6 +922,40 @@ export default function Admin() {
                 </div>}
               </Panel>;
             })()}
+            </div>
+            <TableShell scrollHeight={800}><table className="min-w-full text-sm">
+              <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr>
+                <th className="w-10 px-4 py-3"><input type="checkbox" aria-label="Select all visible members" checked={allVisibleSelected} onChange={toggleVisibleSelection}/></th><th className="px-4 py-3">Member</th><th className="px-4 py-3">Type</th><th className="px-4 py-3">Credit</th><th className="px-4 py-3">Account</th><th className="px-4 py-3">Joined</th><th className="px-4 py-3 text-right">Actions</th>
+              </tr></thead>
+              <tbody className="divide-y divide-slate-100">{filteredMembers.map(m=>{
+                const state=m.account_state || (m.banned?'suspended':m.is_active===false?'suspended':'active');
+                const busy=memberActionId===m.id;
+                const protectedAdmin=m.auth_role==='admin';
+                const selected=selectedMemberIds.includes(m.id);
+                const signupState = !m.auth_ready ? 'Authentication record missing' : !m.profile_ready ? 'Profile recovery pending' : !m.is_verified ? 'Email verification pending' : (!protectedAdmin && !m.phone_verified ? 'Phone verification pending' : null);
+                return <tr key={m.id} className={selected?'bg-rose-50/40':''}>
+                  <td className="px-4 py-3">{protectedAdmin?<span className="text-slate-300">—</span>:<input type="checkbox" aria-label={`Select ${m.username?('@'+m.username):m.email}`} checked={selected} onChange={()=>setSelectedMemberIds(current=>selected?current.filter(id=>id!==m.id):[...current,m.id])}/>}</td>
+                  <td className="px-4 py-3"><button type="button" onClick={()=>openMemberAccount(m)} className="text-left font-semibold text-slate-900 underline decoration-rose-300 decoration-2 underline-offset-2 hover:text-rose-700" title="Open this account — see all activity">{m.username?('@'+m.username):(m.name||'Unnamed member')}</button>{m.username&&m.name&&m.name!==m.username&&<div className="text-xs text-slate-500">{m.name}</div>}<div className="text-xs text-slate-500">{m.email}</div><div className="mt-1 text-[11px] font-semibold text-slate-400">Promotional email: {m.marketing_email_opt_in?'Yes':'No'}</div>{m.location&&<div className="text-xs text-slate-400">{m.location}</div>}</td>
+                  <td className="px-4 py-3 text-slate-600">{m.user_type||'user'}{protectedAdmin&&<div className="mt-1"><Pill tone="purple">Protected Admin</Pill></div>}</td>
+                  <td className="px-4 py-3"><Pill tone={m.subscription_status==='credit_buyer'?'violet':'blue'}>{m.subscription_plan||'Member'}</Pill></td>
+                  <td className="px-4 py-3"><Pill tone={state==='active'?'green':state==='deleted'?'red':'amber'}>{state}</Pill>{signupState&&<div className="mt-1 max-w-xs text-xs font-semibold text-amber-700">{signupState}</div>}{m.ban_reason&&state!=='active'&&<div className="mt-1 max-w-xs text-xs text-slate-400">{String(m.ban_reason).replace(/^O2OL_(?:DELETED|SUSPENDED):\s*/,'')}</div>}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-slate-500">{date(m.created_at)}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-wrap justify-end gap-2">
+                      <button onClick={()=>openMemberAccount(m)} className="inline-flex items-center gap-1 rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-slate-700">View account</button>
+                      {protectedAdmin ? <span className="text-xs font-semibold text-slate-400">Protected</span> : <>
+                        <button disabled={busy} onClick={()=>handleGrantGameCredit(m)} className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-700 disabled:opacity-50">Grant Game Credit</button>
+                        {state==='active' ? <>
+                          <button disabled={busy} onClick={()=>handleMemberAction(m,'suspend')} className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs font-bold text-amber-700 disabled:opacity-50"><UserX size={14}/>Suspend</button>
+                          <button disabled={busy} onClick={()=>handleMemberAction(m,'delete')} className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-bold text-rose-700 disabled:opacity-50"><Trash2 size={14}/>Delete</button>
+                        </> : <button disabled={busy} onClick={()=>handleMemberAction(m,'restore')} className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-700 disabled:opacity-50">{busy?<Loader2 size={14} className="animate-spin"/>:<RotateCcw size={14}/>}Restore</button>}
+                      </>}
+                    </div>
+                  </td>
+                </tr>;
+              })}</tbody>
+            </table></TableShell>
+
 
             <Panel title="Visitor Registry / Audience Intelligence" subtitle="Persistent visitor history. Anonymous browser activity remains anonymous until the visitor voluntarily creates an account; then the existing visitor ID is linked to that member." className="mt-6">
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
