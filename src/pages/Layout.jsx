@@ -529,6 +529,15 @@ function LanguageContent({ children, currentPageName }) {
             <button
               ref={mobileMenuButtonRef}
               type="button"
+              // The homepage guest gate swallows every tap that is not
+              // marked data-guest-allow and opens the create-account
+              // panel instead — without this mark, a signed-out visitor
+              // could never open the menu at all (owner report,
+              // 2026-10-12: "Hamburger takes me straight to create
+              // account and not sign in"). The menu itself is built for
+              // guests: its Sign In / Sign Up buttons carry the same
+              // mark, and member links inside stay gated by design.
+              data-guest-allow
               aria-label={mobileMenuOpen ? t.nav.closeMenu : t.nav.openMenu}
               aria-expanded={mobileMenuOpen}
               aria-controls="responsive-navigation-menu"
