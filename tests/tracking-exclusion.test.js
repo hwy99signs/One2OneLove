@@ -232,6 +232,34 @@ test('client: admin identity excludes permanently; non-admin never sets or clear
   assert.equal(isTrackingExcluded(), true);
 });
 
+test('client: presence ping is the link carrier only while an excluded identity is signed in', async () => {
+  const mod = await import('../src/lib/interactionAnalytics.js?presence=1');
+  installWindowStub('');
+  let tick = null;
+  globalThis.window.setInterval = (fn) => { tick = fn; return 1; };
+  globalThis.document = { addEventListener: () => {} };
+  const fetches = [];
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => { fetches.push(String(url)); return { ok: true }; };
+  try {
+    mod.installPresenceHeartbeat();
+    assert.equal(fetches.length, 1); // ordinary anonymous ping
+    mod.setAnalyticsIdentity({ role: 'user', email: 'izoemotors@gmail.com' });
+    tick();
+    assert.equal(fetches.length, 2); // link-carrier ping despite the flag
+    mod.setAnalyticsIdentity(null); // signed out: silence resumes
+    tick();
+    assert.equal(fetches.length, 2);
+    mod.setAnalyticsIdentity({ role: 'user', email: 'member@example.com' });
+    tick();
+    assert.equal(fetches.length, 2); // a regular member does not un-silence a flagged browser
+    assert.ok(fetches.every((url) => url.includes('/api/site-presence/ping')));
+  } finally {
+    globalThis.fetch = realFetch;
+    delete globalThis.document;
+  }
+});
+
 test("client: the owner's own member accounts also exclude the browser", async () => {
   // Fresh module instance (query suffix): the identity flag above is
   // module-level state already set by the admin test.
