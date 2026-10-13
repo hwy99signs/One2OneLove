@@ -42,7 +42,7 @@ export function AuthProvider({ children }) {
   // recording (owner-directed, 2026-10-12). Signing out does not clear
   // the exclusion — see setAnalyticsIdentity in interactionAnalytics.js.
   useEffect(() => {
-    setAnalyticsIdentity(user ? { role: user.role } : null);
+    setAnalyticsIdentity(user ? { role: user.role, email: user.email } : null);
   }, [user]);
 
   const refreshUserProfile = async ({ preserveOnNull = false } = {}) => {
