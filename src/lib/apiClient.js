@@ -95,16 +95,31 @@ export async function getAuthSession() {
   return user?.emailVerified === true && session ? { user, session } : null;
 }
 
-export async function getAuthSessionWithRetry(attempts = 3, delayMs = 250) {
+// Tri-state session read (2026-10-12 phantom-logout repair).
+// 'authenticated' — the checker answered with a live session.
+// 'signed_out'    — the checker ANSWERED: a completed empty read or a
+//                   401. Only this state may sign a member out.
+// 'unknown'       — the checker could not answer (429 rate limit,
+//                   5xx, network). Unknown must NEVER sign a member
+//                   out: during the 2026-10-12 rate-limit storms the
+//                   old binary read turned "too busy" into "logged
+//                   out" on every tab return and reload.
+export async function getAuthSessionState(attempts = 3, delayMs = 250) {
   let lastError = null;
+  let definitive = false;
 
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     try {
       const auth = await getAuthSession();
-      if (auth) return auth;
+      if (auth) return { state: 'authenticated', auth };
+      // A completed read with no session is the server speaking
+      // clearly. Remember it, but keep retrying briefly: upstream
+      // session hydration can race and answer empty for a moment.
+      definitive = true;
       lastError = null;
     } catch (error) {
       lastError = error;
+      if (error?.status === 401) definitive = true;
       if (error?.status === 429 && attempt < attempts - 1) {
         await wait(Math.min(Math.max(error.retryAfterMs || delayMs * 2, 500), 2500));
         continue;
@@ -116,9 +131,15 @@ export async function getAuthSessionWithRetry(attempts = 3, delayMs = 250) {
     }
   }
 
-  if (lastError?.status === 401) return null;
-  if (lastError) throw lastError;
-  return null;
+  if (definitive) return { state: 'signed_out' };
+  return { state: 'unknown', error: lastError };
+}
+
+export async function getAuthSessionWithRetry(attempts = 3, delayMs = 250) {
+  const result = await getAuthSessionState(attempts, delayMs);
+  if (result.state === 'authenticated') return result.auth;
+  if (result.state === 'signed_out') return null;
+  throw result.error || Object.assign(new Error('Session check is temporarily unavailable.'), { status: 429 });
 }
 
 export async function signInWithEmail(email, password) {
@@ -144,10 +165,20 @@ export async function signInWithEmail(email, password) {
   const directSession = payload?.session ?? payload?.data?.session ?? null;
 
   // Better Auth commonly returns the verified user immediately while the cookie
-  // is already being committed. Do not hammer get-session after a successful
-  // credential check; that created unnecessary 429s on launch QA.
+  // is already being committed. When the response carries no session of its
+  // own, confirm the login against the cookie ONCE before declaring it
+  // durable (2026-10-12): a sign-in that exists only in page state is a
+  // logout waiting for the next tab switch. If the confirmation read is
+  // merely inconclusive (rate limit, network), accept the credential
+  // result — the session state machine now preserves through unknowns.
   if (directUser?.emailVerified === true) {
-    return { user: directUser, session: directSession || { pending: true } };
+    if (directSession) return { user: directUser, session: directSession };
+    const confirmed = await getAuthSessionWithRetry(2, 400).catch(() => undefined);
+    if (confirmed?.user) return confirmed;
+    if (confirmed === null) {
+      throw new Error('Your sign-in could not be completed. Please try again.');
+    }
+    return { user: directUser, session: { pending: true } };
   }
 
   // Unverified accounts intentionally receive no usable session. One short

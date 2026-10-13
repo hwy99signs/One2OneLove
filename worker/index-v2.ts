@@ -144,8 +144,8 @@ async function socialPageResponse(request, env, url) {
   const pair=meta[lang]||meta.en;
   const title=pair[0];
   const description=pair[1];
-  const canonical='https://www.one2onelove.com'+url.pathname+(lang!=='en'?('?lang='+encodeURIComponent(lang)):'');
-  const image='https://www.one2onelove.com'+meta.image;
+  const canonical='https://one2onelove.com'+url.pathname+(lang!=='en'?('?lang='+encodeURIComponent(lang)):'');
+  const image='https://one2onelove.com'+meta.image;
 
   let html=await assetResponse.text();
   html=html.replace(/<html lang="[^"]*">/i,'<html lang="'+lang+'">')

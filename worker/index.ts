@@ -60,6 +60,24 @@ function copyAuthResponseHeaders(upstreamHeaders) {
   return headers;
 }
 
+// Session-read micro-cache (2026-10-12 phantom-logout repair): the
+// auth provider rate-limits /get-session, and a burst of identity
+// reads (page boot + tab returns + keep-alives) could trip the limit
+// and leave members facing a signed-out wall while their session was
+// perfectly valid. A browser's repeated reads of its OWN session are
+// served from a 20-second in-isolate cache keyed by a hash of its
+// cookie — the same trick the provider's own cookie cache plays,
+// one layer closer. Only completed reads WITH a live session are
+// cached (never an empty answer, never a sign-in/out POST), and the
+// member's cookie remains the only credential involved.
+const sessionReadCache = new Map();
+const SESSION_READ_TTL_MS = 20000;
+
+async function sessionReadCacheKey(cookieHeader) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(cookieHeader));
+  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 async function proxyAuth(request, env, url) {
   const suffix = url.pathname.slice('/api/auth'.length) || '/';
   const upstream = new URL(env.NEON_AUTH_BASE_URL.replace(/\/$/, '') + suffix);
@@ -69,6 +87,19 @@ async function proxyAuth(request, env, url) {
   headers.delete('host');
   headers.delete('content-length');
 
+  const cacheableSessionRead = request.method === 'GET' && suffix === '/get-session';
+  const cookieHeader = request.headers.get('cookie') || '';
+  let cacheKey = null;
+  if (cacheableSessionRead && cookieHeader) {
+    cacheKey = await sessionReadCacheKey(cookieHeader);
+    const hit = sessionReadCache.get(cacheKey);
+    if (hit && Date.now() - hit.at < SESSION_READ_TTL_MS) {
+      const cachedHeaders = new Headers(hit.headers);
+      cachedHeaders.set('x-o2ol-session-cache', 'hit');
+      return new Response(hit.body, { status: 200, headers: cachedHeaders });
+    }
+  }
+
   const upstreamResponse = await fetch(upstream.toString(), {
     method: request.method,
     headers,
@@ -76,10 +107,39 @@ async function proxyAuth(request, env, url) {
     redirect: 'manual',
   });
 
+  const responseHeaders = copyAuthResponseHeaders(upstreamResponse.headers);
+
+  if (cacheKey && upstreamResponse.status === 200) {
+    const bodyText = await upstreamResponse.text();
+    let hasLiveSession = false;
+    try {
+      const parsed = JSON.parse(bodyText);
+      const u = parsed?.user ?? parsed?.data?.user ?? null;
+      const sess = parsed?.session ?? parsed?.data?.session ?? null;
+      hasLiveSession = Boolean(u && sess);
+    } catch { /* non-JSON — never cached */ }
+    if (hasLiveSession) {
+      if (sessionReadCache.size > 500) {
+        const oldest = sessionReadCache.keys().next().value;
+        if (oldest) sessionReadCache.delete(oldest);
+      }
+      sessionReadCache.set(cacheKey, {
+        at: Date.now(),
+        body: bodyText,
+        headers: Array.from(responseHeaders.entries()),
+      });
+    }
+    return new Response(bodyText, {
+      status: upstreamResponse.status,
+      statusText: upstreamResponse.statusText,
+      headers: responseHeaders,
+    });
+  }
+
   return new Response(upstreamResponse.body, {
     status: upstreamResponse.status,
     statusText: upstreamResponse.statusText,
-    headers: copyAuthResponseHeaders(upstreamResponse.headers),
+    headers: responseHeaders,
   });
 }
 
