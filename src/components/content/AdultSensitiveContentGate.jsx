@@ -31,6 +31,8 @@ const copy = {
     agree: "I Agree — Enter Podcast Library",
     saving: "Saving your consent…",
     error: "We could not save your consent. Please try again.",
+    checkError: "We could not check your saved consent just now.",
+    retry: "Try again",
     privacy: "Your acceptance date and agreement version are saved to your account so you do not have to accept this notice every time.",
   },
   es: {
@@ -54,6 +56,8 @@ const copy = {
     agree: "Acepto — Entrar a la Biblioteca de Podcasts",
     saving: "Guardando tu consentimiento…",
     error: "No pudimos guardar tu consentimiento. Inténtalo de nuevo.",
+    checkError: "No pudimos comprobar tu consentimiento guardado en este momento.",
+    retry: "Reintentar",
     privacy: "La fecha de aceptación y la versión del acuerdo se guardan en tu cuenta para que no tengas que aceptar este aviso cada vez.",
   },
   fr: {
@@ -77,6 +81,8 @@ const copy = {
     agree: "J’Accepte — Entrer dans la Bibliothèque de Podcasts",
     saving: "Enregistrement de votre consentement…",
     error: "Nous n’avons pas pu enregistrer votre consentement. Veuillez réessayer.",
+    checkError: "Nous n’avons pas pu vérifier votre consentement enregistré pour le moment.",
+    retry: "Réessayer",
     privacy: "La date d’acceptation et la version de l’accord sont enregistrées dans votre compte afin que vous n’ayez pas à accepter cet avis à chaque visite.",
   },
   it: {
@@ -100,6 +106,8 @@ const copy = {
     agree: "Accetto — Entra nella Libreria Podcast",
     saving: "Salvataggio del consenso…",
     error: "Non siamo riusciti a salvare il tuo consenso. Riprova.",
+    checkError: "Non siamo riusciti a verificare il tuo consenso salvato in questo momento.",
+    retry: "Riprova",
     privacy: "La data di accettazione e la versione dell’accordo vengono salvate nel tuo account, così non dovrai accettare questo avviso ogni volta.",
   },
   de: {
@@ -123,6 +131,8 @@ const copy = {
     agree: "Ich Stimme Zu — Podcastbibliothek Öffnen",
     saving: "Zustimmung wird gespeichert…",
     error: "Ihre Zustimmung konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+    checkError: "Ihre gespeicherte Zustimmung konnte gerade nicht geprüft werden.",
+    retry: "Erneut versuchen",
     privacy: "Ihr Zustimmungsdatum und die Version der Vereinbarung werden in Ihrem Konto gespeichert, damit Sie diesen Hinweis nicht jedes Mal erneut akzeptieren müssen.",
   },
 };
@@ -137,6 +147,8 @@ export default function AdultSensitiveContentGate({ children }) {
   const [contentConfirmed, setContentConfirmed] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
+  const [checkFailed, setCheckFailed] = useState(false);
+  const [retryNonce, setRetryNonce] = useState(0);
 
   const canSubmit = useMemo(
     () => ageConfirmed && contentConfirmed && !isSaving,
@@ -146,7 +158,7 @@ export default function AdultSensitiveContentGate({ children }) {
   useEffect(() => {
     let active = true;
 
-    const checkConsent = async () => {
+    const checkConsent = async (isRetry = false) => {
       if (isLoading) return;
 
       if (!isAuthenticated || !user?.id) {
@@ -159,6 +171,7 @@ export default function AdultSensitiveContentGate({ children }) {
 
       setIsChecking(true);
       setError("");
+      setCheckFailed(false);
 
       try {
         const consent = await getAdultSensitiveConsent();
@@ -168,11 +181,23 @@ export default function AdultSensitiveContentGate({ children }) {
           consent?.sensitive_content_acknowledged === true;
 
         if (active) setHasConsent(Boolean(accepted));
+        if (active) setIsChecking(false);
       } catch (checkError) {
         console.error("Adult content consent check failed:", checkError);
-        if (active) setError(t.error);
-      } finally {
-        if (active) setIsChecking(false);
+        // A failed CHECK is not a failed SAVE: the old code showed
+        // "We could not save your consent" on page load, before the
+        // member touched anything, whenever this read hiccuped
+        // (re-run click pass, 2026-10-12). Retry once quietly, then
+        // tell the truth with a way to try again.
+        if (!isRetry) {
+          setTimeout(() => { if (active) checkConsent(true); }, 2000);
+          return;
+        }
+        if (active) {
+          setError(t.checkError || t.error);
+          setCheckFailed(true);
+          setIsChecking(false);
+        }
       }
     };
 
@@ -180,7 +205,7 @@ export default function AdultSensitiveContentGate({ children }) {
     return () => {
       active = false;
     };
-  }, [isAuthenticated, isLoading, user?.id, t.error]);
+  }, [isAuthenticated, isLoading, user?.id, t.error, retryNonce]);
 
   const acceptConsent = async () => {
     if (!canSubmit) return;
@@ -286,6 +311,11 @@ export default function AdultSensitiveContentGate({ children }) {
         {error && (
           <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
+            {checkFailed && (
+              <button type="button" onClick={() => setRetryNonce((n) => n + 1)} className="ml-2 font-bold underline">
+                {t.retry || "Try again"}
+              </button>
+            )}
           </div>
         )}
 
