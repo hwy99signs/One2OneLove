@@ -106,6 +106,8 @@ const translations = {
       walletBonus: "O2OL Bonus Game Credits",
       walletExpires: "Expires {date}",
       walletOpen: "Open My Wallet",
+      completeTab: "Complete Your Profile",
+      tabNote: "This tab disappears when your profile is completed.",
       complete: "Complete",
       changeProfilePicture: "Change profile picture",
       enterLocation: "Enter location",
@@ -231,6 +233,8 @@ const translations = {
       walletBonus: "O2OL Bonus Game Credits",
       walletExpires: "Vence el {date}",
       walletOpen: "Abrir Mi Billetera",
+      completeTab: "Completa Tu Perfil",
+      tabNote: "Esta pestaña desaparece cuando tu perfil esté completo.",
       complete: "Completo",
       changeProfilePicture: "Cambiar foto de perfil",
       enterLocation: "Ingrese ubicación",
@@ -356,6 +360,8 @@ const translations = {
       walletBonus: "O2OL Bonus Game Credits",
       walletExpires: "Expire le {date}",
       walletOpen: "Ouvrir Mon Portefeuille",
+      completeTab: "Complétez Votre Profil",
+      tabNote: "Cet onglet disparaît lorsque votre profil est terminé.",
       complete: "Complet",
       changeProfilePicture: "Changer la photo de profil",
       enterLocation: "Entrez l'emplacement",
@@ -481,6 +487,8 @@ const translations = {
       walletBonus: "O2OL Bonus Game Credits",
       walletExpires: "Scade il {date}",
       walletOpen: "Apri Il Mio Portafoglio",
+      completeTab: "Completa Il Tuo Profilo",
+      tabNote: "Questa scheda scompare quando il tuo profilo è completo.",
       complete: "Completo",
       changeProfilePicture: "Cambia foto del profilo",
       enterLocation: "Inserisci posizione",
@@ -606,6 +614,8 @@ const translations = {
       walletBonus: "O2OL Bonus Game Credits",
       walletExpires: "Verfällt am {date}",
       walletOpen: "Meine Wallet Öffnen",
+      completeTab: "Vervollständigen Sie Ihr Profil",
+      tabNote: "Diese Registerkarte verschwindet, wenn Ihr Profil vollständig ist.",
       complete: "Vollständig",
       changeProfilePicture: "Profilbild ändern",
       enterLocation: "Standort eingeben",
@@ -718,6 +728,8 @@ const translations = {
       walletBonus: "O2OL Bonus Game Credits",
       walletExpires: "Verloopt op {date}",
       walletOpen: "Open Mijn Portemonnee",
+      completeTab: "Voltooi Je Profiel",
+      tabNote: "Dit tabblad verdwijnt als je profiel compleet is.",
       complete: "Voltooid",
       changeProfilePicture: "Profielafbeelding wijzigen",
       enterLocation: "Locatie invoeren",
@@ -830,6 +842,8 @@ const translations = {
       walletBonus: "O2OL Bonus Game Credits",
       walletExpires: "Expira em {date}",
       walletOpen: "Abrir Minha Carteira",
+      completeTab: "Complete Seu Perfil",
+      tabNote: "Esta aba desaparece quando seu perfil estiver completo.",
       complete: "Completo",
       changeProfilePicture: "Alterar foto do perfil",
       enterLocation: "Digite a localização",
@@ -1333,6 +1347,22 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 py-12 px-4">
       <div className="max-w-7xl mx-auto">
+        {/* The orange tab (owner design, 2026-10-12): bright orange
+            against the purple, impossible to politely ignore, at the
+            top of every member's page while their profile is
+            unfinished — and gone the moment it is complete. It
+            invites; it never blocks a single thing. */}
+        {completionPercentage < 100 && (
+          <button
+            type="button"
+            onClick={() => document.getElementById('profile-details')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+            className="mx-auto mb-8 block w-full max-w-md rounded-2xl bg-orange-500 px-5 py-4 text-center shadow-[0_10px_30px_rgba(249,115,22,0.5)] ring-4 ring-orange-300 transition hover:bg-orange-600"
+          >
+            <span className="block text-xl font-black uppercase tracking-wide text-white">{t.profile.completeTab} · {completionPercentage}%</span>
+            <span className="mt-1 block text-sm font-semibold text-orange-50">{t.profile.tabNote}</span>
+          </button>
+        )}
+
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -1384,37 +1414,6 @@ export default function Profile() {
             {user?.name || user?.email?.split('@')[0] || t.profile.userFallback} 💕
           </h1>
           <p className="text-gray-600 mb-6">{t.profile.memberSince} {joinDate}</p>
-          
-          {/* Profile Completion */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="max-w-md mx-auto mb-8"
-          >
-            <Card className="shadow-lg">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <User className="w-5 h-5 text-purple-600" />
-                    <span className="font-semibold text-gray-900">{t.profile.profileCompletion}</span>
-                  </div>
-                  <span className="text-2xl font-bold text-purple-600">{completionPercentage}%</span>
-                </div>
-                <div className="mb-2">
-                  <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${completionPercentage}%` }}
-                      transition={{ duration: 1, delay: 0.4 }}
-                      className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"
-                    />
-                  </div>
-                </div>
-                <p className="text-sm text-gray-600">{completedFields}/{totalFields} {t.profile.complete}</p>
-              </CardContent>
-            </Card>
-          </motion.div>
         </motion.div>
 
         {/* My Wallet — balances live at the top of the account now */}
@@ -1698,6 +1697,7 @@ export default function Profile() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
           {/* Personal Info */}
           <motion.div
+            id="profile-details"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1 }}
