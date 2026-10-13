@@ -178,6 +178,18 @@ async function socialPageResponse(request, env, url) {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
+    // One front door (owner session defect, 2026-10-12): the site used to
+    // answer fully on BOTH one2onelove.com and www.one2onelove.com with
+    // no redirect, while the auth proxy keeps session cookies host-only
+    // (see copyAuthResponseHeaders in index.ts). A member signed in on
+    // one host therefore looked signed OUT on the other — "logged out
+    // again" whenever a link, email, or history entry crossed hosts.
+    // www now canonicalizes to the apex with a 308 (method-preserving).
+    if (url.hostname === 'www.one2onelove.com') {
+      url.hostname = 'one2onelove.com';
+      return Response.redirect(url.toString(), 308);
+    }
     if (url.pathname === '/api/epscie/admin-health') return handlePrivateAdminHealth(request,env);
 
     if (url.pathname === '/api/health') {
