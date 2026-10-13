@@ -23,6 +23,13 @@ const MAX_MESSAGE_CHARS = 2000;
 const HISTORY_MESSAGES = 12;
 const MAX_MESSAGES_PER_HOUR = 30;
 const ESCALATE_MARKER = '[[ESCALATE]]';
+// Deterministic escalation backstops (live QA, 2026-10-12): the model twice
+// promised a hand-off in words without emitting the marker, so no ticket
+// was filed. The system now honors the assistant's own promise phrases,
+// and files a ticket on unmistakable escalation intents in the visitor's
+// message even when the model forgets the marker.
+const PROMISE_RE = /(pass(ed|ing)? (this|it|that|your (question|request|issue|message))? ?(on |over )?to (the|our) team|team will (follow up|look|check|review)|I(?:'|’)ll pass|I will pass|I(?:'|’)ve passed)/i;
+const INTENT_RE = /((want|need|request|requesting|get|getting|give me|please|i'd like|i would like)[^.!?]{0,30}refund|refund (me|my card|my money|for (this|that|the))|charged twice|double[- ]?charg|chargeback|dispute (a |the |this )?charge|delete my account|close my account|remove my account|sue|lawsuit|lawyer|attorney|privacy (violation|complaint|request)|report (a|this|that) (member|user|person)|abuse|talk to a (human|person|real)|speak to a (human|person|real)|real person)/i;
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: HEADERS });
@@ -92,7 +99,7 @@ function outputText(payload) {
   return pieces.join('\n').trim();
 }
 
-async function openAiText(env, { instructions, input, maxOutputTokens = 3000 }) {
+async function openAiText(env, { instructions, input, maxOutputTokens = 6000 }) {
   if (!env.OPENAI_API_KEY) {
     throw Object.assign(new Error('AI service is not configured yet.'), { status: 503, code: 'ai_not_configured' });
   }
@@ -242,9 +249,13 @@ export async function handleSupportChatRequest(request, env, url) {
       let snapshot = null;
       if (userId) snapshot = await memberSnapshot(db, userId).catch(() => null);
 
-      const instructions = snapshot
-        ? `${SUPPORT_SYSTEM_PROMPT}\n\nPRIVATE ACCOUNT SNAPSHOT (this member's own data — use it only for this member's questions; never share it with anyone else):\n${snapshot.text}`
-        : SUPPORT_SYSTEM_PROMPT;
+      const followUpEmail = snapshot?.profile?.email || conversation.email || contactEmail || null;
+      const contextNote = snapshot
+        ? `\n\nPRIVATE ACCOUNT SNAPSHOT (this member's own data — use it only for this member's questions; never share it with anyone else):\n${snapshot.text}`
+        : followUpEmail
+          ? '\n\nCONTEXT: this visitor is not signed in, and they have ALREADY provided a follow-up email — do not ask for one again.'
+          : '\n\nCONTEXT: this visitor is not signed in and has not provided a follow-up email. If you escalate, invite them to add one in the email field under the chat so the team can reply.';
+      const instructions = `${SUPPORT_SYSTEM_PROMPT}${contextNote}`;
       const input = [
         ...history.map((row) => `${row.role === 'user' ? 'Visitor' : 'Musey'}: ${row.content}`),
         `Visitor: ${message}`,
@@ -260,22 +271,24 @@ export async function handleSupportChatRequest(request, env, url) {
         reply = await openAiText(env, { instructions, input });
       }
       let escalated = false;
-      if (reply.includes(ESCALATE_MARKER)) {
-        reply = reply.split(ESCALATE_MARKER).join('').trim();
+      const markerUsed = reply.includes(ESCALATE_MARKER);
+      if (markerUsed) reply = reply.split(ESCALATE_MARKER).join('').trim();
+      const promiseMade = PROMISE_RE.test(reply);
+      const intentEscalation = INTENT_RE.test(message);
+      if (markerUsed || promiseMade || intentEscalation) {
         const transcript = [
           ...history.map((row) => `${row.role === 'user' ? 'Visitor' : 'Musey'}: ${row.content}`),
           `Visitor: ${message}`,
           `Musey: ${reply}`,
         ].join('\n');
         const name = snapshot?.profile?.name || snapshot?.profile?.username || (userId ? 'Signed-in member' : 'Support chat guest');
-        const email = snapshot?.profile?.email || conversation.email || contactEmail;
         escalated = await fileEscalationTicket(db, {
           name,
-          email,
+          email: followUpEmail,
           transcript,
-          reason: `Support chat escalation (handbook v${SUPPORT_HANDBOOK_VERSION})`,
+          reason: `Support chat escalation (handbook v${SUPPORT_HANDBOOK_VERSION}${markerUsed ? '' : ', system backstop'})`,
         }).catch(() => false);
-        if (escalated) {
+        if (escalated && !promiseMade) {
           reply += '\n\nI\'ve passed this to our team with the details of our conversation — they\'ll follow up using the contact details we have. For anything urgent, you can also reach us at support@one2onelove.com.';
         }
       }

@@ -81,7 +81,7 @@ export default function SupportChat() {
   }
 
   return (
-    <div data-guest-allow style={{ position: 'fixed', right: 16, bottom: 16, zIndex: 1200, fontFamily: 'inherit' }}>
+    <div data-guest-allow style={{ position: 'fixed', right: 16, bottom: 0, zIndex: 1200, fontFamily: 'inherit' }}>
       {!open && (
         <button
           type="button"
@@ -90,13 +90,13 @@ export default function SupportChat() {
           aria-label="Open support chat with Musey"
           style={{
             display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer',
-            background: '#7c1d3f', color: '#fff', border: '2px solid #d4af37',
-            borderRadius: 999, padding: '8px 18px 8px 8px',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.35)', fontSize: 17, fontWeight: 700,
+            background: '#7c1d3f', color: '#fff', border: '2px solid #d4af37', borderBottom: 'none',
+            borderRadius: '16px 16px 0 0', padding: '8px 18px 10px 10px',
+            boxShadow: '0 -4px 24px rgba(0,0,0,0.35)', fontSize: 17, fontWeight: 700,
           }}
         >
           <img src="/support/musey-avatar.webp" alt="Musey" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />
-          Support
+          Musey · Support
         </button>
       )}
 
@@ -107,6 +107,7 @@ export default function SupportChat() {
           aria-label="One2OneLove support chat"
           style={{
             width: 'min(400px, calc(100vw - 24px))', height: 'min(560px, calc(100vh - 32px))',
+            marginBottom: 12,
             display: 'flex', flexDirection: 'column', background: '#fff', color: '#1c1220',
             borderRadius: 18, overflow: 'hidden', boxShadow: '0 18px 50px rgba(0,0,0,0.45)',
             border: '1px solid #e6d9de',

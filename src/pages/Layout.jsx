@@ -800,9 +800,6 @@ function LanguageContent({ children, currentPageName }) {
           </footer>
         </>
       )}
-        <button type="button" onClick={() => navigate('/Suggestions?mode=problem')} aria-label={fT.reportProblem}
-          className="fixed bottom-0 right-4 z-50 rounded-t-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-red-700">
-          {fT.reportProblem}</button>
     </div>
   );
 }
