@@ -34,7 +34,10 @@ export function isTokensRequiredError(error){
   return error?.status===402 && ['tokens_required','credit_required'].includes(error?.payload?.error?.code);
 }
 export function isPhoneVerificationError(error){
-  return error?.status===428 || error?.payload?.error?.code==='phone_verification_required';
+  // Status and code are the contract; the message match is a safety net so
+  // a member whose account is only missing phone verification NEVER lands
+  // on a generic failure card if an envelope detail drifts upstream.
+  return error?.status===428 || error?.payload?.error?.code==='phone_verification_required' || /phone verification is required/i.test(error?.message||'');
 }
 export function tokenRequiredDetails(error){
   const e=error?.payload?.error||{};
