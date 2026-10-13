@@ -36,6 +36,10 @@ export async function getAdminAnalytics() {
   return getFreshAdminJson('/api/admin/analytics');
 }
 
+export async function getMemberActivity(memberId) {
+  return getFreshAdminJson(`/api/admin/members/${encodeURIComponent(memberId)}/activity`);
+}
+
 
 export async function manageMemberAccount(memberId, action, reason = '') {
   const response = await fetch(`/api/admin/members/${encodeURIComponent(memberId)}/${encodeURIComponent(action)}`, {

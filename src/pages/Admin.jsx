@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import {
   Activity, AlertTriangle, ArrowLeft, BarChart3, CalendarDays, CheckCircle2,
   Clock3, Coins, CreditCard, FileCheck2, Gauge, Heart, Loader2, LockKeyhole,
-  Menu, MessageSquareText, RefreshCw, Search, ShieldCheck, TrendingUp,
+  Menu, MessageSquareText, RefreshCw, Search, ShieldCheck, Sparkles, TrendingUp,
   UserCheck, UserX, Trash2, RotateCcw, Users, X,
 } from 'lucide-react';
-import { getAdminAnalytics, getAdminDashboard, getAdminPresence, manageMemberAccount, manageMemberAccountsBulk, grantMemberGameCredit } from '../lib/adminService';
+import { getAdminAnalytics, getAdminDashboard, getAdminPresence, getMemberActivity, manageMemberAccount, manageMemberAccountsBulk, grantMemberGameCredit } from '../lib/adminService';
 import { touchAdminMfa } from '../lib/adminMfaService';
 import GameEconomyPanel from '../components/admin/GameEconomyPanel';
 import {
@@ -279,6 +279,9 @@ export default function Admin() {
   const [mobileNav,setMobileNav] = useState(false);
   const [memberActionId,setMemberActionId] = useState(null);
   const [selectedMemberIds,setSelectedMemberIds] = useState([]);
+  const [memberDetail,setMemberDetail] = useState(null);
+  const [memberDetailLoading,setMemberDetailLoading] = useState(false);
+  const [memberDetailError,setMemberDetailError] = useState('');
   const [bulkMemberAction,setBulkMemberAction] = useState(false);
   const [votingPlatform,setVotingPlatform] = useState('all');
   const [registryRange,setRegistryRange] = useState('30d');
@@ -482,6 +485,20 @@ export default function Admin() {
       window.alert(err?.message || `Unable to ${verb} this member.`);
     } finally {
       setMemberActionId(null);
+    }
+  };
+
+  const openMemberAccount = async (member) => {
+    setMemberDetail({ member, data: null });
+    setMemberDetailError('');
+    setMemberDetailLoading(true);
+    try {
+      const payload = await getMemberActivity(member.id);
+      setMemberDetail({ member, data: payload });
+    } catch (err) {
+      setMemberDetailError(err?.message || 'Unable to load this account.');
+    } finally {
+      setMemberDetailLoading(false);
     }
   };
 
@@ -871,13 +888,14 @@ export default function Admin() {
                 const signupState = !m.auth_ready ? 'Authentication record missing' : !m.profile_ready ? 'Profile recovery pending' : !m.is_verified ? 'Email verification pending' : (!protectedAdmin && !m.phone_verified ? 'Phone verification pending' : null);
                 return <tr key={m.id} className={selected?'bg-rose-50/40':''}>
                   <td className="px-4 py-3">{protectedAdmin?<span className="text-slate-300">—</span>:<input type="checkbox" aria-label={`Select ${m.username?('@'+m.username):m.email}`} checked={selected} onChange={()=>setSelectedMemberIds(current=>selected?current.filter(id=>id!==m.id):[...current,m.id])}/>}</td>
-                  <td className="px-4 py-3"><div className="font-semibold">{m.username?('@'+m.username):(m.name||'Unnamed member')}</div>{m.username&&m.name&&m.name!==m.username&&<div className="text-xs text-slate-500">{m.name}</div>}<div className="text-xs text-slate-500">{m.email}</div><div className="mt-1 text-[11px] font-semibold text-slate-400">Promotional email: {m.marketing_email_opt_in?'Yes':'No'}</div>{m.location&&<div className="text-xs text-slate-400">{m.location}</div>}</td>
+                  <td className="px-4 py-3"><button type="button" onClick={()=>openMemberAccount(m)} className="text-left font-semibold text-slate-900 underline decoration-rose-300 decoration-2 underline-offset-2 hover:text-rose-700" title="Open this account — see all activity">{m.username?('@'+m.username):(m.name||'Unnamed member')}</button>{m.username&&m.name&&m.name!==m.username&&<div className="text-xs text-slate-500">{m.name}</div>}<div className="text-xs text-slate-500">{m.email}</div><div className="mt-1 text-[11px] font-semibold text-slate-400">Promotional email: {m.marketing_email_opt_in?'Yes':'No'}</div>{m.location&&<div className="text-xs text-slate-400">{m.location}</div>}</td>
                   <td className="px-4 py-3 text-slate-600">{m.user_type||'user'}{protectedAdmin&&<div className="mt-1"><Pill tone="purple">Protected Admin</Pill></div>}</td>
                   <td className="px-4 py-3"><Pill tone={m.subscription_status==='credit_buyer'?'violet':'blue'}>{m.subscription_plan||'Member'}</Pill></td>
                   <td className="px-4 py-3"><Pill tone={state==='active'?'green':state==='deleted'?'red':'amber'}>{state}</Pill>{signupState&&<div className="mt-1 max-w-xs text-xs font-semibold text-amber-700">{signupState}</div>}{m.ban_reason&&state!=='active'&&<div className="mt-1 max-w-xs text-xs text-slate-400">{String(m.ban_reason).replace(/^O2OL_(?:DELETED|SUSPENDED):\s*/,'')}</div>}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-slate-500">{date(m.created_at)}</td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap justify-end gap-2">
+                      <button onClick={()=>openMemberAccount(m)} className="inline-flex items-center gap-1 rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-slate-700">View account</button>
                       {protectedAdmin ? <span className="text-xs font-semibold text-slate-400">Protected</span> : <>
                         <button disabled={busy} onClick={()=>handleGrantGameCredit(m)} className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-700 disabled:opacity-50">Grant Game Credit</button>
                         {state==='active' ? <>
@@ -890,6 +908,46 @@ export default function Admin() {
                 </tr>;
               })}</tbody>
             </table></TableShell>
+
+            {memberDetail && (()=>{
+              const md=memberDetail.member, d=memberDetail.data, w=d?.wallet, gc=d?.gameCredit, sa=d?.siteActivity, totals=sa?.totals || {};
+              const onlineNow=(sa?.presence || []).some(p=>Date.now()-new Date(p.last_ping_at).getTime()<90000);
+              return <Panel title="Member Account" subtitle="Everything recorded for this one account — Credit, Game Credit, unlocks, site activity and support tickets." className="mt-6">
+                <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <div className="text-lg font-black text-slate-900">{md.username?('@'+md.username):(md.name||'Unnamed member')}</div>
+                    <div className="text-sm text-slate-500">{md.email}</div>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <Pill tone={md.subscription_plan==='Credit Buyer'?'violet':'blue'}>{md.subscription_plan||'Member'}</Pill>
+                      <Pill tone={md.account_state==='active'?'green':md.account_state==='deleted'?'red':'amber'}>{md.account_state||'active'}</Pill>
+                      <Pill tone={md.is_verified?'green':'amber'}>{md.is_verified?'Email verified':'Email not verified'}</Pill>
+                      <Pill tone={md.phone_verified?'green':'amber'}>{md.phone_verified?'Phone verified':'Phone not verified'}</Pill>
+                      {onlineNow&&<Pill tone="green">On site now</Pill>}
+                    </div>
+                    <div className="mt-2 text-xs text-slate-500">Joined {date(md.created_at)}{md.age_range?` · Age range ${md.age_range}`:''}{md.location?` · ${md.location}`:''}{md.relationship_status?` · ${md.relationship_status}`:''} · Promotional email: {md.marketing_email_opt_in?'Yes':'No'}</div>
+                  </div>
+                  <button type="button" onClick={()=>setMemberDetail(null)} className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-black text-slate-700 hover:bg-slate-100">Close account view</button>
+                </div>
+                {memberDetailLoading&&<div className="flex items-center gap-2 py-6 text-sm font-semibold text-slate-500"><Loader2 className="animate-spin" size={16}/>Loading this account…</div>}
+                {memberDetailError&&<div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800">{memberDetailError}</div>}
+                {d&&!memberDetailLoading&&<div>
+                  <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    <Metric icon={Coins} label="Credit Balance" value={w?money(Number(w.balance||0)/100):'—'} note={w?`bought ${money(Number(w.lifetime_purchased||0)/100)} · used ${money(Number(w.lifetime_used||0)/100)} all time`:'no wallet yet'} tone="violet"/>
+                    <Metric icon={Sparkles} label="Game Credit Balance" value={money(Number(gc?.balanceCents||0)/100)} note={gc?.nextExpiryAt?`next expiry ${date(gc.nextExpiryAt)}`:'games-only credit'} tone="green"/>
+                    <Metric icon={Activity} label="Site Visits" value={number(totals.visits)} note={`${number(totals.page_views)} page views · ${number(totals.clicks)} clicks · ${number(totals.actions)} actions`} tone="blue"/>
+                    <Metric icon={Clock3} label="Last Seen" value={totals.last_seen?date(totals.last_seen):'—'} note={totals.first_seen?`first seen ${date(totals.first_seen)}`:'no recorded activity'} tone="slate"/>
+                  </div>
+                  {(sa?.topFeatures || []).length>0&&<div className="mb-6"><h4 className="mb-2 text-sm font-black text-slate-900">Most-used features</h4><div className="flex flex-wrap gap-2">{sa.topFeatures.map(f=><Pill key={f.feature} tone="slate">{f.feature} · {number(f.events)}</Pill>)}</div></div>}
+                  <div className="grid gap-6 xl:grid-cols-2">
+                    <div><h4 className="mb-2 text-sm font-black text-slate-900">Credit activity</h4>{(d.creditActivity || []).length?<div className="max-h-96 space-y-2 overflow-y-auto pr-1">{d.creditActivity.map(item=><div key={item.id} className="rounded-xl bg-slate-50 p-3 text-sm"><div className="flex items-center justify-between gap-3"><div className="font-semibold">{creditActivityLabel(item)}</div><div className={cx('font-bold',Number(item.wallet_delta)<0?'text-slate-900':'text-emerald-700')}>{Number(item.wallet_delta)<0?'-':'+'}{money(Math.abs(Number(item.wallet_delta||0))/100)}</div></div><div className="mt-1 text-xs text-slate-400">{date(item.created_at)} · balance after {money(Number(item.balance_after||0)/100)}</div></div>)}</div>:<Empty>No Credit activity yet.</Empty>}</div>
+                    <div><h4 className="mb-2 text-sm font-black text-slate-900">Game Credit activity</h4>{(gc?.ledger || []).length?<div className="max-h-96 space-y-2 overflow-y-auto pr-1">{gc.ledger.map(item=><div key={item.id} className="rounded-xl bg-slate-50 p-3 text-sm"><div className="flex items-center justify-between gap-3"><div className="font-semibold capitalize">{String(item.kind||'').replace(/_/g,' ')}{item.game?` · ${item.game}`:''}</div><div className={cx('font-bold',Number(item.amount_cents)<0?'text-slate-900':'text-emerald-700')}>{Number(item.amount_cents)<0?'-':'+'}{money(Math.abs(Number(item.amount_cents||0))/100)}</div></div><div className="mt-1 text-xs text-slate-400">{date(item.created_at)}{item.expires_at?` · expires ${date(item.expires_at)}`:''}{item.note?` · ${item.note}`:''}</div></div>)}</div>:<Empty>No Game Credit activity yet.</Empty>}</div>
+                    <div><h4 className="mb-2 text-sm font-black text-slate-900">Unlocked content</h4>{(d.unlocks || []).length?<div className="max-h-96 space-y-2 overflow-y-auto pr-1">{d.unlocks.map((item,idx)=><div key={idx} className="rounded-xl bg-slate-50 p-3 text-sm"><div className="font-semibold">{item.feature_code}</div><div className="mt-1 break-words text-xs text-slate-500">{item.content_key}</div><div className="mt-1 text-xs text-slate-400">{date(item.unlocked_at)}{Number(item.tokens_charged||0)>0?` · ${money(Number(item.tokens_charged)/100)}`:''}</div></div>)}</div>:<Empty>Nothing unlocked yet.</Empty>}</div>
+                    <div><h4 className="mb-2 text-sm font-black text-slate-900">Recent site activity</h4>{(sa?.recent || []).length?<div className="max-h-96 space-y-2 overflow-y-auto pr-1">{sa.recent.map((item,idx)=><div key={idx} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 p-3 text-sm"><div><span className="font-semibold capitalize">{String(item.event_type||'').replace(/_/g,' ')}</span><span className="text-slate-500"> · {item.feature||item.route||'—'}</span></div><div className="whitespace-nowrap text-xs text-slate-400">{date(item.created_at)}</div></div>)}</div>:<Empty>No site activity recorded yet.</Empty>}</div>
+                  </div>
+                  <div className="mt-6"><h4 className="mb-2 text-sm font-black text-slate-900">Support tickets from this email</h4>{(d.supportTickets || []).length?<div className="space-y-2">{d.supportTickets.map(item=><div key={item.id} className="rounded-xl bg-slate-50 p-3 text-sm"><div className="flex flex-wrap items-center gap-2"><Pill tone={statusTone(item.status)}>{item.status||'new'}</Pill><span className="font-semibold capitalize">{item.suggestion_type||'message'}</span><span className="text-xs text-slate-400">{date(item.created_at)}</span></div><div className="mt-1 whitespace-pre-wrap text-slate-600">{String(item.suggestion||'').slice(0,400)}</div></div>)}</div>:<Empty>No support tickets from this member.</Empty>}</div>
+                </div>}
+              </Panel>;
+            })()}
 
             <Panel title="Visitor Registry / Audience Intelligence" subtitle="Persistent visitor history. Anonymous browser activity remains anonymous until the visitor voluntarily creates an account; then the existing visitor ID is linked to that member." className="mt-6">
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
