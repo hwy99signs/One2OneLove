@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -79,18 +79,33 @@ export default function AIPersonalizationModal({ onClose, onNoteGenerated, curre
   const [generating, setGenerating] = useState(false);
   const [tokenBalance,setTokenBalance]=useState(0);
   const [tokenCost,setTokenCost]=useState(0);
+  const [walletError,setWalletError]=useState(false);
   const language = ["en","es","fr","it","de"].includes(currentLanguage) ? currentLanguage : "en";
   const t = COPY[language];
 
-  useEffect(()=>{
-    let cancelled=false;
-    getTokenWallet().then(data=>{
-      if(cancelled)return;
+  // The wallet read used to fire once and swallow any failure,
+  // latching a false $0.00 balance (and a missing price) for the
+  // whole dialog (re-run click pass, 2026-10-12: the page header
+  // showed $4.51 while this dialog insisted $0.00). It now retries
+  // once automatically and, if the read still fails, says so with a
+  // Retry button instead of posing as an empty wallet. Generation
+  // itself always re-checks the real balance server-side.
+  const loadWallet=useCallback(()=>{
+    return getTokenWallet().then(data=>{
       setTokenBalance(Number(data?.wallet?.balance||0));
       setTokenCost(Number(data?.featurePrices?.find(item=>item.feature_code==='love_note_ai')?.token_cost||0));
-    }).catch(()=>{});
-    return()=>{cancelled=true};
+      setWalletError(false);
+      return true;
+    }).catch(()=>{setWalletError(true);return false;});
   },[]);
+  useEffect(()=>{
+    let cancelled=false;
+    let timer;
+    loadWallet().then(ok=>{
+      if(!ok&&!cancelled) timer=setTimeout(()=>{if(!cancelled)loadWallet();},2000);
+    });
+    return()=>{cancelled=true;if(timer)clearTimeout(timer);};
+  },[loadWallet]);
 
   const toggleTrait = (trait) => {
     if (selectedTraits.includes(trait)) {
@@ -256,7 +271,7 @@ export default function AIPersonalizationModal({ onClose, onNoteGenerated, curre
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
             <div className="flex items-center justify-between gap-3">
               <span className="inline-flex items-center gap-2 font-black text-amber-900"><Coins className="h-5 w-5"/>Credit</span>
-              <span className="font-black text-amber-900">{tokenCost?'$'+(Number(tokenCost)/100).toFixed(2)+' Credit':'—'} · Balance {'$'+(Number(tokenBalance||0)/100).toFixed(2)}</span>
+              <span className="font-black text-amber-900">{tokenCost?'$'+(Number(tokenCost)/100).toFixed(2)+' Credit':'—'} · {walletError?<>Balance unavailable <button type="button" onClick={()=>loadWallet()} className="underline">Retry</button></>:'Balance $'+(Number(tokenBalance||0)/100).toFixed(2)}</span>
             </div>
             <p className="mt-1 text-xs text-amber-800">Credit is charged only when the AI-generated Love Note is successfully created.</p>
           </div>
