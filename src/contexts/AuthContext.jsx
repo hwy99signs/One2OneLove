@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   apiRequest,
-  getAuthSessionWithRetry,
+  getAuthSessionState,
   getProfile,
   signInWithEmail,
   signOutAuth,
@@ -33,9 +33,25 @@ function mergeUser(authUser, profile) {
   };
 }
 
+// Remembers, on this device only, that a member was signed in here.
+// It records no identity — just "signed in once" — so a page load that
+// cannot reach the session checker can hold a reconnecting state
+// instead of presenting a false sign-out (2026-10-12 repair).
+const SESSION_MARKER_KEY = 'o2ol:session-known';
+function markSessionKnown(on) {
+  try {
+    if (on) window.localStorage.setItem(SESSION_MARKER_KEY, '1');
+    else window.localStorage.removeItem(SESSION_MARKER_KEY);
+  } catch { /* storage unavailable — the hold simply will not arm */ }
+}
+function sessionWasKnown() {
+  try { return window.localStorage.getItem(SESSION_MARKER_KEY) === '1'; } catch { return false; }
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const refreshInFlightRef = useRef(null);
 
   // Publish the signed-in identity to the interaction tracker so an
   // admin sign-in permanently excludes this browser from visitor
@@ -45,36 +61,46 @@ export function AuthProvider({ children }) {
     setAnalyticsIdentity(user ? { role: user.role, email: user.email } : null);
   }, [user]);
 
-  const refreshUserProfile = async ({ preserveOnNull = false } = {}) => {
-    try {
-      const auth = await getAuthSessionWithRetry(3, 250);
-      if (!auth?.user) {
-        if (preserveOnNull) return undefined;
-        setUser(null);
-        return null;
-      }
-
-      let profile = null;
+  // Stable identity + in-flight dedupe: Profile's mount effect depends
+  // on this function, and an unstable one re-fired the effect after
+  // every refresh (each refresh mints a new merged user object),
+  // multiplying session reads — fuel for the rate limiter whose 429s
+  // then read as logouts (2026-10-12 audit).
+  const refreshUserProfile = useCallback(async ({ preserveOnNull = false } = {}) => {
+    if (refreshInFlightRef.current) return refreshInFlightRef.current;
+    const run = (async () => {
       try {
-        profile = await getProfile();
-      } catch (error) {
-        if (error?.status !== 401) console.warn('Profile refresh failed:', error);
+        const result = await getAuthSessionState(3, 250);
+        if (result.state === 'authenticated') {
+          let profile = null;
+          try {
+            profile = await getProfile();
+          } catch (error) {
+            if (error?.status !== 401) console.warn('Profile refresh failed:', error);
+          }
+          const merged = mergeUser(result.auth.user, profile);
+          setUser(merged);
+          markSessionKnown(true);
+          return merged;
+        }
+        if (result.state === 'signed_out') {
+          if (preserveOnNull) return undefined;
+          setUser(null);
+          markSessionKnown(false);
+          return null;
+        }
+        // Unknown (429 / 5xx / network): the checker never said the
+        // member is out, so neither do we — at boot, mid-session,
+        // anywhere. This is the phantom-logout fix.
+        console.warn('Session check inconclusive; preserving current sign-in state.');
+        return undefined;
+      } finally {
+        refreshInFlightRef.current = null;
       }
-
-      const merged = mergeUser(auth.user, profile);
-      setUser(merged);
-      return merged;
-    } catch (error) {
-      if (error?.status === 401) {
-        setUser(null);
-        return null;
-      }
-
-      // A temporary network/Worker/Neon error must not silently sign out a user.
-      console.warn('Session refresh failed; preserving current sign-in state:', error);
-      return undefined;
-    }
-  };
+    })();
+    refreshInFlightRef.current = run;
+    return run;
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -82,9 +108,24 @@ export function AuthProvider({ children }) {
     const refresh = async () => {
       setIsLoading(true);
       try {
-        const current = await refreshUserProfile({ preserveOnNull: false });
+        let current = await refreshUserProfile({ preserveOnNull: false });
         if (!mounted) return;
-        if (current !== undefined) setUser(current);
+        // Boot came back INCONCLUSIVE (the checker is rate-limiting or
+        // unreachable) on a device that was signed in: a phone tab
+        // returning from the background lands exactly here. Hold the
+        // loading state and retry with backoff instead of presenting
+        // a signed-out wall the member did nothing to earn. A
+        // definitive answer — session found, or truly signed out —
+        // resolves the hold immediately.
+        if (current === undefined && sessionWasKnown()) {
+          for (const waitMs of [2000, 4000, 8000]) {
+            await new Promise((resolve) => setTimeout(resolve, waitMs));
+            if (!mounted) return;
+            current = await refreshUserProfile({ preserveOnNull: false });
+            if (!mounted) return;
+            if (current !== undefined) break;
+          }
+        }
       } finally {
         if (mounted) setIsLoading(false);
       }
@@ -127,6 +168,7 @@ export function AuthProvider({ children }) {
       const profile = await getProfile().catch(() => null);
       const merged = mergeUser(auth.user, profile);
       setUser(merged);
+      markSessionKnown(true);
       return { success: true, user: merged };
     } catch (error) {
       return { success: false, error: error?.message || 'Sign in failed. Please try again.' };
@@ -141,6 +183,7 @@ export function AuthProvider({ children }) {
     } finally {
       setUser(null);
       setIsLoading(false);
+      markSessionKnown(false);
     }
   };
 
@@ -192,7 +235,7 @@ export function AuthProvider({ children }) {
     registerInfluencer,
     registerProfessional,
     refreshUserProfile,
-  }), [user, isLoading]);
+  }), [user, isLoading, refreshUserProfile]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
