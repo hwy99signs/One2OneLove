@@ -7,11 +7,29 @@ import { getAnalyticsVisitorId } from '@/lib/interactionAnalytics';
 // /api/support-chat/message, account questions escalate to the team.
 // Support is always free.
 const CONVERSATION_KEY = 'o2ol_support_chat_conversation';
+// Preview gate (owner's standing rule: nothing goes out before he sees it).
+// The panel stays hidden for everyone until the owner has tried it and
+// gives the word. Enable on a device by visiting any page once with
+// ?museysupport=1 (stored on that device); ?museysupport=0 hides it again.
+// Removing this gate is the launch step.
+const PREVIEW_KEY = 'o2ol_support_chat_preview';
+
+function previewEnabled() {
+  try {
+    const param = new URLSearchParams(window.location.search).get('museysupport');
+    if (param === '1') window.localStorage.setItem(PREVIEW_KEY, '1');
+    if (param === '0') window.localStorage.removeItem(PREVIEW_KEY);
+    return window.localStorage.getItem(PREVIEW_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
 
 const WELCOME =
   "Hi, I'm Musey — One2OneLove's AI support assistant. Ask me about Credit, games, Love Notes, prices, or how anything on the site works. If it's about your own account and I can't settle it here, I'll pass it straight to our team.";
 
 export default function SupportChat() {
+  const [enabled] = useState(previewEnabled);
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([{ role: 'assistant', content: WELCOME }]);
   const [input, setInput] = useState('');
@@ -25,6 +43,8 @@ export default function SupportChat() {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [open, messages, sending]);
+
+  if (!enabled) return null;
 
   async function send() {
     const text = input.trim();
