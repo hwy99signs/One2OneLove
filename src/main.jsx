@@ -8,6 +8,17 @@ import { installI18nFallbackLocalization } from '@/utils/i18nFallbackLocalizatio
 import '@/index.css'
 import { installClickAnalytics, installPresenceHeartbeat } from '@/lib/interactionAnalytics'
 
+// One front door (2026-10-12): session cookies are host-only, so the
+// app must never RUN on www — a member signed in at the apex looked
+// signed out there. The worker redirects every path it serves first;
+// this guard covers the asset-served routes the worker never sees.
+// It runs before anything renders.
+if (window.location.hostname === 'www.one2onelove.com') {
+    window.location.replace(
+        'https://one2onelove.com' + window.location.pathname + window.location.search + window.location.hash
+    )
+}
+
 installRuntimeLocalization()
 installStaticUiLocalization()
 installI18nFallbackLocalization()

@@ -115,22 +115,26 @@ export function AuthProvider({ children }) {
     const refresh = async () => {
       setIsLoading(true);
       try {
+        const wasKnown = sessionWasKnown();
         let current = await refreshUserProfile({ preserveOnNull: false });
         if (!mounted) return;
-        // Boot came back INCONCLUSIVE (the checker is rate-limiting or
-        // unreachable) on a device that was signed in: a phone tab
-        // returning from the background lands exactly here. Hold the
-        // loading state and retry with backoff instead of presenting
-        // a signed-out wall the member did nothing to earn. A
-        // definitive answer — session found, or truly signed out —
-        // resolves the hold immediately.
-        if (current === undefined && sessionWasKnown()) {
+        // On a device that was signed in, distrust ANY non-authenticated
+        // boot answer until it persists across a backoff window: a phone
+        // tab returning from the background lands exactly here, and the
+        // checker can answer "too busy" — or even briefly report an
+        // empty session mid-refresh — while the member's session is
+        // perfectly alive (the 2026-10-12 phantom logouts; a /DateIdeas
+        // load still caught one transient wall after the first repair).
+        // Hold the loading state and keep asking. A session found
+        // resolves instantly; a genuinely ended one clears its marker
+        // and presents signed-out after one window, once.
+        if (!current && wasKnown) {
           for (const waitMs of [2000, 4000, 8000]) {
             await new Promise((resolve) => setTimeout(resolve, waitMs));
             if (!mounted) return;
             current = await refreshUserProfile({ preserveOnNull: false });
             if (!mounted) return;
-            if (current !== undefined) break;
+            if (current) break;
           }
         }
       } finally {

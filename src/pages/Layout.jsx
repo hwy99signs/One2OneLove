@@ -222,7 +222,7 @@ function LanguageContent({ children, currentPageName }) {
 
 
   // Get authentication state
-  const { isAuthenticated, logout, user } = useAuth();
+  const { isAuthenticated, isLoading, logout, user } = useAuth();
 
   // Fetch conversations to get unread message count
   const { data: conversations = [], refetch: refetchConversations } = useQuery({
@@ -493,6 +493,11 @@ function LanguageContent({ children, currentPageName }) {
                 <Link to={createPageUrl("Profile")} className={mmiqHeaderButton('from-indigo-500 to-violet-700')}>👤 {t.nav.profile}</Link>
                 <button onClick={handleSignOut} className={mmiqHeaderButton('from-slate-600 to-slate-800')}>{t.nav.signOut}</button>
               </>
+            ) : isLoading ? (
+              // Session still resolving: neutral space, never a flash
+              // of Sign In / Sign Up at a signed-in member (click-pass
+              // session watch, 2026-10-12).
+              <span className="inline-block h-9 w-28" aria-hidden="true" />
             ) : (
               <>
                 <Link to={isMyMatchIQPage ? '/MyMatchIQ/Invite' : createPageUrl("Invite")} className={mmiqHeaderButton('from-emerald-400 to-cyan-600')}>{t.nav.invite}</Link>
