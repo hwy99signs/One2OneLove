@@ -126,6 +126,15 @@ const TRACKING_EXCLUDED_EMAILS = new Set([
   'eranttrucking@gmail.com',
 ]);
 let publishedIdentityIsAdmin = false;
+// True while the currently signed-in identity is itself an excluded one
+// (owner/admin/test/household). The presence heartbeat uses this to let
+// ONE kind of ping out from an otherwise-silent browser: the server
+// links the browser to that account and then drops the ping uncounted —
+// and the link is what makes the browser's earlier signed-out trail
+// stop counting too. Without it, a flagged browser would never
+// identify itself again and its old anonymous rows would linger in the
+// registry for the full 30-day window.
+let publishedIdentityExcluded = false;
 
 function readTrackingExcludedFlag() {
   try {
@@ -168,7 +177,8 @@ export function isTrackingExcluded() {
 export function setAnalyticsIdentity(identity) {
   const role = String(identity?.role || '').trim().toLowerCase();
   const email = String(identity?.email || '').trim().toLowerCase();
-  if (role !== 'admin' && !TRACKING_EXCLUDED_EMAILS.has(email)) return;
+  publishedIdentityExcluded = Boolean(identity) && (role === 'admin' || TRACKING_EXCLUDED_EMAILS.has(email));
+  if (!publishedIdentityExcluded) return;
   publishedIdentityIsAdmin = true;
   writeTrackingExcludedFlag();
   saveQueue([]);
@@ -519,7 +529,11 @@ export function installPresenceHeartbeat() {
   presenceInstalled = true;
   const ping = () => {
     try {
-      if (isTrackingExcluded()) return;
+      // Excluded browsers stay silent — EXCEPT while an excluded
+      // identity is signed in: then the ping is the link carrier (the
+      // server ties this browser to that account, then drops the ping
+      // uncounted). See publishedIdentityExcluded above.
+      if (isTrackingExcluded() && !publishedIdentityExcluded) return;
       if (isAdminAnalyticsSurface(window.location.pathname)) return;
       fetch('/api/site-presence/ping', {
         method: 'POST',
