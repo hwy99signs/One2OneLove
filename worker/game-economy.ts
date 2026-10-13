@@ -121,8 +121,16 @@ export async function gameCreditWallet(db,userId){
         [userId,row.next_expiry_at])).rows[0];
       nextExpiryCents=Number(n?.cents||0);
     }
+    // The member's own Game Credit history (owner, 2026-10-12): members
+    // could see their paid Credit activity but only the Game Credit
+    // balance, never its story — grants, game spends and expiries. The
+    // last 25 ledger rows ride the wallet payload so the Credit page can
+    // show both histories side by side, mirroring the admin account view.
+    const ledger=(await db.query(`SELECT kind,amount_cents,game,expires_at,created_at,note
+      FROM public.o2ol_game_credit_ledger WHERE user_id=$1::uuid
+      ORDER BY created_at DESC LIMIT 25`,[userId])).rows;
     await db.query('COMMIT');
-    return {balanceCents:Number(row.balance_cents||0),nextExpiryAt:row.next_expiry_at||null,nextExpiryCents};
+    return {balanceCents:Number(row.balance_cents||0),nextExpiryAt:row.next_expiry_at||null,nextExpiryCents,ledger};
   }catch(e){await db.query('ROLLBACK').catch(()=>{});throw e;}
 }
 
