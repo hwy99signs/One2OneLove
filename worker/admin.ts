@@ -1127,10 +1127,10 @@ async function clickAnalytics(db, env) {
         count(*) FILTER (WHERE event_type='click' AND actor_type='anonymous' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS anonymous_30d,
         count(*) FILTER (WHERE event_type='click' AND access_type='registered_free' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS registered_free_30d,
         count(*) FILTER (WHERE event_type='click' AND access_type='subscribed' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS subscribed_30d,
-        count(DISTINCT visitor_id) FILTER (WHERE event_type='click' AND actor_type='anonymous' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS unique_anonymous_30d,
-        count(DISTINCT user_id) FILTER (WHERE event_type='click' AND access_type='registered_free' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS unique_registered_free_30d,
-        count(DISTINCT user_id) FILTER (WHERE event_type='click' AND access_type='subscribed' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS unique_subscribed_30d,
-        count(DISTINCT user_id) FILTER (WHERE event_type='click' AND actor_type='registered' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS unique_registered_30d,
+        count(DISTINCT e.visitor_id) FILTER (WHERE event_type='click' AND actor_type='anonymous' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS unique_anonymous_30d,
+        count(DISTINCT e.user_id) FILTER (WHERE event_type='click' AND access_type='registered_free' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS unique_registered_free_30d,
+        count(DISTINCT e.user_id) FILTER (WHERE event_type='click' AND access_type='subscribed' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS unique_subscribed_30d,
+        count(DISTINCT e.user_id) FILTER (WHERE event_type='click' AND actor_type='registered' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS unique_registered_30d,
         count(*) FILTER (WHERE event_type='page_view' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS page_views_30d
       FROM public.interaction_events e
       LEFT JOIN neon_auth."user" a ON a.id=e.user_id
