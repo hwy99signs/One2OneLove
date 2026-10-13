@@ -52,6 +52,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const refreshInFlightRef = useRef(null);
+  const lastProfileRef = useRef(null);
 
   // Publish the signed-in identity to the interaction tracker so an
   // admin sign-in permanently excludes this browser from visitor
@@ -75,10 +76,16 @@ export function AuthProvider({ children }) {
           let profile = null;
           try {
             profile = await getProfile();
+            if (profile) lastProfileRef.current = profile;
           } catch (error) {
             if (error?.status !== 401) console.warn('Profile refresh failed:', error);
           }
-          const merged = mergeUser(result.auth.user, profile);
+          // A failed profile read (the same storms that hit the session
+          // checker) must not shrink the member: fall back to the last
+          // good profile so completion %, member-since, and account
+          // flags hold steady instead of flip-flopping between
+          // refreshes (click-pass defect, 2026-10-12).
+          const merged = mergeUser(result.auth.user, profile || lastProfileRef.current);
           setUser(merged);
           markSessionKnown(true);
           return merged;
@@ -166,6 +173,7 @@ export function AuthProvider({ children }) {
       const auth = await signInWithEmail(email, password);
       if (!auth?.user) return { success: false, error: 'Sign in failed. Please try again.' };
       const profile = await getProfile().catch(() => null);
+      if (profile) lastProfileRef.current = profile;
       const merged = mergeUser(auth.user, profile);
       setUser(merged);
       markSessionKnown(true);
