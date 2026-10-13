@@ -345,11 +345,16 @@ export default function ForgotPassword() {
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-4">{t.passwordReset}</h1>
           <p className="text-gray-600 mb-8">{t.passwordResetMessage}</p>
-          <Link to={createPageUrl("SignIn")}>
+          {/* Plain anchor, not a router Link: the owner hit a dead
+              "Back to Sign In" button on this exact screen after a
+              successful reset (2026-10-12). A full-page anchor to the
+              public sign-in page cannot be swallowed by any in-app
+              layer, and the destination needs no SPA state. */}
+          <a href={createPageUrl("SignIn")} className="block">
             <Button className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-semibold text-lg py-6 rounded-xl shadow-lg">
               {t.backToSignIn}
             </Button>
-          </Link>
+          </a>
         </div>
       </PageShell>
     );
@@ -365,16 +370,16 @@ export default function ForgotPassword() {
           <h1 className="text-3xl font-bold text-gray-900 mb-4">{t.invalidLinkTitle}</h1>
           <p className="text-gray-600 mb-8">{t.invalidLinkMessage}</p>
           <div className="space-y-4">
-            <Link to={createPageUrl("ForgotPassword")}>
+            <a href={createPageUrl("ForgotPassword")} className="block">
               <Button className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-semibold text-lg py-6 rounded-xl shadow-lg">
                 {t.requestNewLink}
               </Button>
-            </Link>
-            <Link to={createPageUrl("SignIn")}>
+            </a>
+            <a href={createPageUrl("SignIn")} className="block">
               <Button variant="outline" className="w-full py-6 rounded-xl text-gray-700">
                 {t.backToSignIn}
               </Button>
-            </Link>
+            </a>
           </div>
         </div>
       </PageShell>
@@ -474,17 +479,17 @@ export default function ForgotPassword() {
           <p className="text-gray-600 mb-8">{t.emailSentMessage}</p>
 
           <div className="space-y-4">
-            <Link to={createPageUrl("SignIn")}>
+            <a href={createPageUrl("SignIn")} className="block">
               <Button className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-semibold text-lg py-6 rounded-xl shadow-lg">
                 {t.backToSignIn}
               </Button>
-            </Link>
+            </a>
 
-            <Link to={createPageUrl("Home")}>
+            <a href={createPageUrl("Home")} className="block">
               <Button variant="outline" className="w-full py-6 rounded-xl text-gray-700">
                 {t.backToHome}
               </Button>
-            </Link>
+            </a>
           </div>
 
           <div className="mt-8 pt-6 border-t border-gray-200">
