@@ -92,7 +92,7 @@ function outputText(payload) {
   return pieces.join('\n').trim();
 }
 
-async function openAiText(env, { instructions, input, maxOutputTokens = 700 }) {
+async function openAiText(env, { instructions, input, maxOutputTokens = 3000 }) {
   if (!env.OPENAI_API_KEY) {
     throw Object.assign(new Error('AI service is not configured yet.'), { status: 503, code: 'ai_not_configured' });
   }
@@ -250,7 +250,15 @@ export async function handleSupportChatRequest(request, env, url) {
         `Visitor: ${message}`,
       ].join('\n\n');
 
-      let reply = await openAiText(env, { instructions, input });
+      let reply;
+      try {
+        reply = await openAiText(env, { instructions, input });
+      } catch (error) {
+        // gpt-5-class models can occasionally return an empty completion
+        // (reasoning consumed the output budget). One retry before failing.
+        if (error?.code !== 'empty_ai_response') throw error;
+        reply = await openAiText(env, { instructions, input });
+      }
       let escalated = false;
       if (reply.includes(ESCALATE_MARKER)) {
         reply = reply.split(ESCALATE_MARKER).join('').trim();
