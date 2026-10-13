@@ -43,6 +43,18 @@ export default function GuestHomepageGate({ pathname }) {
       if (event.target.closest('[data-guest-allow]')) return;
       const modal = document.getElementById('guest-homepage-gate-modal');
       if (modal && modal.contains(event.target)) return;
+      // Buttons that navigate (the footer links are <button>s, not
+      // anchors) can declare their destination with data-guest-path;
+      // a declared PUBLIC destination acts like an allowed anchor.
+      // Without this, every footer link on the guest homepage —
+      // Terms, Privacy, About, Help, Report a Problem — opened the
+      // sign-up panel instead of the page a guest is meant to read
+      // before joining (sweep finding, 2026-10-13).
+      const marked = event.target.closest('[data-guest-path]');
+      if (marked) {
+        const declared = String(marked.getAttribute('data-guest-path') || '').toLowerCase().replace(/\/$/, '') || '/';
+        if (PUBLIC_INFORMATION_ROUTES.has(declared) || EXTRA_OPEN_PATHS.has(declared)) return;
+      }
       const interactive = event.target.closest('a,button,[role="button"],input,select,textarea,summary,video,[data-analytics-destination],[class*="cursor-pointer"]');
       if (!interactive) return;
       const anchor = event.target.closest('a');
