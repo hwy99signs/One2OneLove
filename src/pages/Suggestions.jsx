@@ -183,7 +183,7 @@ export default function Suggestions() {
                   </select>
                 </div>}
                 <div>
-                  <label htmlFor="suggestion-text" className="block text-sm font-medium text-gray-700 mb-2">{t.suggestion}</label>
+                  <label htmlFor="suggestion-text" className="block text-sm font-medium text-gray-700 mb-2">{problemMode ? problem.label : t.suggestion}</label>
                   <Textarea id="suggestion-text" value={formData.suggestion} onChange={(e) => setFormData({...formData, suggestion: e.target.value})} required className="h-40" placeholder={problemMode ? problem.placeholder : t.placeholder} />
                 </div>
                 <Button type="submit" disabled={submitting || storageReady !== true} className="w-full h-12 bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-lg">

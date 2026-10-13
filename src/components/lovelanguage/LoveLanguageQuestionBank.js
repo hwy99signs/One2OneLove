@@ -2,29 +2,35 @@ const LOVE_LANGUAGE_IDS = ['words', 'quality', 'gifts', 'service', 'touch'];
 
 const localeData = {
   en: {
+    // Contexts are noun/gerund phrases by design: every template below
+    // wraps them prepositionally ("Thinking about {context}",
+    // "During {context}", "When it comes to {context}"), so a clause
+    // form ("when you are sick", "while traveling") garbles the
+    // pairing ("If you were while traveling together" — click-pass
+    // defect, 2026-10-12). Keep new contexts in this shape.
     contexts: [
-      'after a stressful workweek',
-      'on an ordinary weekday',
-      'when celebrating good news',
-      'when you are feeling discouraged',
-      'after a disagreement',
-      'during a very busy season',
-      'on your birthday',
-      'on an anniversary',
-      'when you are sick or tired',
-      'before an important event',
-      'after spending time apart',
-      'during a quiet weekend at home',
-      'while traveling together',
-      'when you are overwhelmed with responsibilities',
-      'when reconnecting after a long day',
-      'when planning time together',
-      'when you need reassurance'
+      'a stressful workweek',
+      'an ordinary weekday',
+      'celebrating good news',
+      'feeling discouraged',
+      'a disagreement',
+      'a very busy season',
+      'your birthday',
+      'an anniversary',
+      'being sick or tired',
+      'an important event coming up',
+      'spending time apart',
+      'a quiet weekend at home',
+      'traveling together',
+      'being overwhelmed with responsibilities',
+      'reconnecting after a long day',
+      'planning time together',
+      'needing reassurance'
     ],
     templates: [
       'Thinking about {context}, which response would make you feel most loved?',
       'During {context}, what would matter most to you from your partner?',
-      'If you were {context}, which gesture would feel most meaningful?',
+      'In the middle of {context}, which gesture would feel most meaningful?',
       'Around {context}, what would help you feel closest to your partner?',
       'When it comes to {context}, which expression of care would speak most strongly to you?'
     ],
