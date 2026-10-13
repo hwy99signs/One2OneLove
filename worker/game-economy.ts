@@ -177,7 +177,7 @@ export async function resolveGamePromotion(db,userId,game,now=new Date()){
 }
 
 async function currentPrice(db,featureCode){
-  const row=(await db.query(`SELECT token_cost FROM public.o2ol_token_feature_prices WHERE feature_code=$1 AND enabled=true LIMIT 1`,[featureCode])).rows[0];
+  const row=(await db.query(`SELECT token_cost FROM public.o2ol_token_feature_prices WHERE feature_code=$1 AND active=true LIMIT 1`,[featureCode])).rows[0];
   return Number(row?.token_cost||49);
 }
 export async function gamePriceQuote(db,userId,game){
