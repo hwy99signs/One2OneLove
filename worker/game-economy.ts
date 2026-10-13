@@ -170,9 +170,9 @@ export async function resolveGamePromotion(db,userId,game,now=new Date()){
     return p.kind!=='credit_grant';
   });
   const free=eligible.find(p=>p.kind==='free_play'||(p.kind==='percent_off'&&Number(p.percent)>=100));
-  if(free)return {id:free.id,name:free.name,kind:'free_play',free:true,percent:100,timezone:tz};
+  if(free)return {id:free.id,name:free.name,kind:'free_play',free:true,percent:100,timezone:tz,endsAt:free.ends_at||null,temporary:Boolean(free.ends_at)};
   const discounts=eligible.filter(p=>p.kind==='percent_off').sort((a,b)=>Number(b.percent||0)-Number(a.percent||0));
-  if(discounts[0])return {id:discounts[0].id,name:discounts[0].name,kind:'percent_off',free:false,percent:Number(discounts[0].percent||0),timezone:tz};
+  if(discounts[0])return {id:discounts[0].id,name:discounts[0].name,kind:'percent_off',free:false,percent:Number(discounts[0].percent||0),timezone:tz,endsAt:discounts[0].ends_at||null,temporary:Boolean(discounts[0].ends_at)};
   return null;
 }
 
