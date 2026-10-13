@@ -44,6 +44,7 @@ import { enforceApiEntitlement } from './api-entitlements';
 import { enforceLaunchIdentity } from './identity-gate';
 import { handleLaunchReadinessRequest } from './launch-readiness';
 import { handleSuggestionsRequest } from './suggestions';
+import { handleSupportChatRequest } from './support-chat';
 import { handlePhoneVerificationRequest } from './phone-verification';
 import { handleGameAccessRequest, handleGameFileRequest } from './game-access';
 import { handleGameAdminRequest } from './game-admin';
@@ -360,6 +361,11 @@ export default {
 
     if (url.pathname.startsWith('/api/suggestions')) {
       const response = await handleSuggestionsRequest(request, env, url);
+      if (response) return response;
+    }
+
+    if (url.pathname.startsWith('/api/support-chat')) {
+      const response = await handleSupportChatRequest(request, env, url);
       if (response) return response;
     }
 

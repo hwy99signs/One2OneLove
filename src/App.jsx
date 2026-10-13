@@ -9,6 +9,7 @@ import AdminFeatureHeaderLock from "@/components/admin/AdminFeatureHeaderLock.js
 import AdminEntryTab from "@/components/admin/AdminEntryTab.jsx"
 import AdminMfaGate from "@/components/admin/AdminMfaGate.jsx"
 import AdminUserModeToggle from "@/components/admin/AdminUserModeToggle.jsx"
+import SupportChat from "@/components/system/SupportChat.jsx"
 import { Toaster } from "@/components/ui/toaster"
 import { Toaster as SonnerToaster } from "sonner"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
@@ -45,7 +46,10 @@ function App() {
             <AdminMfaGate><Analytics /></AdminMfaGate>
           </BrowserRouter>
         ) : (
-          <Pages />
+          <>
+            <Pages />
+            <SupportChat />
+          </>
         )}
         <AdminEntryTab />
         <AdminUserModeToggle />
