@@ -282,6 +282,8 @@ export default function Admin() {
   const [memberDetail,setMemberDetail] = useState(null);
   const [memberDetailLoading,setMemberDetailLoading] = useState(false);
   const [memberDetailError,setMemberDetailError] = useState('');
+  const [memberDetailNotice,setMemberDetailNotice] = useState('');
+  const [backfillArmed,setBackfillArmed] = useState(false);
   const [bulkMemberAction,setBulkMemberAction] = useState(false);
   const [votingPlatform,setVotingPlatform] = useState('all');
   const [registryRange,setRegistryRange] = useState('30d');
@@ -492,6 +494,8 @@ export default function Admin() {
   const openMemberAccount = async (member) => {
     setMemberDetail({ member, data: null });
     setMemberDetailError('');
+    setMemberDetailNotice('');
+    setBackfillArmed(false);
     setMemberDetailLoading(true);
     // The account panel renders above the members table; bring it into
     // view immediately so the tap visibly does something on any screen.
@@ -508,15 +512,18 @@ export default function Admin() {
     }
   };
 
+  // No native window.confirm/alert here: those dialogs block the page
+  // (and any assisted session) until answered. Confirmation is the
+  // inline two-step arm in the panel; outcomes land in the notice line.
   const handleBackfillVerificationCredit = async (member) => {
-    const memberName = member.username ? `@${member.username}` : member.email;
-    if (!window.confirm(`Give ${memberName} their one-time $5.00 verification Game Credit? They finished verifying before the Game Credit system launched, so it never fired. It expires 14 days from now, like the standard grant.`)) return;
+    setBackfillArmed(false);
     setMemberDetailLoading(true);
     setMemberDetailError('');
     try {
       const result = await grantVerificationGameCredit(member.id);
-      if (result?.alreadyGranted) window.alert('This member already received their verification Game Credit.');
       await openMemberAccount(member);
+      if (result?.alreadyGranted) setMemberDetailNotice('This member already received their verification Game Credit — nothing was granted again.');
+      else if (result?.granted) setMemberDetailNotice('Verification Game Credit granted: $5.00 added, expiring in 14 days like the standard grant.');
     } catch (err) {
       setMemberDetailError(err?.message || 'Unable to grant the verification Game Credit.');
       setMemberDetailLoading(false);
@@ -919,6 +926,7 @@ export default function Admin() {
                 </div>
                 {memberDetailLoading&&<div className="flex items-center gap-2 py-6 text-sm font-semibold text-slate-500"><Loader2 className="animate-spin" size={16}/>Loading this account…</div>}
                 {memberDetailError&&<div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800">{memberDetailError}</div>}
+                {memberDetailNotice&&<div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{memberDetailNotice}</div>}
                 {d&&!memberDetailLoading&&<div>
                   <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     <Metric icon={Coins} label="Credit Balance" value={w?money(Number(w.balance||0)/100):'—'} note={w?`bought ${money(Number(w.lifetime_purchased||0)/100)} · used ${money(Number(w.lifetime_used||0)/100)} all time`:'no wallet yet'} tone="violet"/>
@@ -929,7 +937,7 @@ export default function Admin() {
                   {(sa?.topFeatures || []).length>0&&<div className="mb-6"><h4 className="mb-2 text-sm font-black text-slate-900">Most-used features</h4><div className="flex flex-wrap gap-2">{sa.topFeatures.map(f=><Pill key={f.feature} tone="slate">{f.feature} · {number(f.events)}</Pill>)}</div></div>}
                   <div className="grid gap-6 xl:grid-cols-2">
                     <div><h4 className="mb-2 text-sm font-black text-slate-900">Credit activity</h4>{(d.creditActivity || []).length?<div className="max-h-96 space-y-2 overflow-y-auto pr-1">{d.creditActivity.map(item=><div key={item.id} className="rounded-xl bg-slate-50 p-3 text-sm"><div className="flex items-center justify-between gap-3"><div className="font-semibold">{creditActivityLabel(item)}</div><div className={cx('font-bold',Number(item.wallet_delta)<0?'text-slate-900':'text-emerald-700')}>{Number(item.wallet_delta)<0?'-':'+'}{money(Math.abs(Number(item.wallet_delta||0))/100)}</div></div><div className="mt-1 text-xs text-slate-400">{date(item.created_at)} · balance after {money(Number(item.balance_after||0)/100)}</div></div>)}</div>:<Empty>No Credit activity yet.</Empty>}</div>
-                    <div><h4 className="mb-2 text-sm font-black text-slate-900">Game Credit activity</h4>{md.is_verified&&md.phone_verified&&gc&&gc.hasSignupBonus===false&&<div className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"><strong>Missing verification Game Credit.</strong><span className="ml-1">This member finished verifying before the Game Credit system launched, so their one-time $5.00 bonus never fired.</span><button type="button" onClick={()=>handleBackfillVerificationCredit(md)} className="ml-3 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-black text-white hover:bg-amber-700">Backfill $5.00</button></div>}{(gc?.ledger || []).length?<div className="max-h-96 space-y-2 overflow-y-auto pr-1">{gc.ledger.map(item=><div key={item.id} className="rounded-xl bg-slate-50 p-3 text-sm"><div className="flex items-center justify-between gap-3"><div className="font-semibold capitalize">{String(item.kind||'').replace(/_/g,' ')}{item.game?` · ${item.game}`:''}</div><div className={cx('font-bold',Number(item.amount_cents)<0?'text-slate-900':'text-emerald-700')}>{Number(item.amount_cents)<0?'-':'+'}{money(Math.abs(Number(item.amount_cents||0))/100)}</div></div><div className="mt-1 text-xs text-slate-400">{date(item.created_at)}{item.expires_at?` · expires ${date(item.expires_at)}`:''}{item.note?` · ${item.note}`:''}</div></div>)}</div>:<Empty>No Game Credit activity yet.</Empty>}</div>
+                    <div><h4 className="mb-2 text-sm font-black text-slate-900">Game Credit activity</h4>{md.is_verified&&md.phone_verified&&gc&&gc.hasSignupBonus===false&&<div className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"><strong>Missing verification Game Credit.</strong><span className="ml-1">This member finished verifying before the Game Credit system launched, so their one-time $5.00 bonus never fired. It expires 14 days from the grant, like the standard bonus.</span>{backfillArmed?<><span className="ml-2 font-black">Grant the $5.00 now?</span><button type="button" onClick={()=>handleBackfillVerificationCredit(md)} className="ml-2 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-black text-white hover:bg-amber-700">Yes, grant it</button><button type="button" onClick={()=>setBackfillArmed(false)} className="ml-2 rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-black text-amber-800 hover:bg-amber-100">Cancel</button></>:<button type="button" onClick={()=>setBackfillArmed(true)} className="ml-3 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-black text-white hover:bg-amber-700">Backfill $5.00</button>}</div>}{(gc?.ledger || []).length?<div className="max-h-96 space-y-2 overflow-y-auto pr-1">{gc.ledger.map(item=><div key={item.id} className="rounded-xl bg-slate-50 p-3 text-sm"><div className="flex items-center justify-between gap-3"><div className="font-semibold capitalize">{String(item.kind||'').replace(/_/g,' ')}{item.game?` · ${item.game}`:''}</div><div className={cx('font-bold',Number(item.amount_cents)<0?'text-slate-900':'text-emerald-700')}>{Number(item.amount_cents)<0?'-':'+'}{money(Math.abs(Number(item.amount_cents||0))/100)}</div></div><div className="mt-1 text-xs text-slate-400">{date(item.created_at)}{item.expires_at?` · expires ${date(item.expires_at)}`:''}{item.note?` · ${item.note}`:''}</div></div>)}</div>:<Empty>No Game Credit activity yet.</Empty>}</div>
                     <div><h4 className="mb-2 text-sm font-black text-slate-900">Unlocked content</h4>{(d.unlocks || []).length?<div className="max-h-96 space-y-2 overflow-y-auto pr-1">{d.unlocks.map((item,idx)=><div key={idx} className="rounded-xl bg-slate-50 p-3 text-sm"><div className="font-semibold">{item.feature_code}</div><div className="mt-1 break-words text-xs text-slate-500">{item.content_key}</div><div className="mt-1 text-xs text-slate-400">{date(item.unlocked_at)}{Number(item.tokens_charged||0)>0?` · ${money(Number(item.tokens_charged)/100)}`:''}</div></div>)}</div>:<Empty>Nothing unlocked yet.</Empty>}</div>
                     <div><h4 className="mb-2 text-sm font-black text-slate-900">Recent site activity</h4>{(sa?.recent || []).length?<div className="max-h-96 space-y-2 overflow-y-auto pr-1">{sa.recent.map((item,idx)=><div key={idx} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 p-3 text-sm"><div><span className="font-semibold capitalize">{String(item.event_type||'').replace(/_/g,' ')}</span><span className="text-slate-500"> · {item.feature||item.route||'—'}</span></div><div className="whitespace-nowrap text-xs text-slate-400">{date(item.created_at)}</div></div>)}</div>:<Empty>No site activity recorded yet.</Empty>}</div>
                   </div>
