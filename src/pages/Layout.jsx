@@ -802,7 +802,7 @@ function LanguageContent({ children, currentPageName }) {
                 <img src="/assets/o2ol-approved-logo.png" alt="One2OneLove" className="h-28 w-auto" />
                 <div className="text-lg mt-2">{fT.loveGrow}</div>
                 <div className="flex gap-4 mt-5 text-2xl">
-                  <a href="https://www.tiktok.com/@one2onelove" target="_blank" rel="noopener noreferrer" aria-label="TikTok"><TiktokIcon /></a>
+                  <a href="https://www.tiktok.com/@one2onelove.com" target="_blank" rel="noopener noreferrer" aria-label="TikTok"><TiktokIcon /></a>
                   <a href="https://www.facebook.com/one2onelove" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><FacebookIcon /></a>
                   <a href="https://www.instagram.com/one2oneloves" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><InstagramIcon /></a>
                   <a href="https://x.com/one2oneloves" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><XIcon /></a>
