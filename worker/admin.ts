@@ -1090,7 +1090,7 @@ async function loveNotes(db) {
     db.query(`SELECT count(*)::int AS total,count(*) FILTER (WHERE sent_date>=now()-interval '7 days')::int AS sent_7d,count(*) FILTER (WHERE sent_date>=now()-interval '30 days')::int AS sent_30d FROM public.sent_love_notes`),
     db.query(`
       SELECT count(DISTINCT user_id)::int AS users_total,
-             count(DISTINCT user_id) FILTER (WHERE created_at>=now()-interval '30 days')::int AS users_30d,
+             count(DISTINCT e.user_id) FILTER (WHERE created_at>=now()-interval '30 days')::int AS users_30d,
              count(*)::int AS schedules_total,
              count(*) FILTER (WHERE created_at>=now()-interval '30 days')::int AS schedules_30d,
              CASE WHEN count(DISTINCT user_id)=0 THEN 0 ELSE round(count(*)::numeric/count(DISTINCT user_id),1) END AS avg_schedules_per_user
@@ -1128,9 +1128,9 @@ async function clickAnalytics(db, env) {
         count(*) FILTER (WHERE event_type='click' AND access_type='registered_free' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS registered_free_30d,
         count(*) FILTER (WHERE event_type='click' AND access_type='subscribed' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS subscribed_30d,
         count(DISTINCT e.visitor_id) FILTER (WHERE event_type='click' AND actor_type='anonymous' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS unique_anonymous_30d,
-        count(DISTINCT user_id) FILTER (WHERE event_type='click' AND access_type='registered_free' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS unique_registered_free_30d,
-        count(DISTINCT user_id) FILTER (WHERE event_type='click' AND access_type='subscribed' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS unique_subscribed_30d,
-        count(DISTINCT user_id) FILTER (WHERE event_type='click' AND actor_type='registered' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS unique_registered_30d,
+        count(DISTINCT e.user_id) FILTER (WHERE event_type='click' AND access_type='registered_free' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS unique_registered_free_30d,
+        count(DISTINCT e.user_id) FILTER (WHERE event_type='click' AND access_type='subscribed' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS unique_subscribed_30d,
+        count(DISTINCT e.user_id) FILTER (WHERE event_type='click' AND actor_type='registered' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS unique_registered_30d,
         count(*) FILTER (WHERE event_type='page_view' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS page_views_30d
       FROM public.interaction_events e
       LEFT JOIN neon_auth."user" a ON a.id=e.user_id
