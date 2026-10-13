@@ -527,6 +527,11 @@ async function createSetupCheckout(request,db,env,auth){
   const origin=new URL(request.url).origin;
   const checkout=await stripeRequest(env,'POST','/checkout/sessions',{
     mode:'setup',
+    // Stripe requires a currency on setup-mode sessions (it validates
+    // card compatibility against it). Without it the Add / Change Card
+    // button died with Stripe's "Missing required param: currency."
+    // (click-pass defect, 2026-10-12).
+    currency:'usd',
     customer,
     success_url:`${origin}/Credit?payment_method=success&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url:`${origin}/Credit?payment_method=cancelled`,

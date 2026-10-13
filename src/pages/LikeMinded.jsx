@@ -313,6 +313,7 @@ export default function LikeMinded() {
   const [gamePass,setGamePass]=useState(null);
   const [gamePromotion,setGamePromotion]=useState(null);
   const [tokenBalance,setTokenBalance]=useState(0);
+  const [walletError,setWalletError]=useState(false);
   const [gameCreditBalance,setGameCreditBalance]=useState(0);
   const [tokenCost,setTokenCost]=useState(0);
   const [tokenPrompt,setTokenPrompt]=useState(false);
@@ -345,9 +346,14 @@ export default function LikeMinded() {
         setGamePromotion(freeAccess?.promotion||access.promotion);
       }
       setGamePass(pass);
+      setWalletError(false);
       return pass;
     }catch(error){
       if(error?.status===402||isTokensRequiredError(error)){setGamePass(null);}
+      // A failed wallet/access read is not a $0.00 balance: flag it so
+      // the header and the unlock dialog stop posing as an empty,
+      // signed-out wallet (click-pass defect, 2026-10-12).
+      else setWalletError(true);
       return null;
     }
   };
@@ -400,8 +406,8 @@ export default function LikeMinded() {
       title="Like Minded?"
       priceCents={Number(tokenCost||49)}
       terms="Per game / session."
-      balanceCents={Number(tokenBalance||0)}
-      gameCreditCents={Number(gameCreditBalance||0)}
+      balanceCents={walletError?null:Number(tokenBalance||0)}
+      gameCreditCents={walletError?null:Number(gameCreditBalance||0)}
       promotion={gamePromotion}
       busy={accessLoading}
       error={apiError}
@@ -919,7 +925,7 @@ export default function LikeMinded() {
           <div className="mx-auto mt-4 w-full max-w-5xl rounded-2xl border border-amber-300/30 bg-amber-300/10 p-4 text-left text-amber-50">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div><div className="inline-flex items-center gap-2 font-black"><Coins className="h-5 w-5"/>{t.premium}</div><p className="mt-1 text-xs leading-5 text-amber-50/80">{t.premiumBody}</p></div>
-              {isAuthenticated ? <Link to="/Credit?return=/LikeMinded" className="rounded-xl bg-amber-300 px-4 py-2 text-sm font-black text-amber-950">{gamePass?'Pass Active':gamePromotion?.free?'🎉 FREE through Sunday · No Credit used':`🔒 ${(Number(tokenCost||49)/100).toFixed(2)} per game · Balance ${(Number(tokenBalance||0)/100).toFixed(2)}`}</Link> : <Link to="/SignUp?source=like-minded&type=individual" className="rounded-xl bg-amber-300 px-4 py-2 text-sm font-black text-amber-950">Create FREE Account</Link>}
+              {isAuthenticated ? <Link to="/Credit?return=/LikeMinded" className="rounded-xl bg-amber-300 px-4 py-2 text-sm font-black text-amber-950">{gamePass?'Pass Active':gamePromotion?.free?'🎉 FREE through Sunday · No Credit used':walletError?`🔒 ${(Number(tokenCost||49)/100).toFixed(2)} per game · Balance unavailable`:`🔒 ${(Number(tokenCost||49)/100).toFixed(2)} per game · Balance ${(Number(tokenBalance||0)/100).toFixed(2)}`}</Link> : <Link to="/SignUp?source=like-minded&type=individual" className="rounded-xl bg-amber-300 px-4 py-2 text-sm font-black text-amber-950">Create FREE Account</Link>}
             </div>
           </div>
 

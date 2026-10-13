@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Heart, Coffee, Utensils, Film, Music, MapPin, Star, Sparkles, Home, TreePine, Waves, Mountain, Plus, Filter, ArrowLeft, Bookmark, Share2, Check, X, CalendarDays, Clock, Coins, Loader2, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -108,6 +108,7 @@ const OPEN_HOUSE_COPY = {
     membersOnly: '$0.49 Credit unlock',
     lockedTitle: 'Unlock this Date Idea',
     lockedBody: 'This Date Idea is locked. Create a FREE account, then use Credit to unlock it. Once unlocked, it stays unlocked for your account.',
+    lockedBodyMember: 'This Date Idea is locked. Use Credit to unlock it — once unlocked, it stays unlocked for your account.',
     unlock: 'Unlock with Credit',
     signIn: 'Sign In',
     saveGate: 'Create an account to save, schedule, and track Date Ideas.',
@@ -119,6 +120,7 @@ const OPEN_HOUSE_COPY = {
     membersOnly: 'Desbloqueo: $0.49',
     lockedTitle: 'Hay mucho más por descubrir',
     lockedBody: 'Esta idea de cita está bloqueada. Crea una cuenta GRATIS y usa Crédito para desbloquearla. Una vez desbloqueada, permanece disponible en tu cuenta.',
+    lockedBodyMember: 'Esta idea de cita está bloqueada. Usa Crédito para desbloquearla: una vez desbloqueada, permanece disponible en tu cuenta.',
     unlock: 'Desbloquear con Crédito',
     signIn: 'Iniciar sesión',
     saveGate: 'Crea una cuenta para guardar, programar y seguir tus ideas de citas.',
@@ -130,6 +132,7 @@ const OPEN_HOUSE_COPY = {
     membersOnly: 'Débloquer : 0,49 USD',
     lockedTitle: 'Il y en a encore beaucoup à découvrir',
     lockedBody: 'Cette idée de rendez-vous est verrouillée. Créez un compte GRATUIT puis utilisez du Crédit pour la déverrouiller. Elle restera ensuite disponible sur votre compte.',
+    lockedBodyMember: 'Cette idée de rendez-vous est verrouillée. Utilisez du Crédit pour la déverrouiller — elle restera ensuite disponible sur votre compte.',
     unlock: 'Déverrouiller avec du Crédit',
     signIn: 'Se connecter',
     saveGate: 'Créez un compte pour enregistrer, planifier et suivre vos idées de rendez-vous.',
@@ -141,6 +144,7 @@ const OPEN_HOUSE_COPY = {
     membersOnly: 'Sblocco: $0.49',
     lockedTitle: 'C’è molto altro da scoprire',
     lockedBody: 'Questa idea è bloccata. Crea un account GRATUITO e usa Credito per sbloccarla. Dopo lo sblocco resterà disponibile nel tuo account.',
+    lockedBodyMember: 'Questa idea è bloccata. Usa il Credito per sbloccarla: dopo lo sblocco resterà disponibile nel tuo account.',
     unlock: 'Sblocca con Credito',
     signIn: 'Accedi',
     saveGate: 'Crea un account per salvare, programmare e monitorare le idee per gli appuntamenti.',
@@ -152,6 +156,7 @@ const OPEN_HOUSE_COPY = {
     membersOnly: 'Freischalten: $0.49',
     lockedTitle: 'Es gibt noch viel mehr zu entdecken',
     lockedBody: 'Diese Date-Idee ist gesperrt. Erstelle ein KOSTENLOSES Konto und verwende Credit zum Freischalten. Danach bleibt sie für dein Konto freigeschaltet.',
+    lockedBodyMember: 'Diese Date-Idee ist gesperrt. Verwende Credit zum Freischalten — danach bleibt sie für dein Konto freigeschaltet.',
     unlock: 'Mit Credit Freischalten',
     signIn: 'Anmelden',
     saveGate: 'Erstelle ein Konto, um Date-Ideen zu speichern, zu planen und zu verfolgen.',
@@ -197,6 +202,12 @@ export default function DateIdeas() {
   const hasMemberAccess = hasFullDateIdeasAccess(currentUser);
   const openHouseCopy = OPEN_HOUSE_COPY[currentLanguage] || OPEN_HOUSE_COPY.en;
   const [showOpenHouseLock, setShowOpenHouseLock] = useState(false);
+  useEffect(() => {
+    if (!showOpenHouseLock) return;
+    const onKey = (event) => { if (event.key === 'Escape') setShowOpenHouseLock(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showOpenHouseLock]);
   const [lockedIdea, setLockedIdea] = useState(null);
   const [unlockingIdea, setUnlockingIdea] = useState(false);
   const [unlockError, setUnlockError] = useState('');
@@ -208,10 +219,12 @@ export default function DateIdeas() {
     queryFn: () => listTokenUnlocks('date_idea_unlock'),
     enabled: Boolean(currentUser?.id),
   });
-  const { data: tokenWalletData = null } = useQuery({
+  const { data: tokenWalletData = null, error: tokenWalletError, refetch: refetchTokenWallet } = useQuery({
     queryKey: ['tokenWallet', dateIdeasUserKey],
     queryFn: getTokenWallet,
-    enabled: Boolean(currentUser?.id) && !isAdmin,
+    // Admins hold real wallets too; excluding them here made the
+    // unlock dialog render a permanent $0.00 (click-pass, 2026-10-12).
+    enabled: Boolean(currentUser?.id),
   });
   const unlockedDateKeys = new Set((tokenUnlockData?.unlocks || []).map(item => String(item.content_key)));
   const dateIdeaTokenCost = Number(tokenWalletData?.featurePrices?.find(item => item.feature_code === 'date_idea_unlock')?.token_cost || 49);
@@ -777,22 +790,32 @@ export default function DateIdeas() {
                 initial={{ opacity: 0, scale: 0.96, y: 12 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.96, y: 12 }}
-                className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-purple-100"
+                className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-purple-100"
                 onClick={(event) => event.stopPropagation()}
                 role="dialog"
                 aria-modal="true"
               >
+                <button type="button" aria-label="Close" onClick={() => setShowOpenHouseLock(false)} className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-100 hover:text-gray-700">
+                  <X className="h-4 w-4" />
+                </button>
                 <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-purple-100">
                   <Lock className="h-7 w-7 text-purple-700" />
                 </div>
                 <div className="text-center">
                   <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-purple-700">{openHouseCopy.badge}</p>
                   <h3 className="text-2xl font-bold text-gray-900">{openHouseCopy.lockedTitle}</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-gray-600">{openHouseCopy.lockedBody}</p><p className="mt-2 text-sm font-black text-purple-800">{(Number(dateIdeaTokenCost||0)/100).toLocaleString('en-US',{style:'currency',currency:'USD'})} · Yours forever</p>
+                  <p className="mt-3 text-sm leading-relaxed text-gray-600">{currentUser?.id ? (openHouseCopy.lockedBodyMember || openHouseCopy.lockedBody) : openHouseCopy.lockedBody}</p><p className="mt-2 text-sm font-black text-purple-800">{(Number(dateIdeaTokenCost||0)/100).toLocaleString('en-US',{style:'currency',currency:'USD'})} · Yours forever</p>
                 </div>
                 <div className="mt-6 flex flex-col gap-2">
                   {currentUser?.id ? (
                     <>
+                      {tokenWalletError ? (
+                        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-center text-sm font-semibold text-amber-900">
+                          We couldn't load your Credit balance just now.
+                          <button type="button" onClick={() => refetchTokenWallet()} className="ml-2 font-black underline">Try again</button>
+                        </div>
+                      ) : (
+                      <>
                       <div className="rounded-xl bg-slate-100 px-4 py-2 text-center text-sm font-black text-slate-700">Credit balance: {((Number(tokenWalletData?.wallet?.balance||0))/100).toLocaleString('en-US',{style:'currency',currency:'USD'})}</div>
                       {Number(tokenWalletData?.wallet?.balance||0) < Number(dateIdeaTokenCost||0) ? (
                         <Button onClick={()=>window.location.assign('/Credit?return=/DateIdeas')} className="w-full bg-gradient-to-r from-amber-400 to-orange-500 font-black text-amber-950 hover:from-amber-500 hover:to-orange-600">
@@ -805,6 +828,8 @@ export default function DateIdeas() {
                         </Button>
                       )}
                       {unlockError && Number(tokenWalletData?.wallet?.balance||0) >= Number(dateIdeaTokenCost||0) && <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">{unlockError}</div>}
+                      </>
+                      )}
                     </>
                   ) : (
                     <>
