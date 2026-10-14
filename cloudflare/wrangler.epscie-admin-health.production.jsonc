@@ -9,7 +9,9 @@
   "workers_dev": true,
   "vars": {
     "O2OL_MONITOR_ENV": "production",
-    "O2OL_EPSCIE_ADMIN_ENABLED": "false"
+    "O2OL_EPSCIE_ADMIN_ENABLED": "true",
+    "O2OL_DEPLOYMENT_ID": "o2ol-release-9b9597d",
+    "O2OL_EPSCIE_ADMIN_KEY_ID": "o2ol-admin-health-20261013-v1"
   },
   "hyperdrive": [
     {
