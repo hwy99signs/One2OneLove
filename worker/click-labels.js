@@ -163,3 +163,78 @@ export function deriveClickFeature({ feature, destination, route } = {}) {
   }
   return featureForRoutePath(route);
 }
+
+// ---------------------------------------------------------------------------
+// Click identity (owner rule, 2026-10-10): a signed-in member's clicks carry
+// their username; "Anonymous" is only for true guests. These helpers are
+// pure so ingest, the client tracker mirror, and the tests all share one
+// definition of who an event belongs to.
+
+// A username is only ever copied from a real account record or from the
+// signed-in member's own client payload — never derived or invented. The
+// shape mirrors the signup rule in worker/launch-auth.ts (3–40 chars).
+export function cleanAnalyticsUsername(value) {
+  const text = String(value || '').trim().replace(/^@+/, '');
+  return /^[A-Za-z0-9._-]{3,40}$/.test(text) ? text : null;
+}
+
+// Password-visibility toggles are pure local UI state: they navigate
+// nowhere, submit nothing, and change no data, so they are not engagement
+// clicks. They are identified by label pattern across the site's five
+// languages: a show/hide verb together with the word for "password".
+// Mirrors src/lib/interactionAnalytics.js — keep the two in sync.
+const PASSWORD_WORDS = ['password', 'contraseña', 'contrasena', 'mot de passe', 'passwort'];
+const SHOW_HIDE_VERBS = ['show', 'hide', 'mostrar', 'ocultar', 'afficher', 'masquer', 'mostra', 'nascondi', 'anzeigen', 'ausblenden', 'verbergen'];
+
+export function isPasswordVisibilityLabel(label) {
+  const text = String(label || '').trim().toLowerCase();
+  if (!text) return false;
+  return PASSWORD_WORDS.some((word) => text.includes(word))
+    && SHOW_HIDE_VERBS.some((verb) => text.includes(verb));
+}
+
+// Decide whose event this is. Identity is accepted from exactly two
+// server-verified sources:
+//   - sessionRow: the caller's own auth session, resolved server-side.
+//   - claimedRow: a database row for the member id the client claimed,
+//     accepted ONLY when linkVerified — public.visitor_identity_links ties
+//     this event's visitor id to that account (written at signup, or at an
+//     earlier verified sign-in on this same browser).
+// An unverified claim is ignored entirely: the event stays anonymous.
+// Admins are dropped (drop: true) on either path, exactly as before —
+// admin activity never enters visitor analytics.
+// Rows are { userId, role, username }; userId may be null on a session row
+// whose account record is missing (role still applies for the admin drop).
+export function resolveClickIdentity({ sessionRow = null, claimedRow = null, linkVerified = false, claimedUserId = null, claimedUsername = null } = {}) {
+  const anonymous = { drop: false, userId: null, actorType: 'anonymous', username: null };
+  const row = sessionRow?.userId
+    ? sessionRow
+    : (linkVerified && claimedRow?.userId ? claimedRow : null);
+  const isAdmin = [sessionRow?.role, row?.role]
+    .some((role) => String(role || '').toLowerCase() === 'admin');
+  if (isAdmin) return { drop: true, userId: null, actorType: 'anonymous', username: null };
+  if (!row) return anonymous;
+  // The client-sent username is trusted only for the very account the
+  // server verified (the claimed id must be the resolved account's own
+  // id) and only when the account record itself has no username stored.
+  const claimedName = claimedUserId && claimedUserId === row.userId
+    ? cleanAnalyticsUsername(claimedUsername)
+    : null;
+  return {
+    drop: false,
+    userId: row.userId,
+    actorType: 'registered',
+    username: cleanAnalyticsUsername(row.username) || claimedName,
+  };
+}
+
+// Admin "Recent Click Details" AUDIENCE cell: a member's events show their
+// username; a member event without a stored username shows "Member";
+// only an event with no member identity at all shows "Anonymous".
+// Mirrors src/lib/interactionAnalytics.js — keep the two in sync.
+export function clickAudienceLabel(row = {}) {
+  const username = cleanAnalyticsUsername(row.username);
+  if (username) return `@${username}`;
+  if (row.user_id || row.userId || row.actor_type === 'registered' || row.actorType === 'registered') return 'Member';
+  return 'Anonymous';
+}

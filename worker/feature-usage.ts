@@ -119,6 +119,11 @@ function validClientId(value) {
   return text && /^[A-Za-z0-9._:-]{6,100}$/.test(text) ? text : null;
 }
 
+function validUuid(value) {
+  const text = clean(value, 100);
+  return text && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(text) ? text : null;
+}
+
 function cleanLanguage(value) {
   const language = clean(value, 10)?.toLowerCase();
   return language && INTERACTION_LANGUAGES.has(language) ? language : null;
@@ -153,6 +158,12 @@ async function ensureInteractionSchema(db) {
   if (!state.table_ready || !state.language_ready || !state.traffic_source_ready || !state.action_ready) {
     throw new Error('Interaction analytics schema is not prepared.');
   }
+  // Click identity (2026-10-10): interaction events carry the signed-in
+  // member's username snapshot in a dedicated column. Additive and
+  // idempotent, following the codebase's lazy ensure-schema convention
+  // (see ensurePresenceSchema below); the same change is recorded in
+  // neon-migrations/2026-10-10-interaction-events-username.sql.
+  await db.query(`ALTER TABLE public.interaction_events ADD COLUMN IF NOT EXISTS username text`);
   interactionSchemaReady = true;
 }
 
@@ -163,17 +174,25 @@ async function handleInteractionEvent(request, env) {
   const eventType = clean(body?.eventType, 30)?.toLowerCase();
   const visitorId = validClientId(body?.visitorId);
   const sessionId = validClientId(body?.sessionId);
-  const route = cleanPath(body?.route);
+  // Path casing is normalized at ingest (2026-10-10): the same page used
+  // to be stored as /signin, /SignIn and /Signin, splitting its counts.
+  // Future rows only — stored history is never rewritten.
+  const route = cleanPath(body?.route)?.toLowerCase() || null;
   const destinationRaw = clean(body?.destination, 300);
-  const destination = destinationRaw?.startsWith('external:')
+  const destination = (destinationRaw?.startsWith('external:')
     ? destinationRaw.slice(0, 300)
-    : cleanPath(destinationRaw);
+    : cleanPath(destinationRaw))?.toLowerCase() || null;
   const featureRaw = clean(body?.feature, 100);
   const clientFeature = featureRaw && TRACKABLE_FEATURES.has(featureRaw) ? featureRaw : null;
   const controlType = clean(body?.controlType, 40);
   const controlKey = clean(body?.controlKey, 160);
   const language = cleanLanguage(body?.language);
   const trafficSource = cleanTrafficSource(body?.trafficSource);
+  // Member identity claimed by the client (present only when a member is
+  // signed in on that browser). A claim is never trusted on its own — see
+  // the verified resolution inside withDb below.
+  const memberId = validUuid(body?.memberId);
+  const memberUsername = clean(body?.memberUsername, 40);
 
   if (!INTERACTION_EVENT_TYPES.has(eventType)) return json({ ok:false,error:{ message:'Unknown event type.' } },400);
   if (!visitorId || !sessionId || !route) return json({ ok:false,error:{ message:'Invalid analytics event.' } },400);
@@ -224,6 +243,7 @@ async function handleInteractionEvent(request, env) {
     let accessType = 'open_house';
     let subscriptionPlan = null;
     let subscriptionStatus = null;
+    let username = null;
 
     if (auth?.user?.id) {
       const identity = await db.query(
@@ -276,10 +296,34 @@ async function handleInteractionEvent(request, env) {
 
     await db.query(
       `INSERT INTO public.interaction_events
-        (user_id,visitor_id,session_id,actor_type,access_type,subscription_plan,subscription_status,event_type,route,feature,control_type,control_key,destination,language,traffic_source)
-       VALUES ($1::uuid,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
-      [userId,visitorId,sessionId,actorType,accessType,subscriptionPlan,subscriptionStatus,eventType,route,feature,controlType,storedControlKey,destination,language,trafficSource],
+        (user_id,visitor_id,session_id,actor_type,access_type,subscription_plan,subscription_status,event_type,route,feature,control_type,control_key,destination,language,traffic_source,username)
+       VALUES ($1::uuid,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`,
+      [userId,visitorId,sessionId,actorType,accessType,subscriptionPlan,subscriptionStatus,eventType,route,feature,controlType,storedControlKey,destination,language,trafficSource,username],
     );
+
+    // Visitor→member stitch (owner rule, 2026-10-10: "return users should
+    // switch from their visitor number to the Username"): whenever a
+    // verified sign-in is on record for this browser, link its visitor id
+    // to the account — the same upsert registration performs in
+    // launch-auth.ts, with the same last-sign-in-wins conflict rule. The
+    // Visitor Registry resolves identity at read time from this link or
+    // from signed-in activity, so the member's activity under this same
+    // visitor id — earlier and future — shows under their @username.
+    // Nothing is written for guests or unverified claims, and the update
+    // is skipped when the link already points at this member, so steady
+    // activity does not churn the row.
+    if (userId) {
+      await db.query(
+        `INSERT INTO public.visitor_identity_links(visitor_id,user_id,link_source,linked_at,updated_at)
+         VALUES($1,$2::uuid,'signed_in_activity',now(),now())
+         ON CONFLICT(visitor_id) DO UPDATE SET
+           user_id=EXCLUDED.user_id,
+           link_source=EXCLUDED.link_source,
+           updated_at=now()
+         WHERE public.visitor_identity_links.user_id IS DISTINCT FROM EXCLUDED.user_id`,
+        [visitorId, userId],
+      );
+    }
 
     return json({ ok:true });
   });
