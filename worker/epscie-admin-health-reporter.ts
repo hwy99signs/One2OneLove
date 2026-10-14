@@ -70,7 +70,10 @@ export default {
           sender_id:'o2ol-independent-admin-worker',deployment_id:env.O2OL_DEPLOYMENT_ID,
           observed_at:when,metrics});
       }
-    })().catch(error=>console.error('Independent O2OL admin delivery failed:',error instanceof Error?error.message:'unknown'));
+    })().catch(error=>{
+      const message=error instanceof Error ? error.message : 'unknown';
+      console.error('Independent O2OL admin delivery failed:',message);
+    }));
   },
   async fetch(){return new Response('Not found',{status:404})}
 };
