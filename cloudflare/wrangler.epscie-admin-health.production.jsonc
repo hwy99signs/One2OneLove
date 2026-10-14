@@ -3,9 +3,7 @@
   "name": "o2ol-admin-health-production",
   "main": "../worker/epscie-admin-health-reporter.ts",
   "compatibility_date": "2026-09-11",
-  "compatibility_flags": [
-    "nodejs_compat"
-  ],
+  "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
   "vars": {
     "O2OL_MONITOR_ENV": "production",
@@ -13,15 +11,13 @@
     "O2OL_DEPLOYMENT_ID": "o2ol-release-9b9597d",
     "O2OL_EPSCIE_ADMIN_KEY_ID": "o2ol-admin-health-20261013-v1"
   },
-  "hyperdrive": [
-    {
-      "binding": "HYPERDRIVE",
-      "id": "ef44564dbfca4e1bb13176ee568aaddf"
-    }
+  "services": [
+    {"binding":"EPSCIE_SERVICE","service":"epscie-core"}
   ],
-  "triggers": {
-    "crons": [
-      "*/5 * * * *"
-    ]
+  "hyperdrive": [{"binding": "HYPERDRIVE","id": "ef44564dbfca4e1bb13176ee568aaddf"}],
+  "triggers": {"crons": ["*/5 * * * *"]},
+  "observability": {
+    "enabled": true,
+    "logs": {"enabled": true, "invocation_logs": true}
   }
 }
