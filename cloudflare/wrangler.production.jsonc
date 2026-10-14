@@ -7,14 +7,8 @@
   "workers_dev": true,
   "preview_urls": true,
   "routes": [
-    {
-      "pattern": "one2onelove.com/*",
-      "zone_name": "one2onelove.com"
-    },
-    {
-      "pattern": "www.one2onelove.com/*",
-      "zone_name": "one2onelove.com"
-    }
+    {"pattern": "one2onelove.com/*","zone_name": "one2onelove.com"},
+    {"pattern": "www.one2onelove.com/*","zone_name": "one2onelove.com"}
   ],
   "assets": {
     "directory": "../dist",
@@ -34,19 +28,10 @@
     "O2OL_EPSCIE_SITE_ENABLED": "true",
     "O2OL_EPSCIE_SITE_KEY_ID": "o2ol-site-health-20261013-v1"
   },
-  "hyperdrive": [
-    {
-      "binding": "HYPERDRIVE",
-      "id": "ef44564dbfca4e1bb13176ee568aaddf"
-    }
+  "services": [
+    {"binding":"EPSCIE_SERVICE","service":"epscie-core"}
   ],
-  "triggers": {
-    "crons": ["* * * * *"]
-  },
-  "r2_buckets": [
-    {
-      "binding": "MEDIA",
-      "bucket_name": "one2onelove-media"
-    }
-  ]
+  "hyperdrive": [{"binding": "HYPERDRIVE","id": "ef44564dbfca4e1bb13176ee568aaddf"}],
+  "triggers": {"crons": ["* * * * *"]},
+  "r2_buckets": [{"binding": "MEDIA","bucket_name": "one2onelove-media"}]
 }
