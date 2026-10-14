@@ -21,13 +21,18 @@ async function databaseHealthy(env){
  try{const r=await db.query("SELECT to_regclass('public.users') IS NOT NULL AS ready");return r.rows[0]?.ready===true}
  finally{await db.end()}
 }
+async function postToEpscie(env,url,headers,payload){
+ const request=new Request(url,{method:'POST',headers,body:JSON.stringify(payload)});
+ return env.EPSCIE_SERVICE?.fetch ? env.EPSCIE_SERVICE.fetch(request) : fetch(request,{signal:AbortSignal.timeout(10000)});
+}
 export async function sendProductionSiteHealth(env){
  // This guard intentionally rejects preview/staging deployments.
  if(env.O2OL_EPSCIE_SITE_ENABLED!=='true'||env.O2OL_DEPLOYMENT_ENV!=='production')return;
  const keyId=env.O2OL_EPSCIE_SITE_KEY_ID,secret=env.O2OL_EPSCIE_SITE_SECRET;
  const accessId=env.O2OL_EPSCIE_ACCESS_CLIENT_ID,accessSecret=env.O2OL_EPSCIE_ACCESS_CLIENT_SECRET;
  const deployment=env.O2OL_DEPLOYMENT_ID;
- if(!keyId||!secret||!accessId||!accessSecret||!deployment)throw new Error('O2OL production health configuration incomplete');
+ const serviceBound=Boolean(env.EPSCIE_SERVICE?.fetch);
+ if(!keyId||!secret||!deployment||(!serviceBound&&(!accessId||!accessSecret)))throw new Error('O2OL production health configuration incomplete');
  const [assets,db]=await Promise.all([timed('production-assets',()=>assetHealthy(env)),timed('production-db',()=>databaseHealthy(env))]);
  const checks={site_assets:assets.status,site_database:db.status};
  const status=Object.values(checks).includes('critical')?'critical':'healthy';
@@ -37,12 +42,16 @@ export async function sendProductionSiteHealth(env){
     version:deployment,checks,response_ms:Math.max(assets.ms,db.ms),
     observed_at:new Date().toISOString()
  }};
- const r=await fetch(ENDPOINT,{method:'POST',headers:{
+ const headers={
   'content-type':'application/json',
   'x-epscie-app-key':'one2onelove',
-  'x-epscie-key-id':keyId,'x-epscie-secret':secret,
-  'CF-Access-Client-Id':accessId,'CF-Access-Client-Secret':accessSecret
- },body:JSON.stringify(payload),signal:AbortSignal.timeout(10000)});
+  'x-epscie-key-id':keyId,'x-epscie-secret':secret
+ };
+ if(accessId&&accessSecret){
+  headers['CF-Access-Client-Id']=accessId;
+  headers['CF-Access-Client-Secret']=accessSecret;
+ }
+ const r=await postToEpscie(env,ENDPOINT,headers,payload);
  if(r.status!==202)throw new Error('Production site health reporting rejected: '+r.status);
 }
 export async function handlePrivateAdminHealth(request,env){
