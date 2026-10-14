@@ -1,5 +1,5 @@
-// O2OL independent administrator-backend reporter; preview-disabled, server-side only.
-// @ts-nocheck
+// O2OL independent administrator-backend reporter; production-only, server-side.
+ // @ts-nocheck
 import { Client } from 'pg';
 
 const HEALTH='https://epscie-core.hwy99signs.workers.dev/v1/health/admin';
@@ -10,8 +10,6 @@ async function captureAdminSnapshot(env){
   const client=new Client({connectionString:env.HYPERDRIVE.connectionString,connectionTimeoutMillis:4000});
   await client.connect();
   try{
-    // Uses the same count definitions as the real O2OL admin overview.
-    // No email, phone, ID, messages, profiles or other member rows are exported.
     const r=await client.query(`
       SELECT count(*)::int AS total,
         count(*) FILTER (WHERE p.id IS NOT NULL
@@ -37,22 +35,29 @@ async function captureAdminSnapshot(env){
   }finally{await client.end()}
 }
 async function postReport(env,path,payload){
-  const r=await fetch(path,{method:'POST',headers:{
+  const headers={
     'content-type':'application/json','x-epscie-app-key':'one2onelove',
     'x-epscie-key-id':env.O2OL_EPSCIE_ADMIN_KEY_ID,
-    'x-epscie-secret':env.O2OL_EPSCIE_ADMIN_SECRET,
-    'CF-Access-Client-Id':env.O2OL_EPSCIE_ACCESS_CLIENT_ID,
-    'CF-Access-Client-Secret':env.O2OL_EPSCIE_ACCESS_CLIENT_SECRET
-  },body:JSON.stringify(payload),signal:AbortSignal.timeout(10000)});
+    'x-epscie-secret':env.O2OL_EPSCIE_ADMIN_SECRET
+  };
+  if(env.O2OL_EPSCIE_ACCESS_CLIENT_ID&&env.O2OL_EPSCIE_ACCESS_CLIENT_SECRET){
+    headers['CF-Access-Client-Id']=env.O2OL_EPSCIE_ACCESS_CLIENT_ID;
+    headers['CF-Access-Client-Secret']=env.O2OL_EPSCIE_ACCESS_CLIENT_SECRET;
+  }
+  const request=new Request(path,{method:'POST',headers,body:JSON.stringify(payload)});
+  const r=env.EPSCIE_SERVICE?.fetch
+    ? await env.EPSCIE_SERVICE.fetch(request)
+    : await fetch(request,{signal:AbortSignal.timeout(10000)});
   if(r.status!==202)throw new Error('EPSCIE admin report rejected: '+r.status);
 }
 export default {
   async scheduled(_controller,env,ctx){
     if(env.O2OL_EPSCIE_ADMIN_ENABLED!=='true'||env.O2OL_MONITOR_ENV!=='production')return;
     ctx.waitUntil((async()=>{
-      const required=['HYPERDRIVE','O2OL_EPSCIE_ADMIN_KEY_ID','O2OL_EPSCIE_ADMIN_SECRET',
-        'O2OL_EPSCIE_ACCESS_CLIENT_ID','O2OL_EPSCIE_ACCESS_CLIENT_SECRET','O2OL_DEPLOYMENT_ID'];
+      const required=['HYPERDRIVE','O2OL_EPSCIE_ADMIN_KEY_ID','O2OL_EPSCIE_ADMIN_SECRET','O2OL_DEPLOYMENT_ID'];
       if(required.some(k=>!env[k]))throw new Error('Independent O2OL admin reporter configuration missing');
+      if(!env.EPSCIE_SERVICE?.fetch&&(!env.O2OL_EPSCIE_ACCESS_CLIENT_ID||!env.O2OL_EPSCIE_ACCESS_CLIENT_SECRET))
+        throw new Error('Independent O2OL admin delivery path missing');
       const started=performance.now();
       let metrics=null,status='critical';
       try{metrics=await captureAdminSnapshot(env);status='healthy'}catch(error){
