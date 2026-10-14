@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Heart, User, Mail, Calendar as CalendarIcon, MapPin, Edit, Save, X, Sparkles, Gift, TrendingUp, Award, ArrowRight, MessageCircle, Camera, BookOpen, Target, CalendarDays, Palette, Users, Lightbulb } from "lucide-react";
+import { AtSign, Heart, User, Mail, Calendar as CalendarIcon, MapPin, Edit, Save, X, Sparkles, Gift, TrendingUp, Award, ArrowRight, MessageCircle, Camera, BookOpen, Target, CalendarDays, Palette, Users, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,8 +14,9 @@ import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { uploadProfilePicture, updateUserProfile } from "@/lib/profileService";
-import SubscriptionCard from "@/components/profile/SubscriptionCard";
 import { getTokenWallet } from "@/lib/tokenService";
+import FoundingPerkNotice from "@/components/profile/FoundingPerkNotice";
+import CreditBillingCard from "@/components/profile/CreditBillingCard";
 import goalsService from "@/lib/goalsService";
 
 const translations = {
@@ -25,6 +26,7 @@ const translations = {
       memberSince: "Member since", 
       personalInfo: "Personal Information", 
       accountName: "Account Name",
+      username: "Username",
       enterAccountName: "Enter your name",
       accountNameHelp: "This is the name on your account. Its first name signs your Love Notes.",
       accountNameBlank: "Your name can't be blank — your account needs a first name.",
@@ -152,6 +154,7 @@ const translations = {
       memberSince: "Miembro desde", 
       personalInfo: "Información Personal", 
       accountName: "Nombre de la Cuenta",
+      username: "Nombre de Usuario",
       enterAccountName: "Ingresa tu nombre",
       accountNameHelp: "Este es el nombre de tu cuenta. Su primer nombre firma tus Notas de Amor.",
       accountNameBlank: "Tu nombre no puede estar vacío: tu cuenta necesita un primer nombre.",
@@ -279,6 +282,7 @@ const translations = {
       memberSince: "Membre depuis", 
       personalInfo: "Informations Personnelles", 
       accountName: "Nom du Compte",
+      username: "Nom d'Utilisateur",
       enterAccountName: "Entrez votre nom",
       accountNameHelp: "C'est le nom sur votre compte. Son prénom signe vos Notes d'Amour.",
       accountNameBlank: "Votre nom ne peut pas être vide — votre compte a besoin d'un prénom.",
@@ -406,6 +410,7 @@ const translations = {
       memberSince: "Membro dal", 
       personalInfo: "Informazioni Personali", 
       accountName: "Nome dell'Account",
+      username: "Nome Utente",
       enterAccountName: "Inserisci il tuo nome",
       accountNameHelp: "Questo è il nome sul tuo account. Il suo primo nome firma le tue Note d'Amore.",
       accountNameBlank: "Il tuo nome non può essere vuoto: il tuo account ha bisogno di un primo nome.",
@@ -533,6 +538,7 @@ const translations = {
       memberSince: "Mitglied seit", 
       personalInfo: "Persönliche Informationen", 
       accountName: "Kontoname",
+      username: "Benutzername",
       enterAccountName: "Geben Sie Ihren Namen ein",
       accountNameHelp: "Dies ist der Name auf Ihrem Konto. Sein Vorname unterschreibt Ihre Liebesbotschaften.",
       accountNameBlank: "Ihr Name darf nicht leer sein — Ihr Konto braucht einen Vornamen.",
@@ -660,6 +666,7 @@ const translations = {
       memberSince: "Lid sinds", 
       personalInfo: "Persoonlijke Informatie", 
       accountName: "Accountnaam",
+      username: "Gebruikersnaam",
       enterAccountName: "Voer uw naam in",
       accountNameHelp: "Dit is de naam op uw account. De voornaam ondertekent uw Liefdebriefjes.",
       accountNameBlank: "Uw naam mag niet leeg zijn — uw account heeft een voornaam nodig.",
@@ -774,6 +781,7 @@ const translations = {
       memberSince: "Membro desde", 
       personalInfo: "Informações Pessoais", 
       accountName: "Nome da Conta",
+      username: "Nome de Usuário",
       enterAccountName: "Digite seu nome",
       accountNameHelp: "Este é o nome da sua conta. O primeiro nome assina suas Notas de Amor.",
       accountNameBlank: "Seu nome não pode ficar em branco — sua conta precisa de um primeiro nome.",
@@ -1413,7 +1421,12 @@ export default function Profile() {
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-2">
             {user?.name || user?.email?.split('@')[0] || t.profile.userFallback} 💕
           </h1>
+          {user?.username && (
+            <p className="text-lg font-semibold text-purple-600 mb-1">@{user.username}</p>
+          )}
           <p className="text-gray-600 mb-6">{t.profile.memberSince} {joinDate}</p>
+
+          <FoundingPerkNotice currentLanguage={currentLanguage} />
         </motion.div>
 
         {/* My Wallet — balances live at the top of the account now */}
@@ -1733,6 +1746,15 @@ export default function Profile() {
                     )}
                   </div>
                 </div>
+                {user?.username && (
+                  <div className="flex items-start gap-3">
+                    <AtSign className="w-5 h-5 text-pink-500 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-500">{t.profile.username}</p>
+                      <p className="font-medium text-gray-900">@{user.username}</p>
+                    </div>
+                  </div>
+                )}
                 <div className="flex items-start gap-3">
                   <Mail className="w-5 h-5 text-pink-500 mt-0.5" />
                   <div className="flex-1">
@@ -1882,8 +1904,8 @@ export default function Profile() {
             </Card>
           </motion.div>
 
-          {/* Subscription Info */}
-          <SubscriptionCard user={user} currentLanguage={currentLanguage} />
+          {/* Credit & Billing */}
+          <CreditBillingCard user={user} currentLanguage={currentLanguage} />
         </div>
 
         {/* Recommendations */}
