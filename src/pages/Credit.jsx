@@ -10,6 +10,7 @@ import {
   confirmPaymentMethodSetup,updateAutoReplenish,startCostCalibration,endCostCalibration,getCalibrationHistory,
   isPhoneVerificationError
 } from '@/lib/tokenService';
+import {FEATURE_PRICING} from '@/lib/featurePricing';
 
 const COPY={
  en:{title:'BUY CREDIT',sub:'Credit is plain US dollars for One2OneLove features — a $5.00 balance is five dollars. No points, no conversion. Keep Credit ready so premium features, locked content, games and AI conversations are available when you want them.',badge:'CREDIT · US DOLLARS · $1.00 = $1.00',balance:'Credit Balance',buy:'Add Credit',buyAccess:'Add Credit To Access',packages:'Add Credit',auto:'Auto-Replenish',autoBody:'Optional. When your balance falls to your refill point, we charge your saved card once for the amount you choose — so Credit is available when you choose a paid feature.',enable:'Enable Auto-Replenish',threshold:'Refill when my balance falls to ($)',cap:'Monthly Auto-Replenish cap ($)',consent:'I agree that One2OneLove may charge my saved card automatically each time my balance falls to my refill point, up to my monthly cap. I can turn this off at any time.',consentRequired:'Please tick the consent box to enable Auto-Replenish.',receiptNote:'Stripe emails you a receipt for every reload.',offNote:'Turning it off is one tap — no charges after that, ever, until you turn it back on.',payment:'Payment method',addCard:'Add / Change Card',history:'Recent Activity',noHistory:'No Credit activity yet.',cal:'Cost Calibration',calBody:'Admin-only measurement mode. Start a session, use the selected feature naturally, then end it to see the complete provider-usage totals.',start:'Start Cost Test',end:'End Cost Test',feature:'Feature',notes:'Notes',signed:'Create or sign in to a free verified account before adding Credit.',back:'Back',loading:'Loading wallet…',saved:'Auto-Replenish saved.',checkout:'Opening secure checkout…',calStarted:'Cost test started.',calEnded:'Cost test ended.',providerCost:'Provider cost',charsIn:'Characters in',charsOut:'Characters out',providerIn:'Provider input units',providerCached:'Cached input units',providerOut:'Provider output units',contextChars:'Context characters',o2olTokens:'Credit charged (cents)',costPerToken:'Provider cost / cent',packageTest:'Package under test',creditNote:'Credit is service credit for One2OneLove features only — non-transferable, no cash redemption.',pricesTitle:'Current Feature Prices',regionalNote:'Priced by the recipient\u2019s region — from $0.29 (USA & Canada)',gcHistory:'O2OL Bonus Game Credits Activity',noGcHistory:'No Bonus Game Credits activity yet.'},
@@ -166,7 +167,54 @@ export default function Credit(){
   finally{setBusy('');}
  };
 
- if(!isAuthenticated)return <main className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-rose-50 px-4 py-12"><div className="mx-auto max-w-xl rounded-[28px] border bg-white p-8 text-center shadow-xl"><Coins className="mx-auto h-12 w-12 text-violet-600"/><h1 className="mt-4 text-3xl font-black">{t.title}</h1><p className="mt-3 text-slate-600">{t.signed}</p><div className="mt-6 flex flex-wrap justify-center gap-3"><Link to={`/SignUp?source=buy-credit&feature=credit&return=${encodeURIComponent(returnTo)}`} className="inline-flex rounded-2xl bg-slate-950 px-6 py-3 font-black text-white">Create FREE Account</Link><Link to={`/SignIn?source=buy-credit&redirect=${encodeURIComponent(returnTo)}`} className="inline-flex rounded-2xl border-2 border-slate-300 bg-white px-6 py-3 font-black text-slate-800">Sign In</Link></div></div></main>;
+ if(!isAuthenticated){
+  // Guest view (owner homepage model, 2026-10-15): guests may SEE this page —
+  // what Credit is, the Credit packs, and the current feature prices — but
+  // every buy action is locked: GuestHomepageGate intercepts the tap and
+  // opens the sign-up panel. No wallet is loaded and no member balance or
+  // activity is ever shown here; pack data mirrors the public package
+  // table and prices mirror the public Feature Pricing list.
+  const guestPackages=[
+   {code:'credit_5',label:'Add $5 Credit',tokens:500},
+   {code:'credit_10',label:'Add $10 Credit',tokens:1000},
+   {code:'credit_15',label:'Add $15 Credit',tokens:1500},
+   {code:'credit_20',label:'Add $20 Credit',tokens:2000},
+  ];
+  const guestPrices=FEATURE_PRICING.filter(row=>row.cents===null||row.cents>0);
+  return <main className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-rose-50 px-4 py-8">
+  <div className="mx-auto max-w-6xl">
+   <div className="rounded-[30px] bg-gradient-to-br from-slate-950 via-violet-950 to-fuchsia-950 p-7 text-white shadow-2xl sm:p-10">
+    <div className="flex flex-wrap items-center justify-between gap-6">
+     <div><div className="text-xs font-black uppercase tracking-[.2em] text-fuchsia-200">One2OneLove</div><h1 className="mt-2 text-4xl font-black sm:text-5xl">{t.title}</h1><p className="mt-3 max-w-2xl text-white/70">{t.sub}</p><div className="mt-4 inline-flex rounded-full border border-amber-300/40 bg-amber-300/10 px-3 py-1.5 text-xs font-black text-amber-200">{t.badge}</div></div>
+     <div className="min-w-[230px] max-w-xs rounded-3xl border border-white/15 bg-white/10 p-5 text-center backdrop-blur"><Coins className="mx-auto h-10 w-10 text-amber-200"/><p className="mt-3 text-sm font-semibold leading-6 text-white/85">{t.signed}</p><div className="mt-4 flex flex-col gap-2"><Link to={`/SignUp?source=buy-credit&feature=credit&return=${encodeURIComponent(returnTo)}`} className="inline-flex justify-center rounded-2xl bg-white px-5 py-3 font-black text-slate-950">Create FREE Account</Link><Link to={`/SignIn?source=buy-credit&redirect=${encodeURIComponent(returnTo)}`} className="inline-flex justify-center rounded-2xl border border-white/40 px-5 py-3 font-black text-white">Sign In</Link></div></div>
+    </div>
+   </div>
+   <p className="mt-5 max-w-3xl text-sm font-semibold text-slate-600">O2OL Bonus Game Credits are applied before paid Credit when you play a One2OneLove game. They cannot be purchased, transferred, withdrawn, or used for non-game features.</p>
+
+   <section className="mt-7">
+    <h2 className="text-2xl font-black text-slate-950">{t.packages}</h2>
+    <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+     {guestPackages.map(pkg=><div key={pkg.code} className={'flex min-h-[210px] flex-col rounded-[22px] border bg-white p-4 shadow-sm '+(pkg.code==='credit_10'?'border-violet-300 ring-2 ring-violet-100':'border-slate-200')}>
+      <div className="text-xs font-black uppercase tracking-wide text-violet-600">{pkg.label}</div>
+      <div className="mt-2 text-3xl font-black">{money(pkg.tokens)}</div>
+      <div className="text-sm font-bold text-slate-500">Credit</div>
+      <button type="button" className="mt-auto w-full rounded-xl bg-slate-950 px-3 py-2.5 text-sm font-black text-white">{t.buy}</button>
+     </div>)}
+     <div className="flex min-h-[210px] flex-col rounded-[22px] border border-fuchsia-300 bg-white p-4 shadow-sm ring-2 ring-fuchsia-50">
+      <div className="text-xs font-black uppercase tracking-wide text-fuchsia-700">{customText.title}</div>
+      <p className="mt-3 text-sm leading-6 text-slate-600">{customText.hint}</p>
+      <button type="button" className="mt-auto w-full rounded-xl bg-fuchsia-700 px-3 py-2.5 text-sm font-black text-white">{customText.button}</button>
+     </div>
+    </div>
+    <p className="mt-3 text-xs text-slate-500">{t.creditNote}</p>
+   </section>
+
+   <section className="mt-7 rounded-[26px] border border-violet-200 bg-white p-6 shadow-sm">
+    <h2 className="text-xl font-black">{t.pricesTitle}</h2><div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{guestPrices.map(row=><div key={row.code} className="rounded-xl bg-violet-50 px-4 py-3"><div className="font-bold">{row.feature}</div><div className="mt-1 text-sm"><strong>{row.priceLabel}</strong></div></div>)}</div>
+   </section>
+  </div>
+ </main>;
+ }
  if(loading)return <div className="min-h-[60vh] grid place-items-center font-bold text-slate-500">{t.loading}</div>;
  if(!state){
   // The wallet did not load. Never dress up empty defaults as a real wallet
