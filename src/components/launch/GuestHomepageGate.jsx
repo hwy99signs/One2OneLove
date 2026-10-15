@@ -14,6 +14,12 @@ import { PUBLIC_INFORMATION_ROUTES, VIEW_ONLY_ROUTES } from '@/components/launch
 // and links leaving the site stay live. Members never see this component.
 const EXTRA_OPEN_PATHS = new Set(['/featurepricing']);
 
+// The homepage is the one page a guest may always SEE (owner, 2026-10-11;
+// reaffirmed 2026-10-15): links that simply take the guest home — the header
+// logo, the Home nav item — are navigation to the shop window, not locked
+// actions, and must never open the sign-up panel.
+const HOME_PATHS = new Set(['/', '/home']);
+
 function anchorPath(anchor) {
   const href = anchor.getAttribute('href') || '';
   if (!href) return null;
@@ -53,7 +59,7 @@ export default function GuestHomepageGate({ pathname }) {
       const marked = event.target.closest('[data-guest-path]');
       if (marked) {
         const declared = String(marked.getAttribute('data-guest-path') || '').toLowerCase().replace(/\/$/, '') || '/';
-        if (PUBLIC_INFORMATION_ROUTES.has(declared) || EXTRA_OPEN_PATHS.has(declared)) return;
+        if (PUBLIC_INFORMATION_ROUTES.has(declared) || EXTRA_OPEN_PATHS.has(declared) || HOME_PATHS.has(declared)) return;
       }
       const interactive = event.target.closest('a,button,[role="button"],input,select,textarea,summary,video,[data-analytics-destination],[class*="cursor-pointer"]');
       if (!interactive) return;
@@ -63,7 +69,7 @@ export default function GuestHomepageGate({ pathname }) {
         if (path === 'external') return;
         if (path) {
           const normalized = path.toLowerCase().replace(/\/$/, '') || '/';
-          if (PUBLIC_INFORMATION_ROUTES.has(normalized) || EXTRA_OPEN_PATHS.has(normalized)) return;
+          if (PUBLIC_INFORMATION_ROUTES.has(normalized) || EXTRA_OPEN_PATHS.has(normalized) || HOME_PATHS.has(normalized)) return;
         }
       }
       event.preventDefault();
