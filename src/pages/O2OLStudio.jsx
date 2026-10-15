@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { BrainCircuit, CreditCard, Film, Loader2, MessageCircle, PlayCircle, Sparkles, LockKeyhole, UserPlus } from 'lucide-react';
+import { BrainCircuit, CreditCard, Film, Loader2, MessageCircle, Play, PlayCircle, Sparkles, LockKeyhole, UserPlus } from 'lucide-react';
 import { useLanguage } from './Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { getTokenWallet, isTokensRequiredError, tokenRequiredDetails, unlockTokenContent } from '@/lib/tokenService';
@@ -91,6 +91,7 @@ export default function O2OLStudio(){
   const requestedEpisodeId=searchParams.get('episode');
   const t=COPY[currentLanguage]||COPY.en;
   const [videoUnavailable,setVideoUnavailable]=useState(false);
+  const [showPlayOverlay,setShowPlayOverlay]=useState(true);
   const [episode,setEpisode]=useState(null);
   const [episodes,setEpisodes]=useState([]);
   const videoRef=useRef(null);
@@ -100,6 +101,8 @@ export default function O2OLStudio(){
   const [unlockError,setUnlockError]=useState('');
   const [showUnlockConfirm,setShowUnlockConfirm]=useState(false);
   const [creditBalance,setCreditBalance]=useState(null);
+
+  useEffect(()=>{setShowPlayOverlay(true);},[episode?.id]);
 
   useEffect(()=>{
     let active=true;
@@ -223,6 +226,8 @@ export default function O2OLStudio(){
                 preload="auto"
                 poster={episode.posterPath||undefined}
                 src={episode.mediaPath?episode.mediaPath+'#t=0.1':undefined}
+                onPlay={()=>setShowPlayOverlay(false)}
+                onEnded={()=>setShowPlayOverlay(true)}
                 onError={()=>setVideoUnavailable(true)}
               >
                 Your browser does not support HTML5 video.
@@ -270,9 +275,25 @@ export default function O2OLStudio(){
                 </div>
               </div>
             )}
+            {episode?.canWatch && !videoUnavailable && showPlayOverlay && (
+              <button
+                type="button"
+                data-guest-allow
+                onClick={()=>{setShowPlayOverlay(false);playFeatured();}}
+                aria-label={t.watchFree}
+                className="absolute inset-0 z-10 flex items-center justify-center bg-black/25"
+              >
+                <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/90 shadow-xl">
+                  <Play className="ml-1 h-7 w-7 fill-slate-900 text-slate-900" aria-hidden="true"/>
+                </span>
+              </button>
+            )}
+          </div>
+
+          <div className="mx-auto mt-4 max-w-5xl text-center">
             <Link
               to={`/Chat?room=${encodeURIComponent(chatRoom)}&from=studio`}
-              className="absolute right-3 top-3 z-10 inline-flex items-center gap-2 rounded-full border border-white/30 bg-slate-950/80 px-4 py-2.5 text-xs font-black text-white shadow-xl backdrop-blur-md transition hover:bg-fuchsia-600/90 sm:right-4 sm:top-4 sm:px-5 sm:text-sm"
+              className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-5 py-2.5 text-sm font-black text-white transition hover:bg-fuchsia-600/80"
             >
               <MessageCircle className="h-4 w-4" aria-hidden="true"/>{t.chat}
             </Link>
