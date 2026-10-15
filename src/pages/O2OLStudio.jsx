@@ -72,6 +72,18 @@ const EPISODE_TITLES={
   de:{'season-1-episode-1':'Wer sollte sich zuerst entschuldigen?','season-1-episode-2':'Wer bezahlt beim ersten Date?'}
 };
 
+// Static fallback used only when /api/studio/episodes is unreachable or
+// returns no episodes (e.g. the API-disabled prelaunch preview, or a transient
+// API outage): the episode switcher, the free Episode 1 Watch button and the
+// Episode 2 unlock panel must still render for guests. Episode 1 is free for
+// everyone and its media file is served directly; Episode 2 stays locked at
+// the $1.00 Credit price and its mediaPath stays withheld, exactly as the API
+// returns it for a locked episode. Live API data always wins when it loads.
+const FALLBACK_EPISODES=[
+  {id:'season-1-episode-1',season:1,episode:1,title:'Who Should Apologize First?',canWatch:true,unlockPriceCents:0,mediaPath:'/studio-media/season-1-episode-1.mp4',publicAvailable:true,memberAvailable:true},
+  {id:'season-1-episode-2',season:1,episode:2,title:'Who Pays for the First Date?',canWatch:false,unlockPriceCents:100,mediaPath:null,publicAvailable:true,memberAvailable:true},
+];
+
 export default function O2OLStudio(){
   const {currentLanguage}=useLanguage();
   const {isAuthenticated,user}=useAuth();
@@ -102,12 +114,13 @@ export default function O2OLStudio(){
       .then(async res=>{const data=await res.json();if(!res.ok)throw new Error(data?.error?.message||'Unable to load Studio access.');return data;})
       .then(data=>{
         if(!active)return;
-        const episodes=Array.isArray(data?.episodes)?data.episodes:[];
+        let episodes=Array.isArray(data?.episodes)?data.episodes:[];
+        if(!episodes.length)episodes=FALLBACK_EPISODES;
         const requested=requestedEpisodeId?episodes.find(item=>item?.id===requestedEpisodeId):null;
         setEpisodes(episodes);
-        setEpisode(requested||episodes[0]||null);
+        setEpisode(requested||episodes.find(item=>item?.canWatch&&!item?.unlockPriceCents)||episodes[0]||null);
       })
-      .catch(()=>{if(active)setEpisode(null);})
+      .catch(()=>{if(!active)return;setEpisodes(FALLBACK_EPISODES);setEpisode(requestedEpisodeId?FALLBACK_EPISODES.find(item=>item?.id===requestedEpisodeId)||FALLBACK_EPISODES[0]:FALLBACK_EPISODES[0]);})
       .finally(()=>{if(active)setLoading(false);});
     return()=>{active=false};
   },[isAuthenticated,requestedEpisodeId,refreshKey]);
