@@ -87,6 +87,32 @@ export default function GuestHomepageGate({ pathname }) {
     return () => document.removeEventListener('keydown', onKey);
   }, [open ]);
 
+  // Owner rule (2026-10-15): if the guest takes no action on the sign-up
+  // card for 5 seconds, the card closes itself and the homepage remains
+  // unchanged and visible underneath. Any touch, click, or keypress counts
+  // as action and restarts the 5-second clock, so a guest who is reading
+  // or filling in the form is never cut off mid-action. Clicking another
+  // tab afterwards simply opens the card again.
+  useEffect(() => {
+    if (!open) return undefined;
+    let timer = window.setTimeout(() => setOpen(false), 5000);
+    const reset = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => setOpen(false), 5000);
+    };
+    document.addEventListener('pointerdown', reset, true);
+    document.addEventListener('touchstart', reset, true);
+    document.addEventListener('keydown', reset, true);
+    document.addEventListener('input', reset, true);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener('pointerdown', reset, true);
+      document.removeEventListener('touchstart', reset, true);
+      document.removeEventListener('keydown', reset, true);
+      document.removeEventListener('input', reset, true);
+    };
+  }, [open ]);
+
   if (!active || !open) return null;
 
   return (

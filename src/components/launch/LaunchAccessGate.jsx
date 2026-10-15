@@ -27,7 +27,12 @@ export const PUBLIC_INFORMATION_ROUTES = new Set([
 // watch free Studio Episode 1 there and read what Credit is and costs;
 // elements that must work for guests carry data-guest-allow, and every
 // buy/unlock/member action still opens the sign-up panel.
-export const VIEW_ONLY_ROUTES = new Set(['/', '/home', '/o2olstudio', '/o2olstudio/episodes', '/credit', '/studio']);
+// Homepage only (owner, 2026-10-15): a guest may SEE the homepage and
+// nothing else — every tab and feature, the Studio and Credit pages
+// included, asks for sign-up first. The free Studio Episode 1 is watched
+// after the free account is created. (This reverses the brief guest-view
+// experiment of the same morning at the owner's direction.)
+export const VIEW_ONLY_ROUTES = new Set(['/', '/home']);
 
 const KNOWN_APP_ROUTES = new Set([
   '/',
