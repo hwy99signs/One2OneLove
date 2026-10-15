@@ -76,7 +76,7 @@ export default function O2OLStudioEpisodes(){
 
   return <main className="min-h-screen bg-slate-950 px-4 py-8 text-white sm:px-6 sm:py-12">
     <section className="mx-auto max-w-6xl">
-      <Link to="/O2OLStudio" className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-black hover:bg-white/15"><ArrowLeft className="h-4 w-4"/>{t.back}</Link>
+      <Link data-guest-allow to="/O2OLStudio" className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-black hover:bg-white/15"><ArrowLeft className="h-4 w-4"/>{t.back}</Link>
       <div className="mt-6 rounded-[2rem] border border-fuchsia-300/25 bg-[linear-gradient(90deg,#5d2ea8_0%,#9b10b2_18%,#a812c5_58%,#b01cc9_100%)] p-6 shadow-2xl sm:p-8">
         <div className="text-center"><Film className="mx-auto h-10 w-10 text-fuchsia-200"/><h1 className="mt-3 text-4xl font-black sm:text-5xl">{t.title}</h1><p className="mx-auto mt-3 max-w-2xl text-white/70">{t.sub}</p></div>
         {loading?<div className="py-16 text-center text-white/70">{t.loading}</div>:
@@ -88,10 +88,10 @@ export default function O2OLStudioEpisodes(){
             return <article key={ep.id} className="relative overflow-hidden rounded-[1.5rem] border border-white/15 bg-white/[0.06] shadow-xl">
               {canOpen && !ep?.unlockPriceCents && <span className="absolute right-3 top-3 z-10 rounded-full bg-yellow-300 px-2 py-0.5 text-[10px] font-black tracking-wide text-yellow-950 shadow">FREE</span>}
               <div className="aspect-video bg-black">
-                {playable?<video className="h-full w-full bg-black" controls playsInline preload="metadata" poster={ep.posterPath||undefined} src={ep.mediaPath+'#t=0.1'} onError={()=>setFailedMedia(v=>({...v,[ep.id]:true}))}>Your browser does not support HTML5 video.</video>:
+                {playable?<video data-guest-allow className="h-full w-full bg-black" controls playsInline preload="metadata" poster={ep.posterPath||undefined} src={ep.mediaPath+'#t=0.1'} onError={()=>setFailedMedia(v=>({...v,[ep.id]:true}))}>Your browser does not support HTML5 video.</video>:
                 <div className="flex h-full items-center justify-center bg-[radial-gradient(circle_at_center,rgba(124,58,237,0.32),transparent_45%),#030712] p-6 text-center"><div><LockKeyhole className="mx-auto h-11 w-11 text-amber-300"/><p className="mt-3 font-black">{t.locked}</p>{ep?.unlockPriceCents?<p className="mt-1 text-xs font-bold text-amber-200">{t.unlockPrice}</p>:(ep?.publicAvailableAt&&<p className="mt-1 text-xs text-white/55">{t.opens}: {new Date(ep.publicAvailableAt).toLocaleDateString()}</p>)}</div></div>}
               </div>
-              <div className="p-5"><p className="text-xs font-black uppercase tracking-[.16em] text-cyan-200">{t.season} {ep.season} • {t.episode} {ep.episode}</p><h2 className="mt-2 text-2xl font-black">{EPISODE_TITLES[currentLanguage]?.[ep.id]||EPISODE_TITLES.en[ep.id]||ep.title}</h2>{canOpen&&<Link to={`/O2OLStudio?episode=${encodeURIComponent(ep.id)}`} className="mt-4 inline-flex items-center gap-2 rounded-full border border-fuchsia-300/30 bg-fuchsia-500/15 px-4 py-2 text-sm font-black text-fuchsia-100 hover:bg-fuchsia-500/25"><PlayCircle className="h-5 w-5"/>{t.watch} {ep.episode}</Link>}
+              <div className="p-5"><p className="text-xs font-black uppercase tracking-[.16em] text-cyan-200">{t.season} {ep.season} • {t.episode} {ep.episode}</p><h2 className="mt-2 text-2xl font-black">{EPISODE_TITLES[currentLanguage]?.[ep.id]||EPISODE_TITLES.en[ep.id]||ep.title}</h2>{canOpen&&<Link data-guest-allow to={`/O2OLStudio?episode=${encodeURIComponent(ep.id)}`} className="mt-4 inline-flex items-center gap-2 rounded-full border border-fuchsia-300/30 bg-fuchsia-500/15 px-4 py-2 text-sm font-black text-fuchsia-100 hover:bg-fuchsia-500/25"><PlayCircle className="h-5 w-5"/>{t.watch} {ep.episode}</Link>}
               {!canOpen&&ep?.unlockPriceCents&&(isAuthenticated?(
                 <span className="mt-4 block">
                   <button type="button" disabled={unlockingId===ep.id} onClick={()=>setConfirmEpisode(ep)} className="inline-flex items-center gap-2 rounded-full bg-fuchsia-600 px-4 py-2 text-sm font-black text-white transition hover:brightness-110 disabled:opacity-60">
@@ -100,7 +100,7 @@ export default function O2OLStudioEpisodes(){
                   {unlockErrors[ep.id]&&<span className="mt-2 block text-xs font-bold text-amber-200">{unlockErrors[ep.id]} <Link to="/Credit" className="underline">{t.addCredit}</Link></span>}
                 </span>
               ):(
-                <Link to={`/O2OLStudio?episode=${encodeURIComponent(ep.id)}`} className="mt-4 inline-flex items-center gap-2 rounded-full bg-fuchsia-600 px-4 py-2 text-sm font-black text-white transition hover:brightness-110"><CreditCard className="h-4 w-4"/>{t.unlockBtn}</Link>
+                <Link data-guest-allow to={`/O2OLStudio?episode=${encodeURIComponent(ep.id)}`} className="mt-4 inline-flex items-center gap-2 rounded-full bg-fuchsia-600 px-4 py-2 text-sm font-black text-white transition hover:brightness-110"><CreditCard className="h-4 w-4"/>{t.unlockBtn}</Link>
               ))}</div>
             </article>;
           })}

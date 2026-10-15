@@ -132,6 +132,7 @@ function PagesContent() {
           <Route path="/Profile" element={<Profile />} />
           <Route path="/Invite" element={<Invite />} />
           <Route path="/PodcastsSupport" element={<PodcastsSupport />} />
+          <Route path="/Podcasts" element={<Navigate to="/PodcastsSupport" replace />} />
           <Route path="/ArticlesSupport" element={<ArticlesSupport />} />
           <Route path="/RelationshipQuizzes" element={<RelationshipQuizzes />} />
           <Route path="/AnniversaryTracker" element={<AnniversaryTracker />} />
@@ -157,7 +158,9 @@ function PagesContent() {
           <Route path="/HelpCenter" element={<HelpCenter />} />
           <Route path="/ContactUs" element={<ContactUs />} />
           <Route path="/PrivacyPolicy" element={<PrivacyPolicy />} />
+          <Route path="/Privacy" element={<Navigate to="/PrivacyPolicy" replace />} />
           <Route path="/TermsOfService" element={<TermsOfService />} />
+          <Route path="/Terms" element={<Navigate to="/TermsOfService" replace />} />
           <Route path="/Reviews" element={<Reviews />} />
           <Route path="/LeaveReview" element={<LeaveReview />} />
           <Route path="/Suggestions" element={<Suggestions />} />
@@ -174,6 +177,7 @@ function PagesContent() {
           <Route path="/TherapistSignup" element={<TherapistSignup />} />
           <Route path="/InfluencerSignup" element={<InfluencerSignup />} />
           <Route path="/O2OLStudio" element={<O2OLStudio />} />
+          <Route path="/Studio" element={<Navigate to="/O2OLStudio" replace />} />
           <Route path="/O2OLStudio/Episodes" element={<O2OLStudioEpisodes />} />
           <Route path="/TikTokPost" element={<TikTokPost />} />
           <Route path="/MyMatchIQ" element={<MyMatchIQ />} />
