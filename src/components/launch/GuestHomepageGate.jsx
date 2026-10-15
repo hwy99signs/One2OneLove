@@ -12,7 +12,12 @@ import { PUBLIC_INFORMATION_ROUTES, VIEW_ONLY_ROUTES } from '@/components/launch
 // or completes sign-up. Links to the pages a guest may open before joining
 // (sign in / sign up / Terms / Privacy / About / Help / price list, ...)
 // and links leaving the site stay live. Members never see this component.
-const EXTRA_OPEN_PATHS = new Set(['/featurepricing']);
+// Pages a guest may navigate TO from a view-only page in order to learn
+// about the site (owner, 2026-10-15): the Feature Price List and the BUY
+// CREDIT page. Opening them is allowed; using their actions is not — the
+// gate stays active on those pages and turns action taps into the
+// sign-up card.
+const EXTRA_OPEN_PATHS = new Set(['/featurepricing', '/credit']);
 
 // The homepage is the one page a guest may always SEE (owner, 2026-10-11;
 // reaffirmed 2026-10-15): links that simply take the guest home — the header
