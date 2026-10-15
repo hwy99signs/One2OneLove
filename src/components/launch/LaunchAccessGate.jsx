@@ -13,7 +13,7 @@ import QuickAccountGate from '@/components/launch/QuickAccountGate.jsx';
 // isKnown rule below (SPA not-found handling + the certification canary).
 export const PUBLIC_INFORMATION_ROUTES = new Set([
   '/aboutus', '/signin', '/login', '/signup', '/forgotpassword',
-  '/helpcenter', '/contactus', '/privacypolicy', '/termsofservice', '/reviews', '/suggestions',
+  '/helpcenter', '/contactus', '/privacypolicy', '/termsofservice', '/privacy', '/terms', '/reviews', '/suggestions',
   '/invite', '/professionals', '/professionalsignup', '/therapistsignup', '/influencersignup',
   '/adminaccess',
 ]);
@@ -27,7 +27,7 @@ export const PUBLIC_INFORMATION_ROUTES = new Set([
 // watch free Studio Episode 1 there and read what Credit is and costs;
 // elements that must work for guests carry data-guest-allow, and every
 // buy/unlock/member action still opens the sign-up panel.
-export const VIEW_ONLY_ROUTES = new Set(['/', '/home', '/o2olstudio', '/o2olstudio/episodes', '/credit']);
+export const VIEW_ONLY_ROUTES = new Set(['/', '/home', '/o2olstudio', '/o2olstudio/episodes', '/credit', '/studio']);
 
 const KNOWN_APP_ROUTES = new Set([
   '/',
