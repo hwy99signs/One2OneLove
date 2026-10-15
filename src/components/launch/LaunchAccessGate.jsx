@@ -28,11 +28,17 @@ export const PUBLIC_INFORMATION_ROUTES = new Set([
 // elements that must work for guests carry data-guest-allow, and every
 // buy/unlock/member action still opens the sign-up panel.
 // Homepage only (owner, 2026-10-15): a guest may SEE the homepage and
-// nothing else — every tab and feature, the Studio and Credit pages
-// included, asks for sign-up first. The free Studio Episode 1 is watched
-// after the free account is created. (This reverses the brief guest-view
-// experiment of the same morning at the owner's direction.)
-export const VIEW_ONLY_ROUTES = new Set(['/', '/home']);
+// nothing else — every tab and feature, the Studio page included, asks
+// for sign-up first. The free Studio Episode 1 is watched after the free
+// account is created. (This reverses the brief guest-view experiment of
+// the same morning at the owner's direction.)
+// Learn-don't-access exception (owner, 2026-10-15): the BUY CREDIT page
+// may be OPENED by guests so they can learn what Credit is and what it
+// costs; actually buying still asks for sign-up (the guest gate turns
+// every Add Credit tap into the sign-up card). Footer information pages
+// (Help, Contact, Privacy, Terms, Feature Price List, About, Reviews,
+// Suggestions) likewise stay open via PUBLIC_INFORMATION_ROUTES.
+export const VIEW_ONLY_ROUTES = new Set(['/', '/home', '/credit']);
 
 const KNOWN_APP_ROUTES = new Set([
   '/',
