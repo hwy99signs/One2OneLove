@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 
 export default function UnlockPriceDialog({
   open,title,priceCents,priceLabel,terms,description,balanceCents=null,gameCreditCents=null,promotion=null,
-  busy=false,error='',onUnlock,onClose,creditReturn=null
+  busy=false,error='',onUnlock,onClose,creditReturn=null,ctaLabel=null
 }) {
   if(!open) return null;
   const numericPrice=priceCents==null?null:Number(priceCents);
@@ -16,7 +16,7 @@ export default function UnlockPriceDialog({
     window.location.assign('/Credit?return='+encodeURIComponent(returnTo));
   };
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/65 p-4 backdrop-blur-sm" role="presentation" onMouseDown={onClose}>
+    <div data-guest-allow className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/65 p-4 backdrop-blur-sm" role="presentation" onMouseDown={onClose}>
       <div className="relative w-full max-w-md rounded-[1.75rem] border border-white/40 bg-white p-6 text-slate-900 shadow-2xl" role="dialog" aria-modal="true" aria-label={title||'Unlock feature'} onMouseDown={e=>e.stopPropagation()}>
         <button type="button" onClick={onClose} aria-label="Close" className="absolute right-4 top-4 rounded-full p-2 text-slate-500 hover:bg-slate-100"><X className="h-5 w-5"/></button>
         <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-amber-100 text-amber-700"><LockKeyhole className="h-7 w-7"/></div>
@@ -47,7 +47,7 @@ export default function UnlockPriceDialog({
           className="mt-5 min-h-12 w-full rounded-xl bg-fuchsia-600 font-black text-white hover:bg-fuchsia-700 disabled:opacity-60"
         >
           <CreditCard className="mr-2 h-4 w-4"/>
-          {busy?'Unlocking…':shortOnCredit?'Add Credit':'Unlock'}
+          {busy?'Unlocking…':shortOnCredit?'Add Credit':(ctaLabel||'Unlock')}
         </Button>
       </div>
     </div>
