@@ -22,7 +22,12 @@ export const PUBLIC_INFORMATION_ROUTES = new Set([
 // pages - the homepage is the shop window - but every action tab, button,
 // card and menu item on them is locked: GuestHomepageGate intercepts the
 // tap and opens the sign-up panel instead. Members are unaffected.
-export const VIEW_ONLY_ROUTES = new Set(['/', '/home']);
+// Extended 2026-10-15 (owner: "Make all fixes" on the held QA findings):
+// the Studio pages and the Credit page join the shop window. Guests can
+// watch free Studio Episode 1 there and read what Credit is and costs;
+// elements that must work for guests carry data-guest-allow, and every
+// buy/unlock/member action still opens the sign-up panel.
+export const VIEW_ONLY_ROUTES = new Set(['/', '/home', '/o2olstudio', '/o2olstudio/episodes', '/credit']);
 
 const KNOWN_APP_ROUTES = new Set([
   '/',
@@ -84,6 +89,10 @@ const KNOWN_APP_ROUTES = new Set([
   '/o2olstudio',
   '/o2olstudio/episodes',
   '/payment-success',
+  '/podcasts',
+  '/privacy',
+  '/studio',
+  '/terms',
   '/paymentsuccess',
   '/podcastssupport',
   '/premiumfeatures',
