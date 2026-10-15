@@ -180,6 +180,11 @@ export default function O2OLStudio(){
 
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-8 text-white sm:px-6 sm:py-12">
+      {/* Hide the browser's oversized native center play button: the page
+          renders its own modest play overlay, and Android Chrome otherwise
+          stacks the two into a duplicate play icon (owner finding,
+          2026-10-15). The native bottom control bar stays. */}
+      <style>{'.o2ol-studio-video::-webkit-media-controls-overlay-play-button{display:none!important}.o2ol-studio-video::-webkit-media-controls-start-playback-button{display:none!important}'}</style>
       <section className="mx-auto max-w-6xl">
         <div className="rounded-[2rem] border border-fuchsia-300/30 bg-[linear-gradient(90deg,#5d2ea8_0%,#9b10b2_18%,#a812c5_58%,#b01cc9_100%)] p-5 shadow-2xl sm:p-8">
           <div className="text-center">
@@ -220,7 +225,7 @@ export default function O2OLStudio(){
               <video
                 ref={videoRef}
                 data-guest-allow
-                className="aspect-video w-full bg-black"
+                className="o2ol-studio-video aspect-video w-full bg-black"
                 controls
                 playsInline
                 preload="auto"
