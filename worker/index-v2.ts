@@ -175,9 +175,80 @@ async function socialPageResponse(request, env, url) {
   return new Response(html,{status:assetResponse.status,statusText:assetResponse.statusText,headers});
 }
 
-export default {
-  async fetch(request, env, ctx) {
+// Security response headers (SiteGuard fixes, 2026-10-16).
+//
+// The Content-Security-Policy is built from what the site actually loads:
+//   - scripts: same origin only, plus 'unsafe-inline' — the index.html boot
+//     watchdog and the game files (public/games-src/*.html) run inline
+//     scripts, and Cloudflare's Web Analytics beacon origin is allowed.
+//   - styles/fonts: the app imports Google Fonts (Dancing Script / Kalam /
+//     Comic Neue) from Layout.jsx, so fonts.googleapis.com serves the CSS
+//     and fonts.gstatic.com the font files. React inline styles require
+//     'unsafe-inline' for styles.
+//   - images/media: same origin, data:/blob:, and https: — member photos,
+//     podcast artwork and episode audio can live on external https CDNs.
+//   - frames: same origin (games) plus the LOVE SCRATCH GAME, which is
+//     framed from https://play.one2onelove.com.
+//   - everything else (objects, base, forms, ancestors) is locked down.
+// public/_headers carries the same two headers for asset-served responses
+// that never reach this Worker; the helper below only sets a header when
+// it is not already present, so the two layers never duplicate.
+const CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com data:",
+  "img-src 'self' data: blob: https:",
+  "media-src 'self' blob: https:",
+  "connect-src 'self' https://static.cloudflareinsights.com",
+  "frame-src 'self' https://play.one2onelove.com",
+  "worker-src 'self' blob:",
+  "manifest-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self' https://checkout.stripe.com",
+  "frame-ancestors 'self'",
+].join('; ');
+const STRICT_TRANSPORT_SECURITY = 'max-age=31536000; includeSubDomains';
+
+function withSecurityHeaders(response, request) {
+  try {
     const url = new URL(request.url);
+    const headers = new Headers(response.headers);
+    let touched = false;
+    if (url.protocol === 'https:' && !headers.has('strict-transport-security')) {
+      headers.set('strict-transport-security', STRICT_TRANSPORT_SECURITY);
+      touched = true;
+    }
+    const contentType = headers.get('content-type') || '';
+    if (contentType.includes('text/html') && !headers.has('content-security-policy')) {
+      headers.set('content-security-policy', CONTENT_SECURITY_POLICY);
+      touched = true;
+    }
+    if (!touched) return response;
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    });
+  } catch {
+    return response;
+  }
+}
+
+async function handleFetchV2(request, env, ctx) {
+    const url = new URL(request.url);
+
+    // HTTPS only (SiteGuard fix, 2026-10-16): plain HTTP upgrades to HTTPS
+    // with a method-preserving 308 before anything else runs. The zone's
+    // "Always Use HTTPS" setting covers asset-only paths that never reach
+    // this Worker; this block covers every Worker-first route, and a www
+    // HTTP request canonicalizes to the HTTPS apex in the same hop.
+    if (url.protocol === 'http:') {
+      url.protocol = 'https:';
+      if (url.hostname === 'www.one2onelove.com') url.hostname = 'one2onelove.com';
+      return Response.redirect(url.toString(), 308);
+    }
 
     // One front door (owner session defect, 2026-10-12): the site used to
     // answer fully on BOTH one2onelove.com and www.one2onelove.com with
@@ -487,6 +558,12 @@ export default {
     }
 
     return baseWorker.fetch(request, env, ctx);
+}
+
+export default {
+  async fetch(request, env, ctx) {
+    const response = await handleFetchV2(request, env, ctx);
+    return withSecurityHeaders(response, request);
   },
 
   async scheduled(controller, env, ctx) {
