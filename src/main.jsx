@@ -19,6 +19,27 @@ if (window.location.hostname === 'www.one2onelove.com') {
     )
 }
 
+// Deep-link aliases (owner fix, 2026-10-19): the natural short names people
+// type and share - /Terms, /Privacy, /Studio - have no routes of their own,
+// so they landed on the SPA "Page Not Found" even though the pages exist.
+// Send them to the canonical pages before anything renders, preserving the
+// query string and hash, the same way the www guard above works. Matching
+// is case-insensitive and tolerates a trailing slash. The canonical paths
+// themselves (/termsofservice, /privacypolicy, /o2olstudio) are NOT aliases,
+// so the site's own footer routes never take an extra hop, and unknown
+// routes still fall through to the SPA not-found page untouched.
+const DEEP_LINK_ALIASES = {
+    '/terms': '/TermsOfService',
+    '/privacy': '/PrivacyPolicy',
+    '/studio': '/O2OLStudio',
+}
+const deepLinkPath = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/'
+if (DEEP_LINK_ALIASES[deepLinkPath]) {
+    window.location.replace(
+        DEEP_LINK_ALIASES[deepLinkPath] + window.location.search + window.location.hash
+    )
+}
+
 installRuntimeLocalization()
 installStaticUiLocalization()
 installI18nFallbackLocalization()
