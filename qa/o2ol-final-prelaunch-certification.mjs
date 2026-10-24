@@ -143,12 +143,18 @@ try{
       const gate=page.locator('#guest-homepage-gate-modal');
       const gateOpened=await gate.isVisible().catch(()=>false);
       const menuOpened=await page.locator('#desktop-action-menu').isVisible().catch(()=>false);
+      // Release-cert runs (candidate + production) REQUIRE the view-only
+      // gate. The shared Prelaunch baseline may still serve the pre-gate
+      // homepage until promotion, so there either contract is accepted.
       if(gateOpened&&!menuOpened) pass('Guest homepage tap opens sign-up panel (view-only)');
+      else if(!IS_RELEASE_CERT&&menuOpened) pass('Shared Prelaunch baseline predates guest view-only gate');
       else fail('Guest homepage view-only gate did not open',JSON.stringify({gateOpened,menuOpened}));
       await page.keyboard.press('Escape');
       await page.waitForTimeout(200);
-      if(!(await gate.isVisible().catch(()=>false))) pass('Guest sign-up panel closes with Escape');
-      else fail('Guest sign-up panel did not close with Escape');
+      if(gateOpened){
+        if(!(await gate.isVisible().catch(()=>false))) pass('Guest sign-up panel closes with Escape');
+        else fail('Guest sign-up panel did not close with Escape');
+      }
     }else fail('Guest homepage Action button missing');
     await context.close();
   }
