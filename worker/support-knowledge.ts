@@ -43,7 +43,7 @@ PRICES (the full governing schedule — quote these exactly, in USD)
 
 FEATURES — QUICK HOW-TOS
 - Love Notes: pick or write a note, choose the recipient, send now or schedule it. Sending by text needs a verified sender phone (one-time).
-- Games: Like Minded, PEST'S, Pool Ping Pong, Scrabluko, What Should They Do?, LOVE SCRATCH GAME. Every game is a creation of the site's founder, Eisenhower Antoine.
+- Games: I Thought So!, Like Minded, PEST'S, Pool Ping Pong, Scrabluko, What Should They Do?, LOVE SCRATCH GAME. Every game is a creation of the site's founder, Eisenhower Antoine.
 - Chat: 8 chat rooms; free for members; first names only.
 - MyMatchIQ: Bianca is the compatibility guide inside One2OneLove.
 - Amora is One2OneLove's personality and co-host; O2OL and Amora host the O2OL Studio show.

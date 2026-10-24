@@ -30,6 +30,7 @@ import CoupleActivities from './CoupleActivities';
 import CooperativeGames from './CooperativeGames';
 import Pests from './Pests';
 import PoolPingPong from './PoolPingPong';
+import IThoughtSo from './IThoughtSo';
 import Scrabluko from './Scrabluko';
 import WhatShouldTheyDo from './WhatShouldTheyDo';
 import ScratchGame from './ScratchGame';
@@ -80,7 +81,7 @@ const PAGES = {
   Home, AboutUs, SignIn, SignUp, AdminAccess, Admin, Analytics, TokenSystemDashboard, Amora, MemoryLane, LoveNotes, SendCredits, CoupleSupport,
   LoveLanguageQuiz, DateIdeas, Profile, Invite, PodcastsSupport, ArticlesSupport, RelationshipQuizzes,
   AnniversaryTracker, ForgotPassword, Dashboard, RelationshipMilestones, RelationshipGoals,
-  CommunicationPractice, CouplesProfile, CoupleActivities, CooperativeGames, Pests, PoolPingPong, Scrabluko, WhatShouldTheyDo, ScratchGame, LikeMinded, SharedJournals, CouplesDashboard,
+  CommunicationPractice, CouplesProfile, CoupleActivities, CooperativeGames, Pests, PoolPingPong, IThoughtSo, Scrabluko, WhatShouldTheyDo, ScratchGame, LikeMinded, SharedJournals, CouplesDashboard,
   CouplesCalendar, LGBTQSupport, HelpCenter, ContactUs, PrivacyPolicy, TermsOfService, Reviews,
   LeaveReview, Suggestions, Chat, PaymentSuccess, Subscription, VerifyPhone,
   Professionals, ProfessionalSignup, TherapistSignup, InfluencerSignup, MyMatchIQ, MyMatchIQAssessment, MyMatchIQBianca, Credit, FeaturePricing, MyMatchIQMeet, MyMatchIQWorkspace, O2OLStudio, Episodes: O2OLStudioEpisodes,
@@ -147,6 +148,7 @@ function PagesContent() {
           <Route path="/CooperativeGames" element={<CooperativeGames />} />
           <Route path="/Pests" element={<PaidGameSessionGate image="/game-cards/card-pests.jpg" backdrop="#0b2e1d" game="pests" title="PEST'S"><Pests /></PaidGameSessionGate>} />
           <Route path="/PoolPingPong" element={<PaidGameSessionGate image="/game-cards/card-pool-ping-pong.jpg" backdrop="#0d3b2a" game="pool_ping_pong" title="Pool Ping Pong"><PoolPingPong /></PaidGameSessionGate>} />
+          <Route path="/IThoughtSo" element={<PaidGameSessionGate image="/game-cards/card-i-thought-so.jpg" backdrop="#3a2a05" game="i_thought_so" title="I Thought So!"><IThoughtSo /></PaidGameSessionGate>} />
           <Route path="/Scrabluko" element={<PaidGameSessionGate image="/game-cards/card-scrabluko.jpg" backdrop="#0a1f44" game="scrabluko" title="Scrabluko"><Scrabluko /></PaidGameSessionGate>} />
           <Route path="/WhatShouldTheyDo" element={<PaidGameSessionGate image="/game-cards/card-what-should.jpg" backdrop="#2e1020" game="what_should_they_do" title="What Should They Do?"><WhatShouldTheyDo /></PaidGameSessionGate>} />
           <Route path="/Games" element={<PaidGameSessionGate image="/game-cards/card-what-should.jpg" backdrop="#2e1020" game="what_should_they_do" title="What Should They Do?"><WhatShouldTheyDo /></PaidGameSessionGate>} />

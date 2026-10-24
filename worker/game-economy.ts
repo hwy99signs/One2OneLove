@@ -10,6 +10,7 @@ export const GAME_REGISTRY=Object.freeze({
   scratch:{id:'scratch',title:'LOVE SCRATCH GAME',category:'arcade',chargeFeatureCode:'scratch_game_session',route:'/ScratchGame',leaderboard:false,scoreLabel:null,scoreCap:null,kind:'scratch'},
   pests:{id:'pests',title:"PEST'S",category:'arcade',chargeFeatureCode:'premium_game_session',route:'/Pests',leaderboard:true,scoreLabel:'catches',scoreCap:100000,kind:'standard'},
   pool_ping_pong:{id:'pool_ping_pong',title:'Pool Ping Pong',category:'arcade',chargeFeatureCode:'premium_game_session',route:'/PoolPingPong',leaderboard:true,scoreLabel:'points',scoreCap:1000000,kind:'standard'},
+  i_thought_so:{id:'i_thought_so',title:'I Thought So!',category:'brain',chargeFeatureCode:'premium_game_session',route:'/IThoughtSo',leaderboard:false,scoreLabel:null,scoreCap:null,kind:'standard'},
   scrabluko:{id:'scrabluko',title:'Scrabluko',category:'brain',chargeFeatureCode:'premium_game_session',route:'/Scrabluko',leaderboard:true,scoreLabel:'points',scoreCap:1000000,kind:'standard'},
 });
 export function gameDefinition(id){return GAME_REGISTRY[String(id||'').trim()]||null;}
