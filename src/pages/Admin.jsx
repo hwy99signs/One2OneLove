@@ -877,10 +877,11 @@ export default function Admin() {
 
           {section==='members' && <div>
             <Heading title="All Sign-ups" subtitle="Every stored O2OL registration from the beginning to now. Members remain visible here whether or not they have purchased Credit."/>
-            <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
+            <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <Metric icon={Activity} label="On Site Right Now" value={presenceNow === null ? '—' : number(presenceNow)} note={presenceSplit ? `${number(presenceSplit.members)} members · ${number(presenceSplit.guests)} guests · automated checks excluded · last 90 seconds` : 'pages open now · updates every 20 seconds · admins excluded'} tone="green"/>
               <Metric icon={Activity} label="Active (Last 5 Min)" value={number(visitorFunnel.online_now)} note="visitor IDs active in the last 5 minutes · admins excluded" tone="green"/>
-              <Metric icon={Users} label="Anonymous Visitors" value={number(visitorFunnel.anonymous_visitors)} note={`${number(visitorFunnel.total_visitors)} visitor IDs tracked`} tone="slate"/>
+              <Metric icon={Users} label="Guests (Not Signed Up)" value={number(visitorFunnel.anonymous_visitors)} note={`${number(visitorFunnel.total_visitors)} visitors since the fresh start · guests can browse public pages before signing up`} tone="slate"/>
+              <Metric icon={TrendingUp} label="Guest Sign-up Rate" value={Number(visitorFunnel.total_visitors||0)>0?`${(Number(visitorFunnel.signups_since_start||0)/Number(visitorFunnel.total_visitors)*100).toFixed(1)}%`:'—'} note={`${number(visitorFunnel.signups_since_start)} new sign-ups ÷ ${number(visitorFunnel.total_visitors)} visitors since the fresh start`} tone="green"/>
               <Metric icon={UserCheck} label="Members · No Credit Purchase" value={number(visitorFunnel.registered_free)} note={`${number(visitorFunnel.promo_opt_ins)} promotional email opt-ins`} tone="blue"/>
               <Metric icon={CreditCard} label="Credit Buyers" value={number(visitorFunnel.token_buyers)} note="members with a paid Credit purchase" tone="violet"/>
               <Metric icon={TrendingUp} label="Paid Activity" value={money(Number(visitorFunnel.paid_activity_cents||0)/100)} note="Credit purchases + auto-replenish" tone="green"/>
@@ -980,7 +981,7 @@ export default function Admin() {
             </table></TableShell>
 
 
-            <Panel title="Visitor Registry / Audience Intelligence" subtitle="Persistent visitor history. Anonymous browser activity remains anonymous until the visitor voluntarily creates an account; then the existing visitor ID is linked to that member." className="mt-6">
+            <Panel title="Visitor Registry / Audience Intelligence" subtitle="Persistent visitor history. Guests can browse the homepage and public pages without an account, so their activity is listed as Guest (not signed up) until they create an account; then the existing visitor ID is linked to that member." className="mt-6">
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <p className="text-sm text-slate-500">{number(visitorRows.length)} visitors · {{ '7d': 'last 7 days', '30d': 'last 30 days', '90d': 'last 90 days', all: 'all time' }[registryRange]}{Number(visitorRegistry.sweepExcludedVisitors || 0) > 0 ? ` · ${number(visitorRegistry.sweepExcludedVisitors)} automated-check visitors excluded` : ''}</p>
                 <div className="flex flex-wrap gap-2" role="group" aria-label="Visitor Registry date range">
@@ -1003,13 +1004,13 @@ export default function Admin() {
                 <tbody className="divide-y divide-slate-100">
                   {visitorRows.map(v=><tr key={v.visitor_id} className="align-top hover:bg-slate-50">
                     <td className="px-4 py-3">
-                      <div className="font-semibold text-slate-900">{v.username?('@'+v.username):(v.email||'Anonymous Visitor')}</div>
+                      <div className="font-semibold text-slate-900">{v.username?('@'+v.username):(v.email||'Guest (not signed up)')}</div>
                       {v.email&&<div className="text-xs text-slate-500">{v.email}</div>}
                       <div className="mt-1 font-mono text-[10px] text-slate-400">{String(v.visitor_id).slice(0,24)}</div>
                       {v.user_id&&<div className="mt-1 text-[11px] font-semibold text-slate-500">Promo email: {v.marketing_email_opt_in?'Yes':'No'}</div>}
                     </td>
                     <td className="px-4 py-3">
-                      <Pill tone={v.audience_status==='Credit Buyer'?'violet':v.audience_status==='Member'?'blue':'slate'}>{v.audience_status==='Token Buyer'?'Credit Buyer':(v.audience_status||'Anonymous Visitor')}</Pill>{v.is_online&&<div className="mt-1"><Pill tone="green">On site now</Pill></div>}
+                      <Pill tone={v.audience_status==='Credit Buyer'?'violet':v.audience_status==='Member'?'blue':'slate'}>{v.audience_status==='Token Buyer'?'Credit Buyer':(v.audience_status||'Guest (not signed up)')}</Pill>{v.is_online&&<div className="mt-1"><Pill tone="green">On site now</Pill></div>}
                       {Number(v.paid_cents||0)>0&&<div className="mt-1 text-xs font-bold text-emerald-700">{(Number(v.paid_cents)/100).toLocaleString('en-US',{style:'currency',currency:'USD'})} paid</div>}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-xs text-slate-500"><div>{date(v.first_seen)}</div><div className="mt-1 font-semibold text-slate-700">{date(v.last_seen)}</div></td>

@@ -138,6 +138,10 @@ let publishedIdentityExcluded = false;
 
 function readTrackingExcludedFlag() {
   try {
+    // Automated browsers (our own QA runs, Lighthouse, test robots) announce
+    // themselves through navigator.webdriver; they never count as visitors
+    // (owner order, 2026-10-24: only verified outside visitors count).
+    if (typeof navigator !== 'undefined' && navigator.webdriver === true) return true;
     return window.localStorage.getItem(TRACKING_EXCLUDED_KEY) === '1';
   } catch {
     return false;

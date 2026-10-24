@@ -131,7 +131,7 @@ function EdgeStat({ label, value }) {
 // shown as reported. When the Cloudflare connection is not configured on
 // this Worker yet, the panel renders a calm explanation naming the exact
 // missing setting — never an error dump.
-function EdgeCountsPanel({ edge, tooltipStyle }) {
+function EdgeCountsPanel({ edge, tooltipStyle, freshStart }) {
   const definition = 'Counts every arrival at the site, including bots, crawlers and link previews. These numbers will always be higher than the visitor activity recorded inside the site.';
   if (!edge || !edge.connected) {
     const missing = Array.isArray(edge?.missing) && edge.missing.length
@@ -158,13 +158,13 @@ function EdgeCountsPanel({ edge, tooltipStyle }) {
         <EdgeStat label="Pageviews" value={edge.today?.pageViews}/>
         <EdgeStat label="Requests" value={edge.today?.requests}/>
       </div>
-      <p className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">Last 30 days</p>
+      <p className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">{edge.sinceDate ? `Since the fresh start · ${shortDate(edge.sinceDate)}` : 'Last 30 days'}</p>
       <div className="mb-5 grid gap-3 sm:grid-cols-3">
         <EdgeStat label="Visits (unique visitors)" value={edge.totals?.visits}/>
         <EdgeStat label="Pageviews" value={edge.totals?.pageViews}/>
         <EdgeStat label="Requests" value={edge.totals?.requests}/>
       </div>
-      <ChartFrame height={300}><ResponsiveContainer width="100%" height="100%"><LineChart data={edge.days || []} margin={{ top: 10, right: 15, left: -10, bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="date" tickFormatter={shortDate} minTickGap={24}/><YAxis allowDecimals={false}/><Tooltip labelFormatter={shortDate} contentStyle={tooltipStyle}/><Legend/><Line type="monotone" dataKey="requests" name="Requests" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="pageViews" name="Pageviews" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="visits" name="Visits" strokeWidth={3} dot={false}/></LineChart></ResponsiveContainer></ChartFrame>
+      <ChartFrame height={300}><ResponsiveContainer width="100%" height="100%"><LineChart data={edge.days || []} margin={{ top: 10, right: 15, left: -10, bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="date" tickFormatter={shortDate} minTickGap={24}/>{freshStart && <ReferenceLine x={freshStart} stroke="#0f172a" strokeWidth={2} ifOverflow="extendDomain" label={{ value: 'Fresh start', position: 'insideTopLeft', fill: '#0f172a', fontSize: 11, fontWeight: 700 }}/>}<YAxis allowDecimals={false}/><Tooltip labelFormatter={shortDate} contentStyle={tooltipStyle}/><Legend/><Line type="monotone" dataKey="requests" name="Requests" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="pageViews" name="Pageviews" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="visits" name="Visits" strokeWidth={3} dot={false}/></LineChart></ResponsiveContainer></ChartFrame>
       <p className="mt-4 text-xs leading-5 text-slate-500">Days are Cloudflare&rsquo;s own days (UTC), shown exactly as Cloudflare reports them; today&rsquo;s row is still counting. Counts refresh about every 15 minutes.</p>
     </Panel>
   );
@@ -283,6 +283,9 @@ export default function Analytics() {
   }
 
   const tooltipStyle = { borderRadius: 12, border: '1px solid #e2e8f0' };
+  // Fresh start (owner order, 2026-10-24): every number on this page counts
+  // from this day; the solid line on each dated graph marks it.
+  const freshStart = data?.analyticsBaselineDate || null;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -295,7 +298,7 @@ export default function Analytics() {
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         {refreshError && <div className="mb-5 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900"><strong>Analytics refresh needs attention.</strong> The values below may be from the last successful refresh. Use Refresh; if Admin verification is requested, complete it and return here.</div>}
-        <div className="mb-6"><h2 className="text-2xl font-black tracking-tight">30-Day Trend View</h2><p className="mt-1 text-sm text-slate-500">Graphs are built from actual One2OneLove records and feature-use events. They will become more meaningful as launch traffic grows.</p></div>
+        <div className="mb-6"><h2 className="text-2xl font-black tracking-tight">30-Day Trend View</h2><p className="mt-1 text-sm text-slate-500">Graphs are built from actual One2OneLove records and feature-use events. They will become more meaningful as launch traffic grows.</p>{freshStart && <p className="mt-2 text-sm font-semibold text-slate-700">Every number counts from the fresh start on {shortDate(freshStart)} (the solid line on each graph): Rhonda Campbell, new members who join from now on, and guests verified as real outside visitors. Owner, household and test accounts, automated test runs, crawlers and link previewers are left out.</p>}</div>
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <Metric icon={Users} label="New Signups" value={number(signupTotal)} note="last 30 days"/>
@@ -313,12 +316,12 @@ export default function Analytics() {
               <div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Anonymous Visitors</p><p className="mt-1 text-2xl font-black text-slate-900">{number(data?.siteUsageSummary?.anonymous_visitors)}</p></div>
               <div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Registered Users</p><p className="mt-1 text-2xl font-black text-slate-900">{number(data?.siteUsageSummary?.registered_users)}</p></div>
             </div>
-            <ChartFrame height={340}><ResponsiveContainer width="100%" height="100%"><LineChart data={data?.siteUsage||[]} margin={{ top: 10,right: 15,left: -10,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="date" tickFormatter={shortDate} minTickGap={24}/><YAxis allowDecimals={false}/><Tooltip labelFormatter={shortDate} contentStyle={tooltipStyle}/><Legend/><Line type="monotone" dataKey="page_views" name="Page views" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="clicks" name="Clicks" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="visitors" name="Unique visitors / day" strokeWidth={3} dot={false}/></LineChart></ResponsiveContainer></ChartFrame>
+            <ChartFrame height={340}><ResponsiveContainer width="100%" height="100%"><LineChart data={data?.siteUsage||[]} margin={{ top: 10,right: 15,left: -10,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="date" tickFormatter={shortDate} minTickGap={24}/>{freshStart && <ReferenceLine x={freshStart} stroke="#0f172a" strokeWidth={2} ifOverflow="extendDomain" label={{ value: 'Fresh start', position: 'insideTopLeft', fill: '#0f172a', fontSize: 11, fontWeight: 700 }}/>}<YAxis allowDecimals={false}/><Tooltip labelFormatter={shortDate} contentStyle={tooltipStyle}/><Legend/><Line type="monotone" dataKey="page_views" name="Page views" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="clicks" name="Clicks" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="visitors" name="Unique visitors / day" strokeWidth={3} dot={false}/></LineChart></ResponsiveContainer></ChartFrame>
           </Panel>
         </div>
 
         <div className="mt-6">
-          <EdgeCountsPanel edge={data?.edgeCounts} tooltipStyle={tooltipStyle}/>
+          <EdgeCountsPanel edge={data?.edgeCounts} tooltipStyle={tooltipStyle} freshStart={freshStart}/>
         </div>
 
         <div className="mt-6">
@@ -372,15 +375,15 @@ export default function Analytics() {
 
         <div className="mt-6 grid gap-6 xl:grid-cols-2">
           <Panel title="Member Signups" subtitle="Daily new One2OneLove accounts.">
-            <ChartFrame><ResponsiveContainer width="100%" height="100%"><LineChart data={data?.signups||[]} margin={{ top: 10,right: 15,left: -10,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="date" tickFormatter={shortDate} minTickGap={24}/><YAxis allowDecimals={false}/><Tooltip labelFormatter={shortDate} contentStyle={tooltipStyle}/><Line type="monotone" dataKey="signups" name="Signups" strokeWidth={3} dot={false}/></LineChart></ResponsiveContainer></ChartFrame>
+            <ChartFrame><ResponsiveContainer width="100%" height="100%"><LineChart data={data?.signups||[]} margin={{ top: 10,right: 15,left: -10,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="date" tickFormatter={shortDate} minTickGap={24}/>{freshStart && <ReferenceLine x={freshStart} stroke="#0f172a" strokeWidth={2} ifOverflow="extendDomain" label={{ value: 'Fresh start', position: 'insideTopLeft', fill: '#0f172a', fontSize: 11, fontWeight: 700 }}/>}<YAxis allowDecimals={false}/><Tooltip labelFormatter={shortDate} contentStyle={tooltipStyle}/><Line type="monotone" dataKey="signups" name="Signups" strokeWidth={3} dot={false}/></LineChart></ResponsiveContainer></ChartFrame>
           </Panel>
 
           <Panel title="Love Notes Usage" subtitle="Direct sends compared with notes added to the scheduler.">
-            <ChartFrame><ResponsiveContainer width="100%" height="100%"><LineChart data={data?.loveNotes||[]} margin={{ top: 10,right: 15,left: -10,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="date" tickFormatter={shortDate} minTickGap={24}/><YAxis allowDecimals={false}/><Tooltip labelFormatter={shortDate} contentStyle={tooltipStyle}/><Legend/><Line type="monotone" dataKey="direct_sent" name="Direct sent" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="scheduled" name="Scheduled" strokeWidth={3} dot={false}/></LineChart></ResponsiveContainer></ChartFrame>
+            <ChartFrame><ResponsiveContainer width="100%" height="100%"><LineChart data={data?.loveNotes||[]} margin={{ top: 10,right: 15,left: -10,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="date" tickFormatter={shortDate} minTickGap={24}/>{freshStart && <ReferenceLine x={freshStart} stroke="#0f172a" strokeWidth={2} ifOverflow="extendDomain" label={{ value: 'Fresh start', position: 'insideTopLeft', fill: '#0f172a', fontSize: 11, fontWeight: 700 }}/>}<YAxis allowDecimals={false}/><Tooltip labelFormatter={shortDate} contentStyle={tooltipStyle}/><Legend/><Line type="monotone" dataKey="direct_sent" name="Direct sent" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="scheduled" name="Scheduled" strokeWidth={3} dot={false}/></LineChart></ResponsiveContainer></ChartFrame>
           </Panel>
 
           <Panel title="Scheduled Love Note Delivery Health" subtitle="Daily passed, failed and pending scheduled deliveries.">
-            <ChartFrame><ResponsiveContainer width="100%" height="100%"><BarChart data={data?.scheduledHealth||[]} margin={{ top: 10,right: 15,left: -10,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="date" tickFormatter={shortDate} minTickGap={24}/><YAxis allowDecimals={false}/><Tooltip labelFormatter={shortDate} contentStyle={tooltipStyle}/><Legend/><Bar dataKey="passed" name="Passed"/><Bar dataKey="failed" name="Failed"/><Bar dataKey="pending" name="Pending"/></BarChart></ResponsiveContainer></ChartFrame>
+            <ChartFrame><ResponsiveContainer width="100%" height="100%"><BarChart data={data?.scheduledHealth||[]} margin={{ top: 10,right: 15,left: -10,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="date" tickFormatter={shortDate} minTickGap={24}/>{freshStart && <ReferenceLine x={freshStart} stroke="#0f172a" strokeWidth={2} ifOverflow="extendDomain" label={{ value: 'Fresh start', position: 'insideTopLeft', fill: '#0f172a', fontSize: 11, fontWeight: 700 }}/>}<YAxis allowDecimals={false}/><Tooltip labelFormatter={shortDate} contentStyle={tooltipStyle}/><Legend/><Bar dataKey="passed" name="Passed"/><Bar dataKey="failed" name="Failed"/><Bar dataKey="pending" name="Pending"/></BarChart></ResponsiveContainer></ChartFrame>
           </Panel>
 
           <Panel title="Most-Used Features — All Visitors" subtitle="Actual feature opens, clicks and meaningful feature actions from anonymous visitors, registered-free users and subscribers. Admin activity is excluded.">
@@ -388,15 +391,15 @@ export default function Analytics() {
           </Panel>
 
           <Panel title="Daily Feature Activity — All Visitors" subtitle="Shows feature opens, ordinary clicks and meaningful actions such as opening a podcast, using an LGBTQ+ resource or selecting a Love Note category.">
-            <ChartFrame><ResponsiveContainer width="100%" height="100%"><LineChart data={data?.featureDailyAll||[]} margin={{ top: 10,right: 15,left: -10,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="date" tickFormatter={shortDate} minTickGap={24}/><YAxis allowDecimals={false}/><Tooltip labelFormatter={shortDate} contentStyle={tooltipStyle}/><Legend/><Line type="monotone" dataKey="page_views" name="Feature opens" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="clicks" name="Clicks" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="actions" name="Actions" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="users" name="Unique visitors / users" strokeWidth={3} dot={false}/></LineChart></ResponsiveContainer></ChartFrame>
+            <ChartFrame><ResponsiveContainer width="100%" height="100%"><LineChart data={data?.featureDailyAll||[]} margin={{ top: 10,right: 15,left: -10,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="date" tickFormatter={shortDate} minTickGap={24}/>{freshStart && <ReferenceLine x={freshStart} stroke="#0f172a" strokeWidth={2} ifOverflow="extendDomain" label={{ value: 'Fresh start', position: 'insideTopLeft', fill: '#0f172a', fontSize: 11, fontWeight: 700 }}/>}<YAxis allowDecimals={false}/><Tooltip labelFormatter={shortDate} contentStyle={tooltipStyle}/><Legend/><Line type="monotone" dataKey="page_views" name="Feature opens" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="clicks" name="Clicks" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="actions" name="Actions" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="users" name="Unique visitors / users" strokeWidth={3} dot={false}/></LineChart></ResponsiveContainer></ChartFrame>
           </Panel>
 
           <Panel title="Community Activity" subtitle="Daily posts and comments.">
-            <ChartFrame><ResponsiveContainer width="100%" height="100%"><LineChart data={data?.community||[]} margin={{ top: 10,right: 15,left: -10,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="date" tickFormatter={shortDate} minTickGap={24}/><YAxis allowDecimals={false}/><Tooltip labelFormatter={shortDate} contentStyle={tooltipStyle}/><Legend/><Line type="monotone" dataKey="posts" name="Posts" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="comments" name="Comments" strokeWidth={3} dot={false}/></LineChart></ResponsiveContainer></ChartFrame>
+            <ChartFrame><ResponsiveContainer width="100%" height="100%"><LineChart data={data?.community||[]} margin={{ top: 10,right: 15,left: -10,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="date" tickFormatter={shortDate} minTickGap={24}/>{freshStart && <ReferenceLine x={freshStart} stroke="#0f172a" strokeWidth={2} ifOverflow="extendDomain" label={{ value: 'Fresh start', position: 'insideTopLeft', fill: '#0f172a', fontSize: 11, fontWeight: 700 }}/>}<YAxis allowDecimals={false}/><Tooltip labelFormatter={shortDate} contentStyle={tooltipStyle}/><Legend/><Line type="monotone" dataKey="posts" name="Posts" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="comments" name="Comments" strokeWidth={3} dot={false}/></LineChart></ResponsiveContainer></ChartFrame>
           </Panel>
 
           <Panel title="Payment Activity" subtitle="Daily billing records created during the last 30 days.">
-            <ChartFrame><ResponsiveContainer width="100%" height="100%"><LineChart data={data?.payments||[]} margin={{ top: 10,right: 15,left: -10,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="date" tickFormatter={shortDate} minTickGap={24}/><YAxis allowDecimals={false}/><Tooltip labelFormatter={shortDate} contentStyle={tooltipStyle}/><Line type="monotone" dataKey="payments" name="Payments" strokeWidth={3} dot={false}/></LineChart></ResponsiveContainer></ChartFrame>
+            <ChartFrame><ResponsiveContainer width="100%" height="100%"><LineChart data={data?.payments||[]} margin={{ top: 10,right: 15,left: -10,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="date" tickFormatter={shortDate} minTickGap={24}/>{freshStart && <ReferenceLine x={freshStart} stroke="#0f172a" strokeWidth={2} ifOverflow="extendDomain" label={{ value: 'Fresh start', position: 'insideTopLeft', fill: '#0f172a', fontSize: 11, fontWeight: 700 }}/>}<YAxis allowDecimals={false}/><Tooltip labelFormatter={shortDate} contentStyle={tooltipStyle}/><Line type="monotone" dataKey="payments" name="Payments" strokeWidth={3} dot={false}/></LineChart></ResponsiveContainer></ChartFrame>
           </Panel>
         </div>
 
