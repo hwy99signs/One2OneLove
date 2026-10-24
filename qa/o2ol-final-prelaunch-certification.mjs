@@ -127,9 +127,41 @@ async function noBrokenImages(page,label){
 
 const browser=await chromium.launch({executablePath:CHROME,headless:true,args:['--no-sandbox']});
 try{
-  // Anonymous desktop: homepage, Amora, Action menu.
+  // Guest homepage is view-only (owner design, 2026-10-11): a guest tap on
+  // an action tab/menu opens the sign-up panel instead of acting, and the
+  // panel closes with Escape. Interactive homepage checks below therefore
+  // run as a signed-in free member.
   {
     const {context,page}=await open(browser,'/');
+    const guestAction=page.locator('[data-desktop-action-trigger]').first();
+    // The gate activates once the auth check settles; wait for it.
+    await page.waitForLoadState('networkidle',{timeout:15000}).catch(()=>{});
+    await page.waitForTimeout(1500);
+    if(await guestAction.count()){
+      await guestAction.click({timeout:8000});
+      await page.waitForTimeout(300);
+      const gate=page.locator('#guest-homepage-gate-modal');
+      const gateOpened=await gate.isVisible().catch(()=>false);
+      const menuOpened=await page.locator('#desktop-action-menu').isVisible().catch(()=>false);
+      // Release-cert runs (candidate + production) REQUIRE the view-only
+      // gate. The shared Prelaunch baseline may still serve the pre-gate
+      // homepage until promotion, so there either contract is accepted.
+      if(gateOpened&&!menuOpened) pass('Guest homepage tap opens sign-up panel (view-only)');
+      else if(!IS_RELEASE_CERT&&menuOpened) pass('Shared Prelaunch baseline predates guest view-only gate');
+      else fail('Guest homepage view-only gate did not open',JSON.stringify({gateOpened,menuOpened}));
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(200);
+      if(gateOpened){
+        if(!(await gate.isVisible().catch(()=>false))) pass('Guest sign-up panel closes with Escape');
+        else fail('Guest sign-up panel did not close with Escape');
+      }
+    }else fail('Guest homepage Action button missing');
+    await context.close();
+  }
+
+  // Member desktop: homepage, Amora, Action menu.
+  {
+    const {context,page}=await open(browser,'/',{mode:'free'});
     const body=await page.locator('body').innerText();
     if(/CREDIT PER REPLY/i.test(body)) pass('Homepage uses Credit Amora copy');
     else fail('Homepage Credit Amora copy missing');
@@ -235,7 +267,9 @@ try{
     let x=await open(browser,'/this-page-does-not-exist');
     if((await x.page.locator('body').innerText()).includes('Page Not Found')) pass('Real 404 renders'); else fail('Real 404 missing');
     await x.context.close();
-    x=await open(browser,'/Developer');
+    // /Developer requires an account (guests get the sign-up panel), so
+    // certify the deferred-route explanation as a signed-in member.
+    x=await open(browser,'/Developer',{mode:'free'});
     if((await x.page.locator('body').innerText()).includes('This Feature Is Not Available Yet')) pass('Deferred route explains status'); else fail('Deferred route explanation missing');
     await x.context.close();
   }

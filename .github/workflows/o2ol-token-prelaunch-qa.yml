@@ -121,7 +121,7 @@ jobs:
           grep -F "AMORA_HOST_ID" worker/voting.ts >/dev/null
           grep -F "castClickVote" src/lib/votingService.js >/dev/null
           test -f src/components/voting/ClickToVoteCard.jsx
-          grep -F "ClickToVoteCard" src/pages/Home.jsx >/dev/null
+          grep -F "ClickToVoteCard" src/pages/Layout.jsx >/dev/null  # card moved from Home into the site header (owner, 2026-10-10)
           if grep -F "home-open-house-explore-tools" src/pages/Home.jsx; then
             echo "Expired Open House banner still on the homepage." >&2
             exit 1
@@ -193,7 +193,8 @@ jobs:
           grep -F "INSERT INTO public.o2ol_token_wallets" worker/launch-auth.ts
           grep -F "visitor_identity_links" worker/launch-auth.ts
           grep -F "marketingEmailOptIn" worker/launch-auth.ts
-          grep -F "username_taken" worker/launch-auth.ts
+          grep -F "USERNAME_TAKEN_CODE" worker/launch-auth.ts >/dev/null  # code moved to shared username rules (2026-10-12)
+          grep -F "username_taken" worker/username-rules.js
           grep -F "founding_intent" worker/launch-auth.ts
           grep -F "badge_activated:true" worker/phone-verification.ts
           grep -F "const TERMS_VERSION = '2026-10-09';" src/components/signup/LaunchRegularUserForm.jsx
@@ -516,7 +517,7 @@ jobs:
           grep -F "Registered Free" src/pages/Admin.jsx
           grep -F "Credit Buyers" src/pages/Admin.jsx
           grep -F "Paid Activity" src/pages/Admin.jsx
-          grep -F "async function visitorRegistry(db, rangeDays = 30)" worker/admin.ts
+          grep -F "async function visitorRegistry(db, rangeDays = 30" worker/admin.ts  # signature gained env (analytics baseline, 2026-10-12)
           grep -F "marketing_email_opt_in" worker/admin.ts
           grep -F "visitor_identity_links" worker/admin.ts
           grep -F "CREATE TABLE IF NOT EXISTS public.interaction_events" neon-migrations/2026-10-09-o2ol-lightweight-visitor-registry.sql
