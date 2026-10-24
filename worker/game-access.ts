@@ -144,7 +144,7 @@ export async function handleGameAccessRequest(request,env,url){
   }
 }
 
-const GAME_FILES={pests:'/games-src/pests.html',scrabluko:'/games-src/scrabluko.html'};
+const GAME_FILES={pests:'/games-src/pests.html',scrabluko:'/games-src/scrabluko.html',pool_ping_pong:'/games-src/pool-ping-pong.html'};
 export async function handleGameFileRequest(request,env,url){
   // The static-asset layer canonicalizes HTML URLs by stripping the
   // extension (Workers Assets html_handling): /games-src/scrabluko.html
