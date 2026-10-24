@@ -6,6 +6,7 @@ import {
   linkVisitorToAccount,
   resolveIdentityExcluded,
   runTrackingExclusionCleanupOnce,
+  isUncountableRequest,
 } from './tracking-exclusion.js';
 
 const TRACKABLE_FEATURES = new Set([
@@ -209,6 +210,12 @@ async function handleInteractionEvent(request, env) {
       return json({ ok:true, smoke:true, storageReady:true });
     }
 
+    // Fresh start (owner order, 2026-10-24): only verified outside visitors
+    // count. Crawlers, link previewers, headless/automated browsers (our own
+    // QA included) and the production-certification Worker store nothing.
+    // Placed after the schema smoke check so deploy smoke tests still pass.
+    if (isUncountableRequest(request, env)) return json({ ok:true });
+
     // Sign-in linking (owner-directed, 2026-10-12 evening): tie this
     // browser to the signed-in account BEFORE any exclusion return below,
     // so an excluded account's browser is recognized — and its earlier
@@ -244,7 +251,7 @@ async function handleInteractionEvent(request, env) {
       // The Muse test account (owner-directed exclusion, 2026-10-12):
       // its activity is agent testing, not a visitor. Store nothing and
       // answer with the normal success response.
-      if (isExcludedAccountIdentity({ role: row?.role, email: row?.email })) {
+      if (isExcludedAccountIdentity({ id: row?.id, role: row?.role, email: row?.email })) {
         return json({ ok:true });
       }
 
@@ -350,6 +357,9 @@ export async function handlePresencePing(request, env) {
   const visitorId = String(body?.visitorId || '').trim().slice(0, 64);
   if (!visitorId) return json({ ok:false, error:{ code:'visitor_id_required', message:'A visitor ID is required.' } }, 400);
   const route = String(body?.route || '').trim().slice(0, 200) || null;
+  // Fresh start (owner order, 2026-10-24): automated clients and the
+  // production-certification Worker never count as "on site right now".
+  if (isUncountableRequest(request, env)) return new Response(null, { status: 204 });
   const auth = await session(request, env, false);
   return withDb(env, async (db) => {
     await ensurePresenceSchema(db);

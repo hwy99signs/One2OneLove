@@ -35,6 +35,33 @@ export const TRACKING_EXCLUDED_EMAILS = [
   TRACKING_TEST_ACCOUNT_EMAIL,
   ...TRACKING_HOUSEHOLD_EMAILS,
 ];
+// Fresh start (owner order, 2026-10-24): of the accounts that existed
+// before the fresh start, only Rhonda Campbell counts as a real outside
+// member. The remaining pre-launch account is excluded by id (ids, not
+// emails, so no member's address is written into the public repo).
+// Every account created after the fresh start counts normally.
+export const TRACKING_EXCLUDED_USER_IDS = [
+  '374e87e4-ef00-48e6-ab10-448480a2d512',
+];
+
+// Automated-client rule (owner order, 2026-10-24): only visitors that can be
+// verified as people from outside count. Requests from crawlers, link
+// previewers, headless/automated browsers (our own QA included) and plain
+// HTTP tools are dropped at ingest. A missing user agent is treated as
+// automated. ANALYTICS_INGEST_DISABLED="1" turns ingest off entirely for a
+// Worker (the production-certification Worker shares the live database).
+const AUTOMATED_UA_PATTERN = /bot\b|bot\/|crawl|spider|slurp|headless|lighthouse|pagespeed|playwright|puppeteer|selenium|webdriver|phantomjs|electron|preview|facebookexternalhit|embedly|whatsapp|telegram|discord|curl\/|wget\/|python|node-fetch|undici|axios|go-http|java\/|okhttp|libwww|httpclient|scrapy|uptime|monitor|pingdom|statuscake/i;
+
+export function isAutomatedUserAgent(userAgent) {
+  const ua = String(userAgent || '').trim();
+  if (!ua) return true;
+  return AUTOMATED_UA_PATTERN.test(ua);
+}
+
+export function isUncountableRequest(request, env) {
+  if (String(env?.ANALYTICS_INGEST_DISABLED || '') === '1') return true;
+  return isAutomatedUserAgent(request?.headers?.get?.('user-agent'));
+}
 // v2 (2026-10-12 evening): the household widening — the same DELETE runs
 // once more under a new key so historic rows recorded by the owner's
 // personal accounts (and by browsers linked to them) are removed too.
@@ -44,6 +71,7 @@ export const TRACKING_EXCLUSION_CLEANUP_KEY = 'owner_tracking_cleanup_v2';
 export function isExcludedAccountIdentity(identity) {
   if (!identity || typeof identity !== 'object') return false;
   if (String(identity.role || '').trim().toLowerCase() === 'admin') return true;
+  if (identity.id && TRACKING_EXCLUDED_USER_IDS.includes(String(identity.id).trim().toLowerCase())) return true;
   return TRACKING_EXCLUDED_EMAILS.includes(String(identity.email || '').trim().toLowerCase());
 }
 
@@ -51,7 +79,15 @@ export function isExcludedAccountIdentity(identity) {
 // countable (non-excluded) account. Mirrors isExcludedAccountIdentity.
 export function accountCountableSql(alias) {
   const emailList = TRACKING_EXCLUDED_EMAILS.map((email) => `'${email}'`).join(',');
-  return `(COALESCE(${alias}.role,'user') <> 'admin' AND lower(COALESCE(${alias}.email,'')) NOT IN (${emailList}))`;
+  const idList = TRACKING_EXCLUDED_USER_IDS.map((id) => `'${id}'`).join(',');
+  return `(COALESCE(${alias}.role,'user') <> 'admin' AND lower(COALESCE(${alias}.email,'')) NOT IN (${emailList}) AND COALESCE(${alias}.id::text,'') NOT IN (${idList}))`;
+}
+
+// SQL predicate for any table's user column: TRUE when the row has no user
+// or belongs to a countable account. Used by the trend charts (love notes,
+// community, feature activity, payments) so excluded accounts never count.
+export function userColumnCountableSql(column) {
+  return `(${column} IS NULL OR ${column} NOT IN (SELECT o2ol_xa.id FROM neon_auth."user" o2ol_xa WHERE NOT ${accountCountableSql('o2ol_xa')}))`;
 }
 
 // SQL predicate for an interaction_events row: countable when it is
@@ -82,7 +118,7 @@ export async function resolveIdentityExcluded(db, { visitorId = null, userId = n
   if (userId && UUID_PATTERN.test(String(userId))) {
     try {
       const result = await db.query(
-        `SELECT role,email FROM neon_auth."user" WHERE id=$1::uuid LIMIT 1`,
+        `SELECT id,role,email FROM neon_auth."user" WHERE id=$1::uuid LIMIT 1`,
         [String(userId)],
       );
       if (isExcludedAccountIdentity(result.rows[0])) return true;
@@ -95,7 +131,7 @@ export async function resolveIdentityExcluded(db, { visitorId = null, userId = n
       );
       if (ready.rows[0]?.ready) {
         const result = await db.query(
-          `SELECT a.role AS role, a.email AS email
+          `SELECT a.id AS id, a.role AS role, a.email AS email
              FROM public.visitor_identity_links vil
              JOIN neon_auth."user" a ON a.id=vil.user_id
             WHERE vil.visitor_id=$1

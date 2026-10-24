@@ -3,6 +3,7 @@ import { Client } from 'pg';
 import { SWEEP_CTES, SWEEP_EVENT_FILTER } from './sweep-exclusion.js';
 import {
   accountCountableSql,
+  userColumnCountableSql,
   eventActorCountableSql,
   EVENT_ACTOR_COUNTABLE_SQL,
   VISITOR_LINK_JOINS_SQL,
@@ -481,7 +482,7 @@ async function overview(db) {
              )::int AS pending_verification
         FROM neon_auth."user" a
         LEFT JOIN public.users p ON p.id=a.id
-       WHERE COALESCE(a.role,'user') <> 'admin'`),
+       WHERE ${accountCountableSql('a')}`),
     db.query(`
       SELECT
         (SELECT count(*) FROM public.therapist_profiles WHERE status='pending')::int AS licensed_pending,
@@ -503,34 +504,34 @@ async function overview(db) {
         (SELECT count(*) FROM public.o2ol_token_transactions t
            LEFT JOIN neon_auth."user" a ON a.id=t.user_id
           WHERE t.transaction_type IN ('purchase','auto_replenish') AND COALESCE(t.amount_cents,0)>0
-            AND COALESCE(a.role,'user')<>'admin')::int AS recorded_payments,
+            AND ${accountCountableSql('a')})::int AS recorded_payments,
         (SELECT count(*) FROM public.o2ol_token_transactions t
            LEFT JOIN neon_auth."user" a ON a.id=t.user_id
           WHERE t.transaction_type IN ('purchase','auto_replenish') AND COALESCE(t.amount_cents,0)>0
-            AND COALESCE(a.role,'user')<>'admin'
+            AND ${accountCountableSql('a')}
             AND t.created_at >=
             (date_trunc('month', now() AT TIME ZONE 'America/Chicago') AT TIME ZONE 'America/Chicago'))::int AS payments_this_month,
         (SELECT COALESCE(sum(t.amount_cents),0)/100.0 FROM public.o2ol_token_transactions t
            LEFT JOIN neon_auth."user" a ON a.id=t.user_id
           WHERE t.transaction_type IN ('purchase','auto_replenish') AND COALESCE(t.amount_cents,0)>0
-            AND COALESCE(a.role,'user')<>'admin')::numeric AS successful_amount`),
+            AND ${accountCountableSql('a')})::numeric AS successful_amount`),
     db.query(`
       SELECT
-        (SELECT count(*) FROM public.scheduled_love_notes)::int AS scheduled_total,
-        (SELECT count(*) FROM public.scheduled_love_notes WHERE lower(COALESCE(status,'')) IN ('scheduled','pending'))::int AS scheduled_pending,
-        (SELECT count(*) FROM public.scheduled_love_notes WHERE lower(COALESCE(status,''))='failed')::int AS scheduled_failed,
-        (SELECT count(*) FROM public.scheduled_love_notes WHERE lower(COALESCE(status,'')) IN ('sent','passed','delivered') OR sent_at IS NOT NULL)::int AS scheduled_passed,
-        (SELECT count(DISTINCT user_id) FROM public.scheduled_love_notes)::int AS scheduler_users,
-        (SELECT count(DISTINCT user_id) FROM public.scheduled_love_notes WHERE created_at >= now()-interval '30 days')::int AS scheduler_users_30d,
-        (SELECT count(*) FROM public.scheduled_love_notes WHERE created_at >= now()-interval '30 days')::int AS scheduled_30d,
-        (SELECT count(*) FROM public.sent_love_notes)::int AS sent_total,
-        (SELECT count(*) FROM public.sent_love_notes WHERE sent_date >= now()-interval '30 days')::int AS sent_30d,
+        (SELECT count(*) FROM public.scheduled_love_notes WHERE ${userColumnCountableSql('user_id')})::int AS scheduled_total,
+        (SELECT count(*) FROM public.scheduled_love_notes WHERE ${userColumnCountableSql('user_id')} AND (lower(COALESCE(status,'')) IN ('scheduled','pending')))::int AS scheduled_pending,
+        (SELECT count(*) FROM public.scheduled_love_notes WHERE ${userColumnCountableSql('user_id')} AND (lower(COALESCE(status,''))='failed'))::int AS scheduled_failed,
+        (SELECT count(*) FROM public.scheduled_love_notes WHERE ${userColumnCountableSql('user_id')} AND (lower(COALESCE(status,'')) IN ('sent','passed','delivered') OR sent_at IS NOT NULL))::int AS scheduled_passed,
+        (SELECT count(DISTINCT user_id) FROM public.scheduled_love_notes WHERE ${userColumnCountableSql('user_id')})::int AS scheduler_users,
+        (SELECT count(DISTINCT user_id) FROM public.scheduled_love_notes WHERE ${userColumnCountableSql('user_id')} AND (created_at >= now()-interval '30 days'))::int AS scheduler_users_30d,
+        (SELECT count(*) FROM public.scheduled_love_notes WHERE ${userColumnCountableSql('user_id')} AND (created_at >= now()-interval '30 days'))::int AS scheduled_30d,
+        (SELECT count(*) FROM public.sent_love_notes WHERE ${userColumnCountableSql('user_id')})::int AS sent_total,
+        (SELECT count(*) FROM public.sent_love_notes WHERE ${userColumnCountableSql('user_id')} AND (sent_date >= now()-interval '30 days'))::int AS sent_30d,
         (SELECT count(*) FROM public.due_scheduled_love_notes)::int AS due_now`),
     db.query(`
       SELECT
         (SELECT count(*) FROM public.communities)::int AS communities,
-        (SELECT count(*) FROM public.community_posts)::int AS posts,
-        (SELECT count(*) FROM public.post_comments)::int AS comments`),
+        (SELECT count(*) FROM public.community_posts WHERE ${userColumnCountableSql('author_id')})::int AS posts,
+        (SELECT count(*) FROM public.post_comments WHERE ${userColumnCountableSql('author_id')})::int AS comments`),
   ]);
 
   const app = applications.rows[0] || {};
@@ -799,7 +800,7 @@ async function visitorRegistry(db, rangeDays = 30, env) {
         r.pages,r.features,r.resolved_user_id AS user_id,r.linked_at,
         u.username,u.email,u.name,
         COALESCE(u.marketing_email_opt_in,false) AS marketing_email_opt_in,
-        CASE WHEN r.resolved_user_id IS NULL THEN 'Anonymous Visitor'
+        CASE WHEN r.resolved_user_id IS NULL THEN 'Guest (not signed up)'
              WHEN COALESCE(p.purchase_count,0)>0 THEN 'Credit Buyer'
              ELSE 'Member' END AS audience_status,
         COALESCE(p.purchase_count,0)::int AS purchase_count,
@@ -846,14 +847,14 @@ async function visitorRegistry(db, rangeDays = 30, env) {
           LEFT JOIN neon_auth."user" a ON a.id=tt.user_id
          WHERE tt.transaction_type IN ('purchase','auto_replenish')
            AND COALESCE(tt.amount_cents,0)>0
-           AND COALESCE(a.role,'user') <> 'admin'
+           AND ${accountCountableSql('a')}
       )
       SELECT
         (SELECT count(*) FROM visitor_ids)::int AS total_visitors,
         (SELECT count(*) FROM active_visitors)::int AS online_now,
         (SELECT count(DISTINCT visitor_id) FROM resolved_visitors WHERE user_id IS NULL)::int AS anonymous_visitors,
         (SELECT count(*) FROM neon_auth."user" a
-          WHERE COALESCE(a.role,'user') <> 'admin'
+          WHERE ${accountCountableSql('a')}
             AND NOT ${CREDIT_PURCHASE_SQL('a.id')})::int AS registered_free,
         (SELECT count(*) FROM buyers)::int AS token_buyers,
         (SELECT COALESCE(sum(COALESCE(tt.amount_cents,0)),0)
@@ -861,9 +862,11 @@ async function visitorRegistry(db, rangeDays = 30, env) {
            LEFT JOIN neon_auth."user" a ON a.id=tt.user_id
           WHERE tt.transaction_type IN ('purchase','auto_replenish')
             AND COALESCE(tt.amount_cents,0)>0
-            AND COALESCE(a.role,'user') <> 'admin')::bigint AS paid_activity_cents,
+            AND ${accountCountableSql('a')})::bigint AS paid_activity_cents,
         (SELECT count(*) FROM public.users u LEFT JOIN neon_auth."user" a ON a.id=u.id
-          WHERE COALESCE(a.role,'user') <> 'admin' AND COALESCE(u.marketing_email_opt_in,false)=true)::int AS promo_opt_ins
+          WHERE ${accountCountableSql('a')} AND COALESCE(u.marketing_email_opt_in,false)=true)::int AS promo_opt_ins,
+        (SELECT count(*) FROM neon_auth."user" a
+          WHERE ${accountCountableSql('a')} AND a."createdAt" >= $1::timestamptz)::int AS signups_since_start
     `, [baseline]),
     db.query(`
       WITH ${SWEEP_CTES}
@@ -875,7 +878,7 @@ async function visitorRegistry(db, rangeDays = 30, env) {
     sweepExcludedVisitors: sweepExcludedResult.rows[0]?.excluded || 0,
     visitors: visitorsResult.rows,
     funnel: funnelResult.rows[0] || {
-      total_visitors:0,online_now:0,anonymous_visitors:0,registered_free:0,token_buyers:0,paid_activity_cents:0,promo_opt_ins:0
+      total_visitors:0,online_now:0,anonymous_visitors:0,registered_free:0,token_buyers:0,paid_activity_cents:0,promo_opt_ins:0,signups_since_start:0
     }
   };
 }
@@ -1201,22 +1204,22 @@ async function billing(db) {
         (SELECT COALESCE(sum(t.amount_cents),0) FROM public.o2ol_token_transactions t
            LEFT JOIN neon_auth."user" a ON a.id=t.user_id
           WHERE t.transaction_type IN ('purchase','auto_replenish') AND COALESCE(t.amount_cents,0)>0
-            AND t.created_at >= now()-interval '30 days' AND COALESCE(a.role,'user')<>'admin')::bigint AS sold_cents_30d,
+            AND t.created_at >= now()-interval '30 days' AND ${accountCountableSql('a')})::bigint AS sold_cents_30d,
         (SELECT COALESCE(sum(t.amount_cents),0) FROM public.o2ol_token_transactions t
            LEFT JOIN neon_auth."user" a ON a.id=t.user_id
           WHERE t.transaction_type IN ('purchase','auto_replenish') AND COALESCE(t.amount_cents,0)>0
-            AND COALESCE(a.role,'user')<>'admin')::bigint AS sold_cents_total,
+            AND ${accountCountableSql('a')})::bigint AS sold_cents_total,
         (SELECT COALESCE(sum(w.balance),0) FROM public.o2ol_token_wallets w
            LEFT JOIN neon_auth."user" a ON a.id=w.user_id
-          WHERE COALESCE(a.role,'user')<>'admin')::bigint AS outstanding_cents,
+          WHERE ${accountCountableSql('a')})::bigint AS outstanding_cents,
         (SELECT count(DISTINCT t.user_id) FROM public.o2ol_token_transactions t
            LEFT JOIN neon_auth."user" a ON a.id=t.user_id
           WHERE t.transaction_type IN ('purchase','auto_replenish') AND COALESCE(t.amount_cents,0)>0
-            AND COALESCE(a.role,'user')<>'admin')::int AS buyers,
+            AND ${accountCountableSql('a')})::int AS buyers,
         (SELECT COALESCE(sum(-t.wallet_delta),0) FROM public.o2ol_token_transactions t
            LEFT JOIN neon_auth."user" a ON a.id=t.user_id
           WHERE t.transaction_type='reserve' AND t.wallet_delta<0
-            AND t.created_at >= now()-interval '30 days' AND COALESCE(a.role,'user')<>'admin')::bigint AS spent_cents_30d`),
+            AND t.created_at >= now()-interval '30 days' AND ${accountCountableSql('a')})::bigint AS spent_cents_30d`),
     // Recent Credit ledger activity — same columns worker/token-admin.ts exposes,
     // with the same admin exclusion as the aggregates above.
     db.query(`
@@ -1616,7 +1619,7 @@ async function ageRanges(db) {
     const rows = (await db.query(
       `SELECT age_range, COUNT(*)::int AS users
          FROM public.users
-        WHERE COALESCE(role,'user') <> 'admin'
+        WHERE ${userColumnCountableSql('id')}  -- excludes admins too (public.users has no role column)
         GROUP BY age_range`
     )).rows;
     const counts = new Map(rows.map(row => [row.age_range || '', Number(row.users || 0)]));

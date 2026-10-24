@@ -270,3 +270,40 @@ test("client: the owner's own member accounts also exclude the browser", async (
   setAnalyticsIdentity({ role: 'user', email: 'izoemotors@gmail.com' });
   assert.equal(isTrackingExcluded(), true);
 });
+
+// --- Fresh start (owner order, 2026-10-24) ---------------------------------
+
+test('excluded pre-launch account ids are excluded and appear in the SQL predicate', async () => {
+  const mod = await import('../worker/tracking-exclusion.js');
+  for (const id of mod.TRACKING_EXCLUDED_USER_IDS) {
+    assert.equal(mod.isExcludedAccountIdentity({ id, role: 'user', email: 'someone@example.com' }), true);
+    assert.ok(mod.accountCountableSql('a').includes(`'${id}'`));
+  }
+  assert.equal(mod.isExcludedAccountIdentity({ id: '29f23379-5da5-418b-b0a3-c43a75f4b784', role: 'user', email: 'member@example.com' }), false);
+  assert.ok(mod.userColumnCountableSql('user_id').startsWith('(user_id IS NULL OR user_id NOT IN'));
+});
+
+test('automated clients are uncountable; ordinary browsers count', async () => {
+  const { isAutomatedUserAgent, isUncountableRequest } = await import('../worker/tracking-exclusion.js');
+  const automated = [
+    '',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/140.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Mobile Safari/537.36 Chrome-Lighthouse',
+    'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+    'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
+    'curl/8.5.0',
+    'python-requests/2.31.0',
+  ];
+  for (const ua of automated) assert.equal(isAutomatedUserAgent(ua), true, ua);
+  const people = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0',
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Mobile/15E148 Safari/604.1',
+    'Mozilla/5.0 (Linux; Android 14; SM-S918U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36',
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 [FBAN/FBIOS;FBAV/530.0.0.40.97]',
+  ];
+  for (const ua of people) assert.equal(isAutomatedUserAgent(ua), false, ua);
+  const req = (ua) => ({ headers: new Headers(ua ? { 'user-agent': ua } : {}) });
+  assert.equal(isUncountableRequest(req(people[0]), {}), false);
+  assert.equal(isUncountableRequest(req(people[0]), { ANALYTICS_INGEST_DISABLED: '1' }), true);
+  assert.equal(isUncountableRequest(req(automated[1]), {}), true);
+});

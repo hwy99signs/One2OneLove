@@ -513,7 +513,7 @@ jobs:
         run: |
           set -euo pipefail
           grep -F "Visitor Registry / Audience Intelligence" src/pages/Admin.jsx
-          grep -F "Anonymous Visitors" src/pages/Admin.jsx
+          grep -F "Guests (Not Signed Up)" src/pages/Admin.jsx  # renamed from Anonymous Visitors (owner, 2026-10-24)
           grep -F "Registered Free" src/pages/Admin.jsx
           grep -F "Credit Buyers" src/pages/Admin.jsx
           grep -F "Paid Activity" src/pages/Admin.jsx
