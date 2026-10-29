@@ -72,7 +72,7 @@ export default function Scrabluko({gameSessionRef}) {
         <img src="/game-cards/card-scrabluko.jpg" alt="game card" className="mx-auto mb-6 block w-full max-w-3xl rounded-[24px] shadow-2xl ring-1 ring-white/15" />
         <GameLeaderboard game="scrabluko" className="mb-4"/>
         <div className="overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/15">
-          <iframe ref={iframeRef} title="Scrabluko" src="/games-src/scrabluko.html" className="w-full border-0" style={{ height: "min(62vh, 760px)", minHeight: "520px" }} allow="fullscreen" />
+          <iframe ref={iframeRef} title="Scrabluko" src={`/games-src/scrabluko.html?lang=${encodeURIComponent(currentLanguage || 'en')}`} className="w-full border-0" style={{ height: "min(62vh, 760px)", minHeight: "520px" }} allow="fullscreen" />
         </div>
         <p className="mt-4 text-center text-xs text-white/50">Copyright © 2026 EPS Venture Group. All rights reserved.</p>
       </div>
