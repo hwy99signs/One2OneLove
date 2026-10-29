@@ -272,7 +272,7 @@ export async function chargeGameAndCreatePass(db,userId,game,requestId){
       paid=await debitPaidCreditInTx(db,userId,def.chargeFeatureCode,creditCents,`paid:${key}`,{game,request_id:requestId,promotion_id:promo?.id||null});
     }
     // A free promo pass must not remain valid beyond the Jan 1 relock.
-    const expiresAt=new Date(promo?.temporary&&promo?.free
+    const expiresAt=new Date(promo?.free&&isO2OLPromoFreeFeature(def.chargeFeatureCode)
       ?Math.min(Date.now()+120*60*1000,Date.parse(O2OL_FREE_PROMO_END_EXCLUSIVE))
       :Date.now()+120*60*1000).toISOString();
     const pass=(await db.query(`INSERT INTO public.o2ol_game_access_passes
