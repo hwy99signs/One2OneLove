@@ -5,6 +5,7 @@ import { createPageUrl } from "@/utils";
 import { useLanguage } from "@/Layout";
 import { apiRequest, beaconJson } from "@/lib/apiClient";
 import GameLeaderboard from "@/components/activities/GameLeaderboard";
+import { applyGameInstructionLocale } from '@/lib/gameInstructionLocale';
 import { useQueryClient } from "@tanstack/react-query";
 
 const copy = {
@@ -40,6 +41,7 @@ export default function PoolPingPong({gameSessionRef}) {
       try{
         doc=frame.contentDocument;
         if(!doc)return;
+        applyGameInstructionLocale(doc,'pool',currentLanguage);
         // Pool Ping Pong starts a run from either start button; a finished
         // run shows "Play again" on #againBtn ("Next ball" continues the
         // same run). Capture-phase listeners read the score before reset.
@@ -57,7 +59,7 @@ export default function PoolPingPong({gameSessionRef}) {
     const onHide=()=>submit(true);
     window.addEventListener('pagehide',onHide);
     return()=>{submit(true);window.removeEventListener('pagehide',onHide);frame.removeEventListener('load',bind);cleanup.forEach(fn=>fn());};
-  },[gameSessionRef,queryClient]);
+  },[gameSessionRef,queryClient,currentLanguage]);
 
   return (
     <div className="min-h-screen" style={{backgroundColor:'#0d3b2a'}}>

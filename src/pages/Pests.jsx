@@ -5,6 +5,7 @@ import { createPageUrl } from "@/utils";
 import { useLanguage } from "@/Layout";
 import { apiRequest, beaconJson } from "@/lib/apiClient";
 import GameLeaderboard from "@/components/activities/GameLeaderboard";
+import { applyGameInstructionLocale } from '@/lib/gameInstructionLocale';
 import { useQueryClient } from "@tanstack/react-query";
 
 const copy = {
@@ -40,6 +41,7 @@ export default function Pests({gameSessionRef}) {
       try{
         doc=frame.contentDocument;
         if(!doc)return;
+        applyGameInstructionLocale(doc,'pests',currentLanguage);
         const play=doc.getElementById('playBtn'),menu=doc.getElementById('resetBtn');
         const onPlay=()=>newRun();
         const onMenu=()=>submit(false);
@@ -53,7 +55,7 @@ export default function Pests({gameSessionRef}) {
     const onHide=()=>submit(true);
     window.addEventListener('pagehide',onHide);
     return()=>{submit(true);window.removeEventListener('pagehide',onHide);frame.removeEventListener('load',bind);cleanup.forEach(fn=>fn());};
-  },[gameSessionRef,queryClient]);
+  },[gameSessionRef,queryClient,currentLanguage]);
 
   return (
     <div className="min-h-screen" style={{backgroundColor:'#0b2e1d'}}>

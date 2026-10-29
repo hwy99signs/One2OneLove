@@ -5,6 +5,7 @@ import { createPageUrl } from "@/utils";
 import { useLanguage } from "@/Layout";
 import { apiRequest } from "@/lib/apiClient";
 import GameLeaderboard from "@/components/activities/GameLeaderboard";
+import { applyGameInstructionLocale } from '@/lib/gameInstructionLocale';
 import { useQueryClient } from "@tanstack/react-query";
 
 const copy = {
@@ -41,6 +42,7 @@ export default function Scrabluko({gameSessionRef}) {
     const bind=()=>{
       try{
         doc=frame.contentDocument;if(!doc)return;
+        applyGameInstructionLocale(doc,'scrabluko',currentLanguage);
         ['startBtn','againBtn','overNewBtn','newBtn'].forEach(id=>{
           const el=doc.getElementById(id);if(!el)return;
           el.addEventListener('click',newRun,true);
@@ -58,7 +60,7 @@ export default function Scrabluko({gameSessionRef}) {
     frame.addEventListener('load',bind);
     if(frame.contentDocument?.readyState==='complete')bind();
     return()=>{frame.removeEventListener('load',bind);observer?.disconnect();cleanup.forEach(fn=>fn());};
-  },[gameSessionRef,queryClient]);
+  },[gameSessionRef,queryClient,currentLanguage]);
 
   return (
     <div className="min-h-screen" style={{backgroundColor:'#0a1f44'}}>
