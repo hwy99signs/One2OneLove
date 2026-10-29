@@ -935,7 +935,10 @@ export default function LikeMinded() {
           <div className="mx-auto mt-4 w-full max-w-5xl rounded-2xl border border-amber-300/30 bg-amber-300/10 p-4 text-left text-amber-50">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div><div className="inline-flex items-center gap-2 font-black"><Coins className="h-5 w-5"/>{t.premium}</div><p className="mt-1 text-xs leading-5 text-amber-50/80">{t.premiumBody}</p></div>
-              {isAuthenticated ? <Link to="/Credit?return=/LikeMinded" className="rounded-xl bg-amber-300 px-4 py-2 text-sm font-black text-amber-950">{gamePass?'Pass Active':gamePromotion?.free?'🎉 FREE FOREVER · No Credit used':walletError?`🔒 ${(Number(tokenCost||49)/100).toFixed(2)} per game · Balance unavailable`:`🔒 ${(Number(tokenCost||49)/100).toFixed(2)} per game · Balance ${(Number(tokenBalance||0)/100).toFixed(2)}`}</Link> : <Link to="/SignUp?source=like-minded&type=individual" className="rounded-xl bg-amber-300 px-4 py-2 text-sm font-black text-amber-950">Create FREE Account</Link>}
+              {isAuthenticated ? (gamePromotion?.free || tokenCost===0
+                ? <span className="rounded-xl bg-emerald-300 px-4 py-2 text-sm font-black text-emerald-950">{gamePass?'Session Active':'🎉 FREE FOREVER · No Credit used'}</span>
+                : <Link to="/Credit?return=/LikeMinded" className="rounded-xl bg-amber-300 px-4 py-2 text-sm font-black text-amber-950">{walletError?'Credit balance unavailable':`Verified owner-cost session · $${(Number(tokenCost)/100).toFixed(2)} Credit`}</Link>
+              ) : <Link to="/SignUp?source=like-minded&type=individual" className="rounded-xl bg-amber-300 px-4 py-2 text-sm font-black text-amber-950">Create FREE Account</Link>}
             </div>
           </div>
 
