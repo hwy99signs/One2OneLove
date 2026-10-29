@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { Client } from 'pg';
+import { isO2OLPromoFreeFeature } from '../src/lib/o2olFreePromo2026';
 
 const HEADERS = {
   'content-type': 'application/json; charset=utf-8',
@@ -125,7 +126,7 @@ export async function enforceApiEntitlement(request, env, url) {
     // protected API also verifies ownership of its one-time Credit unlock.
     // Administrators retain access for QA without customer Credit charges.
     const unlockFeature = contentUnlockFeature(url.pathname);
-    if (unlockFeature && row.role !== 'admin') {
+    if (unlockFeature && row.role !== 'admin' && !isO2OLPromoFreeFeature(unlockFeature)) {
       const unlocked = await db.query(
         `SELECT EXISTS(
            SELECT 1 FROM public.o2ol_token_content_unlocks
