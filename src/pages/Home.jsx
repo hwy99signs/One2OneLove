@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { useLanguage } from './Layout';
+import { isO2OLPromoFreeFeature } from '@/lib/o2olFreePromo2026';
 
 const LOGO = '/assets/o2ol-approved-logo.png';
 const HERO = '/assets/o2ol-hero.png';
@@ -42,6 +43,21 @@ const STUDIO_E2_COPY = {
   fr:{eyebrow:'O2OL STUDIO SHOW',badge:'NOUVEL ÉPISODE',season:'Saison 1 • Épisode 2',title:'Qui paie au premier rendez-vous ?',body:'La toute nouvelle conversation O2OL Studio est arrivée. Débloquez l’Épisode 2 une fois avec 1 $ de Crédit et regardez-le quand vous voulez — sans abonnement, jamais.',watch:'Débloquer l’Épisode 2 — $1',lockNote:'Déblocage avec 1 $ de Crédit • À regarder à tout moment'},
   it:{eyebrow:'O2OL STUDIO SHOW',badge:'NUOVO EPISODIO',season:'Stagione 1 • Episodio 2',title:'Chi paga al primo appuntamento?',body:'La conversazione più nuova di O2OL Studio è qui. Sblocca l’Episodio 2 una volta con $1 di Credito e guardalo quando vuoi — senza abbonamento, mai.',watch:'Sblocca Episodio 2 — $1',lockNote:'Sblocco con $1 di Credito • Guardalo quando vuoi'},
   de:{eyebrow:'O2OL STUDIO SHOW',badge:'NEUE FOLGE',season:'Staffel 1 • Folge 2',title:'Wer zahlt beim ersten Date?',body:'Das neueste O2OL-Studio-Gespräch ist da. Schalte Folge 2 einmal mit $1 Credit frei und sieh sie dir jederzeit an — kein Abo, niemals.',watch:'Folge 2 Freischalten — $1',lockNote:'$1 Credit Freischaltung • Jederzeit ansehen'}
+};
+
+// Episode 2 is free for verified members while the non-game promotion runs.
+// Its original paid messaging automatically returns after the promotion ends.
+const STUDIO_E2_PROMO_COPY = {
+  en:{body:'Episode 2 is FREE for verified members through Dec 31, 2026. Enjoy the latest O2OL Studio conversation without a Credit charge.',watch:'Watch Episode 2 — FREE',lockNote:'FREE for verified members through Dec 31'},
+  es:{body:'El Episodio 2 es GRATIS para miembros verificados hasta el 31 de diciembre de 2026, sin cobrar Crédito.',watch:'Ver Episodio 2 — GRATIS',lockNote:'GRATIS para miembros verificados hasta el 31 de diciembre'},
+  fr:{body:'L’Épisode 2 est GRATUIT pour les membres vérifiés jusqu’au 31 décembre 2026, sans débit de Crédit.',watch:'Voir l’Épisode 2 — GRATUIT',lockNote:'GRATUIT pour les membres vérifiés jusqu’au 31 décembre'},
+  it:{body:'L’Episodio 2 è GRATIS per i membri verificati fino al 31 dicembre 2026, senza addebiti di Credito.',watch:'Guarda Episodio 2 — GRATIS',lockNote:'GRATIS per i membri verificati fino al 31 dicembre'},
+  de:{body:'Folge 2 ist für bestätigte Mitglieder bis zum 31. Dezember 2026 KOSTENLOS, ohne Credit-Abzug.',watch:'Folge 2 — KOSTENLOS',lockNote:'KOSTENLOS für bestätigte Mitglieder bis 31. Dezember'},
+};
+const HOME_PROMO_TOOL_CODES = {
+  MemoryLane:'memories_unlock',
+  RelationshipGoals:'goals_unlock',
+  RelationshipMilestones:'milestones_unlock'
 };
 
 const STUDIO_TABS_COPY = {
@@ -97,11 +113,13 @@ export default function Home() {
   const t = COPY[currentLanguage] || COPY.en;
   const matchIQLabel = MYMATCHIQ_LABELS[currentLanguage] || MYMATCHIQ_LABELS.en;
   const studio = STUDIO_COPY[currentLanguage] || STUDIO_COPY.en;
-  const studioE2 = STUDIO_E2_COPY[currentLanguage] || STUDIO_E2_COPY.en;
+  const studioEpisodeFree = isO2OLPromoFreeFeature('studio_episode_unlock');
+  const studioE2 = { ...(STUDIO_E2_COPY[currentLanguage] || STUDIO_E2_COPY.en), ...(studioEpisodeFree ? (STUDIO_E2_PROMO_COPY[currentLanguage] || STUDIO_E2_PROMO_COPY.en) : {}) };
   const studioTabs = STUDIO_TABS_COPY[currentLanguage] || STUDIO_TABS_COPY.en;
   const [studioTab, setStudioTab] = useState('new');
   const amora = AMORA_COPY[currentLanguage] || AMORA_COPY.en;
   const [selectedTool, setSelectedTool] = useState(0);
+  const toolIsFree = (page,status) => status === 'free' || isO2OLPromoFreeFeature(HOME_PROMO_TOOL_CODES[page]);
   const [publicStats, setPublicStats] = useState(null);
   const go = page => navigate(createPageUrl(page));
 
@@ -174,8 +192,8 @@ export default function Home() {
         <div className="mx-auto max-w-7xl">
           <h2 className="text-center text-5xl font-black tracking-tight md:text-6xl">{t.tools}</h2>
           <p className="mx-auto mt-3 max-w-5xl text-center text-lg text-slate-600 md:text-xl">{t.toolsBody}</p>
-          <button type="button" data-feature-status="locked" onClick={() => go('Amora')} className="group relative mx-auto mt-8 grid w-full max-w-5xl overflow-hidden rounded-3xl border border-rose-200 bg-gradient-to-r from-rose-50 via-white to-purple-50 text-left shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl sm:grid-cols-[190px_1fr]">
-            <span className="absolute right-4 top-4 z-10 rounded-full bg-amber-300 px-2.5 py-1 text-xs font-black text-amber-950 shadow">🔒</span><div className="flex items-center justify-center bg-[#16070f] p-4">
+          <button type="button" data-feature-status="mixed" onClick={() => go('Amora')} className="group relative mx-auto mt-8 grid w-full max-w-5xl overflow-hidden rounded-3xl border border-rose-200 bg-gradient-to-r from-rose-50 via-white to-purple-50 text-left shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl sm:grid-cols-[190px_1fr]">
+            <div className="flex items-center justify-center bg-[#16070f] p-4">
               <img src="/assets/amora-relationship-coach-official.webp" alt="Amora — One2OneLove Relationship Coach" className="h-auto w-full max-w-[170px] rounded-2xl shadow-lg" />
             </div>
             <div className="flex flex-col justify-center p-6 sm:p-8">
@@ -190,9 +208,9 @@ export default function Home() {
           </button>
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {TOOLS.map(([icon,labelKey,page,gradient,status],index) => (
-              <button key={page} data-feature-status={status} data-analytics-id={`home-tool-${String(page).toLowerCase()}`} data-analytics-destination={`/${page}`} onClick={() => { setSelectedTool(index); go(page); }} className={`relative min-h-[86px] rounded-2xl bg-gradient-to-r ${gradient} px-5 text-xl font-extrabold text-white shadow-lg transition-transform hover:scale-[1.02] ${labelKey === 'MyMatchIQ' ? 'border-2 border-fuchsia-300 ring-2 ring-indigo-200' : ''} ${index===selectedTool?'ring-4 ring-rose-400 ring-offset-2':''}`}>
-                {status === 'free' && <span className="absolute right-2 top-2 rounded-full bg-yellow-300 px-2 py-0.5 text-[10px] font-black tracking-wide text-yellow-950 shadow">FREE</span>}
-                {status === 'locked' && <span aria-label="Locked" className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-amber-300 text-sm text-amber-950 shadow">🔒</span>}
+              <button key={page} data-feature-status={toolIsFree(page,status) ? 'free' : status} data-analytics-id={`home-tool-${String(page).toLowerCase()}`} data-analytics-destination={`/${page}`} onClick={() => { setSelectedTool(index); go(page); }} className={`relative min-h-[86px] rounded-2xl bg-gradient-to-r ${gradient} px-5 text-xl font-extrabold text-white shadow-lg transition-transform hover:scale-[1.02] ${labelKey === 'MyMatchIQ' ? 'border-2 border-fuchsia-300 ring-2 ring-indigo-200' : ''} ${index===selectedTool?'ring-4 ring-rose-400 ring-offset-2':''}`}>
+                {toolIsFree(page,status) && <span className="absolute right-2 top-2 rounded-full bg-yellow-300 px-2 py-0.5 text-[10px] font-black tracking-wide text-yellow-950 shadow">FREE</span>}
+                {status === 'locked' && !toolIsFree(page,status) && <span aria-label="Locked" className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-amber-300 text-sm text-amber-950 shadow">🔒</span>}
                 <span>{icon} {labelKey === 'MyMatchIQ' ? 'MyMatchIQ' : (t.toolLabels[labelKey] || COPY.en.toolLabels[labelKey])}</span>
               </button>
             ))}
@@ -212,7 +230,7 @@ export default function Home() {
               <span className="rounded-full bg-gradient-to-r from-fuchsia-500 to-blue-600 px-3.5 py-1.5 text-[0.68rem] font-black uppercase tracking-[0.18em] text-white shadow-lg sm:text-xs">{studioE2.badge}</span>
               <div className="mt-4 text-[0.7rem] font-black uppercase tracking-[0.22em] text-cyan-200 sm:text-sm">{studioE2.season}</div>
               <div className="mt-3 max-w-4xl text-3xl font-black leading-tight sm:text-5xl lg:text-6xl">{studioE2.title}</div>
-              <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-wide text-white/90 sm:text-sm"><span aria-hidden="true">🔒</span>{studioE2.lockNote}</div>
+              <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-wide text-white/90 sm:text-sm">{!studioEpisodeFree && <span aria-hidden="true">🔒</span>}{studioE2.lockNote}</div>
             </div>
             <div className="bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-950 px-5 py-4 sm:px-7 sm:py-5 lg:px-9 lg:py-6">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
