@@ -19,6 +19,14 @@ import { createCalendarEvent } from "@/lib/calendarService";
 import { listDateIdeas, createDateIdea, updateDateIdea } from "@/lib/dateIdeasService";
 import { getTokenWallet, isTokensRequiredError, listTokenUnlocks, tokenRequiredDetails, unlockTokenContent } from "@/lib/tokenService";
 
+const creditUnlockCopy = {
+  en: { free: 'FREE during the promotion — no Credit deducted.', paid: 'Unlocked with {amount} Credit.' },
+  es: { free: 'GRATIS durante la promoción — no se descontó Crédito.', paid: 'Desbloqueado con {amount} de Crédito.' },
+  fr: { free: 'GRATUIT pendant l’offre — aucun Crédit débité.', paid: 'Débloqué avec {amount} de Crédit.' },
+  it: { free: 'GRATIS durante la promozione — nessun Credito addebitato.', paid: 'Sbloccato con {amount} di Credito.' },
+  de: { free: 'Während der Aktion KOSTENLOS — kein Credit abgezogen.', paid: 'Für {amount} Credit freigeschaltet.' },
+};
+
 const translations = {
   en: {
     title: "Date Ideas for Couples",
@@ -556,7 +564,509 @@ export default function DateIdeas() {
       const full=await loadPrivateIdea(lockedIdea);
       setSelectedIdea({...lockedIdea,...full});
       setLockedIdea(null);
-      toast.success(`Unlocked with $${(Number(result?.tokens?.charged || dateIdeaTokenCost)/100).toFixed(2)} Credit.`);
+      const chargedCents = Number(result?.tokens?.charged ?? 0);
+      const unlockCopy = creditUnlockCopy[currentLanguage] || creditUnlockCopy.en;
+      toast.success(result?.promo || chargedCents === 0
+        ? unlockCopy.free
+        : unlockCopy.paid.replace('{amount}', '
+    } catch (error) {
+      if (isTokensRequiredError(error)) {
+        const info = tokenRequiredDetails(error);
+        setUnlockError(`You need $${(Number(info.required || dateIdeaTokenCost)/100).toFixed(2)} Credit to unlock this Date Idea. Current balance: $${(Number(info.balance || 0)/100).toFixed(2)}.`);
+      } else {
+        setUnlockError(error?.message || 'Unable to unlock this Date Idea.');
+      }
+    } finally {
+      setUnlockingIdea(false);
+    }
+  };
+
+  const localToday = (() => {
+    const now = new Date();
+    const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+    return local.toISOString().split('T')[0];
+  })();
+
+  const formatOptionList = (values, optionMap) => {
+    const list = Array.isArray(values) ? values : values ? [values] : [];
+    return list.map(value => optionMap?.[value] || String(value).replaceAll('_', ' ')).join(' • ');
+  };
+
+  const formatDifficulty = (value) => {
+    if (!value) return '';
+    const text = String(value);
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
+      <div className="max-w-7xl mx-auto px-4 py-12">
+        <div className="mb-6">
+          <Link
+            to={createPageUrl("Home")}
+            className="inline-flex items-center px-4 py-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all"
+          >
+            <ArrowLeft size={20} className="mr-2" />
+            {t.back}
+          </Link>
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-12"
+        >
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full mb-6 shadow-xl">
+            <Heart className="w-10 h-10 text-white fill-white" />
+          </div>
+          <h1 className="text-5xl font-bold text-gray-900 mb-4">{t.title}</h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">{t.subtitle}</p>
+        </motion.div>
+
+        <div className="mb-8 flex flex-wrap gap-4 justify-between items-center">
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+            <Button
+              onClick={() => setViewMode('all')}
+              variant={viewMode === 'all' ? 'default' : 'outline'}
+              className={viewMode === 'all' ? 'bg-gradient-to-r from-pink-500 to-purple-600' : ''}
+            >
+              {t.allDates}
+            </Button>
+            {hasMemberAccess && (
+              <>
+                <Button
+                  onClick={() => setViewMode('custom')}
+                  variant={viewMode === 'custom' ? 'default' : 'outline'}
+                  className={viewMode === 'custom' ? 'bg-gradient-to-r from-pink-500 to-purple-600' : ''}
+                >
+                  {t.myCustomDates} ({customOnlyDates.length})
+                </Button>
+                <Button
+                  onClick={() => setViewMode('saved')}
+                  variant={viewMode === 'saved' ? 'default' : 'outline'}
+                  className={viewMode === 'saved' ? 'bg-gradient-to-r from-pink-500 to-purple-600' : ''}
+                >
+                  <Bookmark className="w-4 h-4 mr-2" />
+                  {t.savedDates} ({savedIdeas.length})
+                </Button>
+              </>
+            )}
+          </div>
+          {hasMemberAccess && (
+            <Button
+              onClick={() => setShowCustomForm(true)}
+              className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              {t.createCustom}
+            </Button>
+          )}
+        </div>
+
+        <AnimatePresence>
+          {showCustomForm && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="mb-8"
+            >
+              <CustomDateForm
+                onSubmit={(data) => createDateMutation.mutate(data)}
+                onCancel={() => setShowCustomForm(false)}
+                isLoading={createDateMutation.isPending}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="mb-8 space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Filter className="w-5 h-5 text-gray-600" />
+            <h3 className="text-lg font-semibold text-gray-900">{t.filters}</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger><SelectValue placeholder={t.categoryLabel} /></SelectTrigger>
+              <SelectContent>
+                {Object.entries(t.categories).map(([key, label]) => (
+                  <SelectItem key={key} value={key}>{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={selectedBudget} onValueChange={setSelectedBudget}>
+              <SelectTrigger><SelectValue placeholder={t.budgetLabel} /></SelectTrigger>
+              <SelectContent>
+                {Object.entries(t.budgetOptions).map(([key, label]) => (
+                  <SelectItem key={key} value={key}>{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+              <SelectTrigger><SelectValue placeholder={t.locationLabel} /></SelectTrigger>
+              <SelectContent>
+                {Object.entries(t.locationOptions).map(([key, label]) => (
+                  <SelectItem key={key} value={key}>{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={selectedOccasion} onValueChange={setSelectedOccasion}>
+              <SelectTrigger><SelectValue placeholder={t.occasionLabel} /></SelectTrigger>
+              <SelectContent>
+                {Object.entries(t.occasionOptions).map(([key, label]) => (
+                  <SelectItem key={key} value={key}>{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={selectedStage} onValueChange={setSelectedStage}>
+              <SelectTrigger><SelectValue placeholder={t.stageLabel} /></SelectTrigger>
+              <SelectContent>
+                {Object.entries(t.stageOptions).map(([key, label]) => (
+                  <SelectItem key={key} value={key}>{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="text-center mb-8">
+          <p className="text-gray-600">
+            {t.showingIdeas} <span className="font-bold text-pink-600">{filteredIdeas.length}</span> {t.ideas}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredIdeas.map((idea, index) => {
+            const Icon = idea.icon || Heart;
+            const isBuiltIn = Boolean(idea.week);
+            const isOpenHouseLocked = isBuiltIn && !hasDateIdeaAccess(idea);
+            const teaser = isOpenHouseLocked ? idea.title : null;
+
+            return (
+              <motion.button
+                type="button"
+                key={idea.id || `${idea.title}-${index}`}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: Math.min(index * 0.015, 0.25) }}
+                onClick={() => openDateIdea(idea)}
+                aria-label={isOpenHouseLocked ? `${idea.title} — ${openHouseCopy.membersOnly}` : idea.title}
+                className={`relative w-full min-h-[86px] rounded-xl border px-4 py-4 text-left flex items-center gap-4 transition-all duration-200 ${
+                  isOpenHouseLocked
+                    ? 'bg-slate-50 border-slate-300 hover:border-purple-300 hover:shadow-md'
+                    : 'bg-white border-gray-200 hover:border-pink-300 hover:shadow-lg'
+                }`}
+              >
+                <div className={`w-11 h-11 flex-shrink-0 bg-gradient-to-br ${idea.color || 'from-pink-500 to-purple-600'} rounded-xl flex items-center justify-center shadow-md`}>
+                  <Icon className="w-6 h-6 text-white" />
+                </div>
+
+
+                {isOpenHouseLocked ? (
+                  <div className="min-w-0 flex-1 pr-10">
+                    <div className="flex items-center gap-2 overflow-hidden">
+                      <span className="font-bold text-gray-700 leading-snug">{teaser}</span>
+                      <span aria-hidden="true" className="h-3 w-10 rounded bg-slate-300 blur-[3px] opacity-90" />
+                    </div>
+                    <div className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-purple-700">
+                      <Lock className="h-3.5 w-3.5" />
+                      {openHouseCopy.membersOnly}
+                    </div>
+                    <div className="absolute inset-y-0 right-3 flex items-center">
+                      <div className="rounded-full bg-white/90 p-2 shadow-sm border border-slate-200">
+                        <Lock className="h-4 w-4 text-slate-600" />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <span className="font-bold text-gray-900 leading-snug">{idea.title}</span>
+                )}
+              </motion.button>
+            );
+          })}
+        </div>
+
+        <AnimatePresence>
+          {showOpenHouseLock && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[60] bg-black/35 backdrop-blur-[2px] flex items-center justify-center p-4"
+              onClick={() => setShowOpenHouseLock(false)}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96, y: 12 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.96, y: 12 }}
+                className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-purple-100"
+                onClick={(event) => event.stopPropagation()}
+                role="dialog"
+                aria-modal="true"
+              >
+                <button type="button" aria-label="Close" onClick={() => setShowOpenHouseLock(false)} className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-100 hover:text-gray-700">
+                  <X className="h-4 w-4" />
+                </button>
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-purple-100">
+                  <Lock className="h-7 w-7 text-purple-700" />
+                </div>
+                <div className="text-center">
+                  <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-purple-700">{openHouseCopy.badge}</p>
+                  <h3 className="text-2xl font-bold text-gray-900">{openHouseCopy.lockedTitle}</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-gray-600">{currentUser?.id ? (openHouseCopy.lockedBodyMember || openHouseCopy.lockedBody) : openHouseCopy.lockedBody}</p><p className="mt-2 text-sm font-black text-purple-800">{(Number(dateIdeaTokenCost||0)/100).toLocaleString('en-US',{style:'currency',currency:'USD'})} · Yours forever</p>
+                </div>
+                <div className="mt-6 flex flex-col gap-2">
+                  {currentUser?.id ? (
+                    <>
+                      {tokenWalletError ? (
+                        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-center text-sm font-semibold text-amber-900">
+                          We couldn't load your Credit balance just now.
+                          <button type="button" onClick={() => refetchTokenWallet()} className="ml-2 font-black underline">Try again</button>
+                        </div>
+                      ) : (
+                      <>
+                      <div className="rounded-xl bg-slate-100 px-4 py-2 text-center text-sm font-black text-slate-700">Credit balance: {((Number(tokenWalletData?.wallet?.balance||0))/100).toLocaleString('en-US',{style:'currency',currency:'USD'})}</div>
+                      {Number(tokenWalletData?.wallet?.balance||0) < Number(dateIdeaTokenCost||0) ? (
+                        <Button onClick={()=>window.location.assign('/Credit?return=/DateIdeas')} className="w-full bg-gradient-to-r from-amber-400 to-orange-500 font-black text-amber-950 hover:from-amber-500 hover:to-orange-600">
+                          <Coins className="mr-2 h-4 w-4" />Add Credit
+                        </Button>
+                      ) : (
+                        <Button disabled={unlockingIdea} onClick={unlockDateIdea} className="w-full bg-gradient-to-r from-amber-400 to-orange-500 font-black text-amber-950 hover:from-amber-500 hover:to-orange-600">
+                          {unlockingIdea ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Coins className="mr-2 h-4 w-4" />}
+                          Unlock
+                        </Button>
+                      )}
+                      {unlockError && Number(tokenWalletData?.wallet?.balance||0) >= Number(dateIdeaTokenCost||0) && <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">{unlockError}</div>}
+                      </>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <Link to="/SignUp?source=date-ideas&feature=date-ideas&return=/DateIdeas" onClick={() => setShowOpenHouseLock(false)}>
+                        <Button className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
+                          <Coins className="mr-2 h-4 w-4" />Create FREE Account · Then Unlock with Credit
+                        </Button>
+                      </Link>
+                      <Link to="/SignIn?source=date-ideas&redirect=/DateIdeas" onClick={() => setShowOpenHouseLock(false)}>
+                        <Button variant="outline" className="w-full">{openHouseCopy.signIn}</Button>
+                      </Link>
+                    </>
+                  )}
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+
+          {selectedIdea && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-black/25 backdrop-blur-[1px] flex items-center justify-center p-4"
+              onClick={() => setSelectedIdea(null)}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96, y: 12 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.96, y: 12 }}
+                transition={{ duration: 0.18 }}
+                className="w-full max-w-2xl"
+                onClick={(event) => event.stopPropagation()}
+                onMouseLeave={() => { if (!showScheduleForm) setSelectedIdea(null); }}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="date-idea-detail-title"
+              >
+                <Card className="bg-white shadow-2xl border-2 border-pink-100 max-h-[85vh] overflow-y-auto">
+                  <CardHeader className="relative pr-14">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label={t.close || 'Close'}
+                      onClick={() => setSelectedIdea(null)}
+                      className="absolute right-3 top-3 rounded-full"
+                    >
+                      <X className="w-5 h-5" />
+                    </Button>
+                    <div className="flex items-center gap-4">
+                      {(() => {
+                        const DetailIcon = selectedIdea.icon || Heart;
+                        return (
+                          <div className={`w-14 h-14 flex-shrink-0 bg-gradient-to-br ${selectedIdea.color || 'from-pink-500 to-purple-600'} rounded-2xl flex items-center justify-center shadow-lg`}>
+                            <DetailIcon className="w-7 h-7 text-white" />
+                          </div>
+                        );
+                      })()}
+                      <div>
+                        <CardTitle id="date-idea-detail-title" className="text-2xl font-bold text-gray-900">{selectedIdea.title}</CardTitle>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-700 leading-relaxed mb-6">{selectedIdea.description}</p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm mb-6">
+                      <div><span className="text-gray-500">{t.difficulty}:</span> <span className="font-semibold text-gray-800">{t.difficultyOptions?.[selectedIdea.difficulty] || formatDifficulty(selectedIdea.difficulty)}</span></div>
+                      <div><span className="text-gray-500">{t.duration}:</span> <span className="font-semibold text-gray-800">{selectedIdea.duration || (selectedIdea.duration_hours ? `${selectedIdea.duration_hours}h` : '')}</span></div>
+                      <div><span className="text-gray-500">{t.budget}:</span> <span className="font-semibold text-gray-800">{t.budgetOptions?.[selectedIdea.budget] || selectedIdea.budget}</span></div>
+                      <div><span className="text-gray-500">{t.locations || t.locationLabel}:</span> <span className="font-semibold text-gray-800">{formatOptionList(selectedIdea.locations || selectedIdea.location_type, t.locationOptions)}</span></div>
+                      <div className="sm:col-span-2"><span className="text-gray-500">{t.occasions || t.occasionLabel}:</span> <span className="font-semibold text-gray-800">{formatOptionList(selectedIdea.occasions || selectedIdea.occasion, t.occasionOptions)}</span></div>
+                      <div className="sm:col-span-2"><span className="text-gray-500">{t.stages || t.stageLabel}:</span> <span className="font-semibold text-gray-800">{formatOptionList(selectedIdea.stages || selectedIdea.relationship_stage, t.stageOptions)}</span></div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-100">
+                      {hasMemberAccess ? (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleSaveDate(selectedIdea)}
+                            className={selectedIdea.is_favorite ? 'bg-pink-50 border-pink-300' : ''}
+                          >
+                            <Bookmark className={`w-4 h-4 mr-2 ${selectedIdea.is_favorite ? 'fill-pink-500 text-pink-500' : ''}`} />
+                            {selectedIdea.is_favorite ? t.saved : t.addToSaved}
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => handleShareDate(selectedIdea)}>
+                            <Share2 className="w-4 h-4 mr-2" />
+                            {t.shareWithPartner}
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={openSchedule}>
+                            <CalendarDays className="w-4 h-4 mr-2" />
+                            {t.schedule}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleCompleteDate(selectedIdea)}
+                            disabled={Boolean(selectedIdea.is_completed)}
+                            className={selectedIdea.is_completed ? 'bg-green-50 border-green-300 text-green-700' : ''}
+                          >
+                            <Check className="w-4 h-4 mr-2" />
+                            {selectedIdea.is_completed ? t.done : t.markComplete}
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button size="sm" variant="outline" onClick={() => handleShareDate(selectedIdea)}>
+                            <Share2 className="w-4 h-4 mr-2" />
+                            {t.shareWithPartner}
+                          </Button>
+                          <Link to="/SignUp?source=open-house-date-ideas&type=individual">
+                            <Button size="sm" className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
+                              <Lock className="w-4 h-4 mr-2" />
+                              {openHouseCopy.memberAction}
+                            </Button>
+                          </Link>
+                          <p className="w-full text-xs text-gray-500">{openHouseCopy.saveGate}</p>
+                        </>
+                      )}
+                    </div>
+
+                    <AnimatePresence>
+                      {showScheduleForm && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -6 }}
+                          className="mt-4 rounded-xl border border-purple-200 bg-purple-50/60 p-4"
+                        >
+                          {!scheduledEvent ? (
+                            <>
+                              <div className="flex items-center gap-2 mb-4">
+                                <CalendarDays className="w-5 h-5 text-purple-600" />
+                                <h4 className="font-bold text-gray-900">{t.scheduleTitle}</h4>
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                  <label htmlFor="date-idea-schedule-date" className="block text-sm font-semibold text-gray-700 mb-1">{t.scheduleDate}</label>
+                                  <Input
+                                    id="date-idea-schedule-date"
+                                    type="date"
+                                    min={localToday}
+                                    value={scheduleDate}
+                                    onChange={(event) => setScheduleDate(event.target.value)}
+                                  />
+                                </div>
+                                <div>
+                                  <label htmlFor="date-idea-schedule-time" className="block text-sm font-semibold text-gray-700 mb-1">{t.scheduleTime}</label>
+                                  <div className="relative">
+                                    <Clock className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                    <Input
+                                      id="date-idea-schedule-time"
+                                      type="time"
+                                      value={scheduleTime}
+                                      onChange={(event) => setScheduleTime(event.target.value)}
+                                      className="pl-9"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex flex-wrap gap-2 mt-4">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setShowScheduleForm(false)}
+                                  disabled={isScheduling}
+                                >
+                                  {t.cancel}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  onClick={handleScheduleDate}
+                                  disabled={isScheduling || !scheduleDate || !scheduleTime}
+                                  className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+                                >
+                                  <CalendarDays className="w-4 h-4 mr-2" />
+                                  {isScheduling ? t.scheduling : t.scheduleAction}
+                                </Button>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <p className="font-semibold text-gray-900 mb-1">{t.dateScheduled}</p>
+                              <p className="text-sm text-gray-700 mb-4">
+                                {t.scheduledFor}: {formatScheduledDate(scheduledEvent.date, scheduledEvent.time)}
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                <Button type="button" size="sm" onClick={handleShareScheduledDate} className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
+                                  <Share2 className="w-4 h-4 mr-2" />
+                                  {t.shareSchedule}
+                                </Button>
+                                <Button type="button" size="sm" variant="outline" onClick={() => setShowScheduleForm(false)}>
+                                  {t.close}
+                                </Button>
+                              </div>
+                            </>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {filteredIdeas.length === 0 && (
+          <div className="text-center py-12">
+            <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-600 mb-2">{t.noIdeasFound}</h3>
+            <p className="text-gray-500">{t.tryAdjusting}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+ + (chargedCents / 100).toFixed(2)));
     } catch (error) {
       if (isTokensRequiredError(error)) {
         const info = tokenRequiredDetails(error);
