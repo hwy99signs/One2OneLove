@@ -12,7 +12,6 @@ import GameCard from "../components/activities/GameCard";
 import { getCooperativeGameHistory } from "@/lib/activityService";
 import OpenHouseBrowseNotice from "@/components/launch/OpenHouseBrowseNotice";
 import { apiRequest } from "@/lib/apiClient";
-import { isO2OLFreePromoActive } from "@/lib/o2olFreePromo2026";
 
 const translations = {
   en: {
@@ -30,7 +29,7 @@ const translations = {
     whatShouldName: "What Should They Do?",
     whatShouldDesc: "Vote on real-life relationship dilemmas, then see how other people answered.",
     likeMindedName: "Like Minded?",
-    likeMindedDesc: "Answer privately, lock your choice, reveal together, and see where you naturally align.", iThoughtSoName:"I Thought So!", iThoughtSoDesc:"Finish the sentence, then guess how everyone else finished it. 2–6 players on one device, 800 questions in 11 categories, plus your own.", poolPingPongName:"Pool Ping Pong", poolPingPongDesc:"Tilt your phone or swipe to roll the 8-ball into the open pocket. Dodge the outer holes, build your streak, and beat the clock in 60-Second Challenge mode only.", publicAccess:"NO ACCOUNT",freeAccess:"FREE ACCOUNT",tokenAccess:"CREDIT", pestsName:"PEST'S", pestsDesc:"The tiny pest is loose! Chase the ant, the fly and the mosquito through kitchens, porches and bedrooms — in Speeds up mode, it gets faster with every catch.", scrablukoName:"Scrabluko", scrablukoDesc:"Scrabble letters, crossword clues, sudoku calm. Build words, solve the clue, keep your cool.", catBrain:"Brain & Puzzle", catArcade:"Arcade & Quick Play", freeBanner:"FREE through Dec 31, 2026 — every game costs 0 Credit during the promotion.",freePlay:"Play FREE",freeToday:"FREE UNTIL DEC 31",freePrice:"FREE during promo · 0 Credit"
+    likeMindedDesc: "Answer privately, lock your choice, reveal together, and see where you naturally align.", iThoughtSoName:"I Thought So!", iThoughtSoDesc:"Finish the sentence, then guess how everyone else finished it. 2–6 players on one device, 800 questions in 11 categories, plus your own.", poolPingPongName:"Pool Ping Pong", poolPingPongDesc:"Tilt your phone or swipe to roll the 8-ball into the open pocket. Dodge the outer holes, build your streak, and beat the clock in 60-Second Challenge mode only.", publicAccess:"NO ACCOUNT",freeAccess:"FREE ACCOUNT",tokenAccess:"CREDIT", pestsName:"PEST'S", pestsDesc:"The tiny pest is loose! Chase the ant, the fly and the mosquito through kitchens, porches and bedrooms — in Speeds up mode, it gets faster with every catch.", scrablukoName:"Scrabluko", scrablukoDesc:"Scrabble letters, crossword clues, sudoku calm. Build words, solve the clue, keep your cool.", catBrain:"Brain & Puzzle", catArcade:"Arcade & Quick Play", freeBanner:"FREE FOREVER! All current and future One2OneLove games are free — no Credit charges.",freePlay:"FREE PLAY",freeToday:"FREE FOREVER",freePrice:"FREE FOREVER · 0 Credit"
   },
   es: {
     title: "Juegos de Relaciones",
@@ -47,7 +46,7 @@ const translations = {
     whatShouldName: "¿Qué Deberían Hacer?",
     whatShouldDesc: "Vota en dilemas reales de relaciones y luego mira cómo respondieron otras personas.",
     likeMindedName: "¿Piensan Igual?",
-    likeMindedDesc: "Respondan en privado, bloqueen su elección, revelen juntos y descubran dónde coinciden.", iThoughtSoName:"I Thought So!", iThoughtSoDesc:"Completa la frase y adivina cómo la completaron los demás. De 2 a 6 jugadores en un solo dispositivo, 800 preguntas en 11 categorías y las tuyas propias.", poolPingPongName:"Pool Ping Pong", poolPingPongDesc:"Inclina el teléfono o desliza para llevar la bola 8 al hoyo abierto. Esquiva los hoyos exteriores y suma rachas; solo hay contrarreloj en el modo Desafío de 60 segundos.", publicAccess:"SIN CUENTA",freeAccess:"CUENTA GRATIS",tokenAccess:"CRÉDITO", pestsName:"PEST'S", pestsDesc:"¡La pequeña plaga anda suelta! Persigue a la hormiga, la mosca y el mosquito por cocinas, porches y dormitorios: en el modo «Speeds up» se acelera con cada captura.", scrablukoName:"Scrabluko", scrablukoDesc:"Letras de Scrabble, pistas de crucigrama, calma de sudoku. Forma palabras, resuelve la pista, mantén la calma.", catBrain:"Mente y lógica", catArcade:"Arcade y juego rápido", freeBanner:"¡GRATIS hasta el 31 de diciembre de 2026! Todos los juegos cuestan 0 Crédito durante la promoción.",freePlay:"Jugar GRATIS",freeToday:"GRATIS HASTA DIC 31",freePrice:"GRATIS en promoción · 0 Crédito"
+    likeMindedDesc: "Respondan en privado, bloqueen su elección, revelen juntos y descubran dónde coinciden.", iThoughtSoName:"I Thought So!", iThoughtSoDesc:"Completa la frase y adivina cómo la completaron los demás. De 2 a 6 jugadores en un solo dispositivo, 800 preguntas en 11 categorías y las tuyas propias.", poolPingPongName:"Pool Ping Pong", poolPingPongDesc:"Inclina el teléfono o desliza para llevar la bola 8 al hoyo abierto. Esquiva los hoyos exteriores y suma rachas; solo hay contrarreloj en el modo Desafío de 60 segundos.", publicAccess:"SIN CUENTA",freeAccess:"CUENTA GRATIS",tokenAccess:"CRÉDITO", pestsName:"PEST'S", pestsDesc:"¡La pequeña plaga anda suelta! Persigue a la hormiga, la mosca y el mosquito por cocinas, porches y dormitorios: en el modo «Speeds up» se acelera con cada captura.", scrablukoName:"Scrabluko", scrablukoDesc:"Letras de Scrabble, pistas de crucigrama, calma de sudoku. Forma palabras, resuelve la pista, mantén la calma.", catBrain:"Mente y lógica", catArcade:"Arcade y juego rápido", freeBanner:"¡GRATIS PARA SIEMPRE! Todos los juegos actuales y futuros de One2OneLove son gratis, sin cobros de Crédito.",freePlay:"JUGAR GRATIS",freeToday:"GRATIS PARA SIEMPRE",freePrice:"GRATIS PARA SIEMPRE · 0 Crédito"
   },
   fr: {
     title: "Jeux Relationnels",
@@ -64,7 +63,7 @@ const translations = {
     whatShouldName: "Que Devraient-Ils Faire ?",
     whatShouldDesc: "Votez sur des dilemmes relationnels réels, puis découvrez les réponses des autres.",
     likeMindedName: "Même Longueur d’Onde ?",
-    likeMindedDesc: "Répondez en privé, verrouillez, révélez ensemble et découvrez vos points d’accord.", iThoughtSoName:"I Thought So!", iThoughtSoDesc:"Complétez la phrase, puis devinez comment les autres l’ont complétée. De 2 à 6 joueurs sur un seul appareil, 800 questions en 11 catégories, plus les vôtres.", poolPingPongName:"Pool Ping Pong", poolPingPongDesc:"Inclinez le téléphone ou glissez pour envoyer la boule 8 dans le trou ouvert. Évitez les trous extérieurs et enchaînez les séries ; le chrono ne compte qu'en mode Défi de 60 secondes.", publicAccess:"SANS COMPTE",freeAccess:"COMPTE GRATUIT",tokenAccess:"CRÉDIT", pestsName:"PEST'S", pestsDesc:"Le petit nuisible est en liberté ! Poursuivez la fourmi, la mouche et le moustique dans les cuisines, les vérandas et les chambres — en mode « Speeds up », il accélère à chaque prise.", scrablukoName:"Scrabluko", scrablukoDesc:"Lettres de Scrabble, indices de mots croisés, calme du sudoku. Formez des mots, résolvez l'indice, gardez votre sang-froid.", catBrain:"Cerveau et casse-tête", catArcade:"Arcade et jeu rapide", freeBanner:"GRATUIT jusqu’au 31 décembre 2026 ! Chaque jeu coûte 0 Crédit pendant l’offre.",freePlay:"Jouer GRATUITEMENT",freeToday:"GRATUIT JUSQU’AU 31 DÉC.",freePrice:"GRATUIT pendant l’offre · 0 Crédit"
+    likeMindedDesc: "Répondez en privé, verrouillez, révélez ensemble et découvrez vos points d’accord.", iThoughtSoName:"I Thought So!", iThoughtSoDesc:"Complétez la phrase, puis devinez comment les autres l’ont complétée. De 2 à 6 joueurs sur un seul appareil, 800 questions en 11 catégories, plus les vôtres.", poolPingPongName:"Pool Ping Pong", poolPingPongDesc:"Inclinez le téléphone ou glissez pour envoyer la boule 8 dans le trou ouvert. Évitez les trous extérieurs et enchaînez les séries ; le chrono ne compte qu'en mode Défi de 60 secondes.", publicAccess:"SANS COMPTE",freeAccess:"COMPTE GRATUIT",tokenAccess:"CRÉDIT", pestsName:"PEST'S", pestsDesc:"Le petit nuisible est en liberté ! Poursuivez la fourmi, la mouche et le moustique dans les cuisines, les vérandas et les chambres — en mode « Speeds up », il accélère à chaque prise.", scrablukoName:"Scrabluko", scrablukoDesc:"Lettres de Scrabble, indices de mots croisés, calme du sudoku. Formez des mots, résolvez l'indice, gardez votre sang-froid.", catBrain:"Cerveau et casse-tête", catArcade:"Arcade et jeu rapide", freeBanner:"GRATUITS POUR TOUJOURS ! Tous les jeux One2OneLove actuels et futurs sont gratuits, sans débit de Crédit.",freePlay:"JOUER GRATUITEMENT",freeToday:"GRATUIT POUR TOUJOURS",freePrice:"GRATUIT POUR TOUJOURS · 0 Crédit"
   },
   it: {
     title: "Giochi Relazionali",
@@ -81,7 +80,7 @@ const translations = {
     whatShouldName: "Cosa Dovrebbero Fare?",
     whatShouldDesc: "Vota su dilemmi relazionali realistici e poi scopri come hanno risposto gli altri.",
     likeMindedName: "Sulla Stessa Lunghezza d’Onda?",
-    likeMindedDesc: "Rispondete in privato, bloccate, rivelate insieme e scoprite dove siete allineati.", iThoughtSoName:"I Thought So!", iThoughtSoDesc:"Completa la frase, poi indovina come l’hanno completata gli altri. Da 2 a 6 giocatori su un solo dispositivo, 800 domande in 11 categorie, più le tue.", poolPingPongName:"Pool Ping Pong", poolPingPongDesc:"Inclina il telefono o scorri per mandare la palla 8 nella buca aperta. Evita le buche esterne e crea serie; la corsa contro il tempo è solo nella Sfida da 60 secondi.", publicAccess:"SENZA ACCOUNT",freeAccess:"ACCOUNT GRATUITO",tokenAccess:"CREDITO", pestsName:"PEST'S", pestsDesc:"Il piccolo insetto è in libertà! Insegui la formica, la mosca e la zanzara tra cucine, verande e camere da letto: in modalità «Speeds up» accelera a ogni cattura.", scrablukoName:"Scrabluko", scrablukoDesc:"Lettere dello Scarabeo, indizi da cruciverba, calma da sudoku. Componi parole, risolvi l'indizio, mantieni la calma.", catBrain:"Mente e rompicapi", catArcade:"Arcade e gioco veloce", freeBanner:"GRATIS fino al 31 dicembre 2026! Ogni gioco costa 0 Credito durante la promozione.",freePlay:"Gioca GRATIS",freeToday:"GRATIS FINO AL 31 DIC.",freePrice:"GRATIS in promozione · 0 Credito"
+    likeMindedDesc: "Rispondete in privato, bloccate, rivelate insieme e scoprite dove siete allineati.", iThoughtSoName:"I Thought So!", iThoughtSoDesc:"Completa la frase, poi indovina come l’hanno completata gli altri. Da 2 a 6 giocatori su un solo dispositivo, 800 domande in 11 categorie, più le tue.", poolPingPongName:"Pool Ping Pong", poolPingPongDesc:"Inclina il telefono o scorri per mandare la palla 8 nella buca aperta. Evita le buche esterne e crea serie; la corsa contro il tempo è solo nella Sfida da 60 secondi.", publicAccess:"SENZA ACCOUNT",freeAccess:"ACCOUNT GRATUITO",tokenAccess:"CREDITO", pestsName:"PEST'S", pestsDesc:"Il piccolo insetto è in libertà! Insegui la formica, la mosca e la zanzara tra cucine, verande e camere da letto: in modalità «Speeds up» accelera a ogni cattura.", scrablukoName:"Scrabluko", scrablukoDesc:"Lettere dello Scarabeo, indizi da cruciverba, calma da sudoku. Componi parole, risolvi l'indizio, mantieni la calma.", catBrain:"Mente e rompicapi", catArcade:"Arcade e gioco veloce", freeBanner:"GRATIS PER SEMPRE! Tutti i giochi One2OneLove attuali e futuri sono gratis, senza addebiti di Credito.",freePlay:"GIOCA GRATIS",freeToday:"GRATIS PER SEMPRE",freePrice:"GRATIS PER SEMPRE · 0 Credito"
   },
   de: {
     title: "Beziehungsspiele",
@@ -98,7 +97,7 @@ const translations = {
     whatShouldName: "Was Sollten Sie Tun?",
     whatShouldDesc: "Stimme über realistische Beziehungsdilemmata ab und sieh danach, wie andere geantwortet haben.",
     likeMindedName: "Gleich Gesinnt?",
-    likeMindedDesc: "Antwortet privat, sperrt eure Wahl, deckt gemeinsam auf und entdeckt eure Übereinstimmungen.", iThoughtSoName:"I Thought So!", iThoughtSoDesc:"Vervollständige den Satz und rate, wie die anderen ihn vervollständigt haben. 2–6 Spieler an einem Gerät, 800 Fragen in 11 Kategorien plus eigene.", poolPingPongName:"Pool Ping Pong", poolPingPongDesc:"Neige dein Handy oder wische, um die 8er-Kugel ins offene Loch zu rollen. Weiche den äußeren Löchern aus und baue Serien auf; gegen die Uhr spielst du nur im 60-Sekunden-Challenge-Modus.", publicAccess:"OHNE KONTO",freeAccess:"KOSTENLOSES KONTO",tokenAccess:"CREDIT", pestsName:"PEST'S", pestsDesc:"Der kleine Plagegeist ist los! Jage die Ameise, die Fliege und die Mücke durch Küchen, Veranden und Schlafzimmer — im Modus „Speeds up“ wird er mit jedem Fang schneller.", scrablukoName:"Scrabluko", scrablukoDesc:"Scrabble-Buchstaben, Kreuzworträtsel-Hinweise, Sudoku-Ruhe. Bilde Wörter, löse den Hinweis, bleib gelassen.", catBrain:"Kopf & Puzzle", catArcade:"Arcade & schnelles Spiel", freeBanner:"GRATIS bis 31. Dezember 2026! Alle Spiele kosten während der Aktion 0 Credit.",freePlay:"GRATIS spielen",freeToday:"GRATIS BIS 31. DEZ.",freePrice:"Während der Aktion GRATIS · 0 Credit"
+    likeMindedDesc: "Antwortet privat, sperrt eure Wahl, deckt gemeinsam auf und entdeckt eure Übereinstimmungen.", iThoughtSoName:"I Thought So!", iThoughtSoDesc:"Vervollständige den Satz und rate, wie die anderen ihn vervollständigt haben. 2–6 Spieler an einem Gerät, 800 Fragen in 11 Kategorien plus eigene.", poolPingPongName:"Pool Ping Pong", poolPingPongDesc:"Neige dein Handy oder wische, um die 8er-Kugel ins offene Loch zu rollen. Weiche den äußeren Löchern aus und baue Serien auf; gegen die Uhr spielst du nur im 60-Sekunden-Challenge-Modus.", publicAccess:"OHNE KONTO",freeAccess:"KOSTENLOSES KONTO",tokenAccess:"CREDIT", pestsName:"PEST'S", pestsDesc:"Der kleine Plagegeist ist los! Jage die Ameise, die Fliege und die Mücke durch Küchen, Veranden und Schlafzimmer — im Modus „Speeds up“ wird er mit jedem Fang schneller.", scrablukoName:"Scrabluko", scrablukoDesc:"Scrabble-Buchstaben, Kreuzworträtsel-Hinweise, Sudoku-Ruhe. Bilde Wörter, löse den Hinweis, bleib gelassen.", catBrain:"Kopf & Puzzle", catArcade:"Arcade & schnelles Spiel", freeBanner:"FÜR IMMER KOSTENLOS! Alle aktuellen und zukünftigen One2OneLove-Spiele sind kostenlos, ohne Credit-Abzug.",freePlay:"GRATIS SPIELEN",freeToday:"FÜR IMMER KOSTENLOS",freePrice:"FÜR IMMER KOSTENLOS · 0 Credit"
   }
 };
 
@@ -109,7 +108,7 @@ export default function CooperativeGames() {
 
   const { user } = useAuth();
   const freeMemberAccess = Boolean(user?.id);
-  const launchFreeGuest = isO2OLFreePromoActive();
+  const permanentFreeGames = true;
 
   const { data: gameCatalog = [] } = useQuery({
     queryKey: ['gameCatalog', user?.id],
@@ -122,12 +121,11 @@ export default function CooperativeGames() {
     staleTime: 60_000
   });
   const catalogById = Object.fromEntries((gameCatalog||[]).map(g => [g.id,g]));
-  const activePromotion = (gameCatalog||[]).map(g=>g.promotion).find(Boolean) || (launchFreeGuest ? {name:'ALL GAMES FREE',free:true} : null);
-  const temporaryFreeGames = Boolean(activePromotion?.free);
+
 
   const gamePrice = id => {
     const q=catalogById[id];
-    const cents=q?.priceCents!=null ? Number(q.priceCents) : (launchFreeGuest ? 0 : 49);
+    const cents=0; // Permanent owner rule applies even before the catalog loads.
     return {
       priceCents:cents,
       priceLabel:cents===0 ? t.freePrice : '$'+(cents/100).toFixed(2),
@@ -184,7 +182,7 @@ export default function CooperativeGames() {
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">{t.subtitle}</p>
         </motion.div>
 
-        {temporaryFreeGames && (
+        {permanentFreeGames && (
           <div className="mb-10 rounded-2xl bg-gradient-to-r from-fuchsia-600 to-pink-600 px-6 py-4 text-center text-lg font-black text-white shadow-lg">
             🎉 {t.freeBanner}
           </div>
