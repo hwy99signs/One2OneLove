@@ -1,4 +1,5 @@
 
+import { isO2OLFreePromoActive, O2OL_FREE_PROMO_MESSAGE } from '@/lib/o2olFreePromo2026';
 import React, { useState, createContext, useContext, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -391,8 +392,8 @@ function LanguageContent({ children, currentPageName }) {
       {t.announcement && location.pathname.toLowerCase() !== '/subscription' && (
         <div className="relative w-full max-w-[100vw] overflow-hidden bg-indigo-950 py-2 text-white" style={{ contain: 'layout paint' }}>
           <div className="o2ol-announcement-track whitespace-nowrap text-lg md:text-xl font-medium tracking-wide" style={{ fontFamily: "'Outfit', 'Inter', sans-serif" }}>
-            <span className="font-extrabold text-yellow-400 uppercase tracking-widest text-sm mr-3">{t.announcement.label}</span> 
-            <span className="text-white/90">{t.announcement.text}</span>
+            <span className="font-extrabold text-yellow-400 uppercase tracking-widest text-sm mr-3">{isO2OLFreePromoActive() ? 'FREE PROMO' : t.announcement.label}</span> 
+            <span className="text-white/90">{isO2OLFreePromoActive() ? O2OL_FREE_PROMO_MESSAGE : t.announcement.text}</span>
           </div>
         </div>
       )}
