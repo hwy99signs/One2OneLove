@@ -46,7 +46,8 @@ const translations = {
     whoWrites: "Who should write it?",
     amoraStyle: "Warm, romantic & heartfelt",
     biancaStyle: "Direct, insightful & playful",
-    writtenBy: "Written by"
+    writtenBy: "Written by",
+    createTitle: "Generate Content", empty: "Fill in the form and click generate to create AI-powered content.", selectRequired: "Please select content type and tone.", downloaded: "Downloaded!", generateFailed: "Failed to generate content. Please try again."
   },
   es: {
     title: "Creador de Contenido IA",
@@ -80,7 +81,8 @@ const translations = {
     whoWrites: "¿Quién debería escribirlo?",
     amoraStyle: "Cálida, romántica y sincera",
     biancaStyle: "Directa, perspicaz y divertida",
-    writtenBy: "Escrito por"
+    writtenBy: "Escrito por",
+    createTitle: "Generar contenido", empty: "Completa el formulario y pulsa generar para crear contenido con IA.", selectRequired: "Selecciona un tipo de contenido y un tono.", downloaded: "¡Descargado!", generateFailed: "No se pudo generar contenido. Inténtalo de nuevo."
   },
   fr: {
     title: "Créateur de Contenu IA",
@@ -114,7 +116,8 @@ const translations = {
     whoWrites: "Qui devrait l’écrire ?",
     amoraStyle: "Chaleureuse, romantique et sincère",
     biancaStyle: "Directe, perspicace et enjouée",
-    writtenBy: "Écrit par"
+    writtenBy: "Écrit par",
+    createTitle: "Créer du contenu", empty: "Remplissez le formulaire, puis lancez la génération pour créer du contenu avec l’IA.", selectRequired: "Choisissez un type de contenu et un ton.", downloaded: "Téléchargé !", generateFailed: "La création du contenu a échoué. Réessayez."
   },
   it: {
     title: "Creatore di Contenuti IA",
@@ -148,7 +151,8 @@ const translations = {
     whoWrites: "Chi dovrebbe scriverlo?",
     amoraStyle: "Calda, romantica e sincera",
     biancaStyle: "Diretta, intuitiva e giocosa",
-    writtenBy: "Scritto da"
+    writtenBy: "Scritto da",
+    createTitle: "Genera contenuti", empty: "Compila il modulo e premi genera per creare contenuti con l’IA.", selectRequired: "Seleziona il tipo di contenuto e il tono.", downloaded: "Scaricato!", generateFailed: "Impossibile generare il contenuto. Riprova."
   },
   de: {
     title: "KI-Content-Ersteller",
@@ -182,7 +186,8 @@ const translations = {
     whoWrites: "Wer soll es schreiben?",
     amoraStyle: "Warm, romantisch und von Herzen",
     biancaStyle: "Direkt, einfühlsam und verspielt",
-    writtenBy: "Geschrieben von"
+    writtenBy: "Geschrieben von",
+    createTitle: "Inhalt erstellen", empty: "Fülle das Formular aus und tippe auf Generieren, um KI-Inhalte zu erstellen.", selectRequired: "Bitte Inhaltstyp und Ton auswählen.", downloaded: "Heruntergeladen!", generateFailed: "Inhalt konnte nicht erstellt werden. Bitte erneut versuchen."
   }
 };
 
@@ -233,7 +238,7 @@ export default function AIContentCreator() {
 
   const handleGenerate = async () => {
     if (!formData.contentType || !formData.tone) {
-      toast.error("Please select content type and tone");
+      toast.error(t.selectRequired);
       return;
     }
 
@@ -248,7 +253,7 @@ export default function AIContentCreator() {
       setGeneratedContent(content);
       setGeneratedPersona(persona);
     } catch (error) {
-      toast.error(error?.message || "Failed to generate content. Please try again.");
+      toast.error(error?.message || t.generateFailed);
       console.error(error);
     } finally {
       setIsGenerating(false);
@@ -272,7 +277,7 @@ export default function AIContentCreator() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    toast.success("Downloaded!");
+    toast.success(t.downloaded);
   };
 
   return (
@@ -345,7 +350,7 @@ export default function AIContentCreator() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-purple-600" />
-                Generate Content
+                {t.createTitle}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-5">
@@ -528,7 +533,7 @@ export default function AIContentCreator() {
                   >
                     <Sparkles className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                     <p className="text-gray-500">
-                      Fill in the form and click generate to create AI-powered content
+                      {t.empty}
                     </p>
                   </motion.div>
                 )}
