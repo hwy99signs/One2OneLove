@@ -285,7 +285,7 @@ function confirmCalibrationBeforeStart(next){
   if(!calib&&!calibrationPromptSeen){
     calibrationPromptSeen=true;
     try{localStorage.setItem('poolSlideCalibPromptSeen','1');}catch(e){}
-    if(!window.confirm("Before you start: lay the phone flat where you'll play and tap 🎯 Set flat (in Settings). That sets YOUR flat as level, so the ball stays still when the phone is flat. Skip it and the game uses the phone's true flat — on a tilted surface the ball will drift."+'\n\nContinue without calibrating?'))return;
+    if(!window.confirm(window.o2olCalibConfirmText || "Before you start: lay the phone flat where you'll play and tap 🎯 Set flat (in Settings). That sets YOUR flat as level, so the ball stays still when the phone is flat. Skip it and the game uses the phone's true flat — on a tilted surface the ball will drift."+'\n\nContinue without calibrating?'))return;
   }
   next();
 }
@@ -516,5 +516,6 @@ if(new URLSearchParams(location.search).get('play')==='1') beginPlay();  // test
 requestAnimationFrame(loop);
 })();
 </script>
+<script src="/games-src/game-howto-i18n.js"></script>
 </body>
 </html>

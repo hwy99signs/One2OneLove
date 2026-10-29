@@ -29,7 +29,13 @@ export default function IThoughtSo() {
         </div>
         <img src="/game-cards/card-i-thought-so.jpg" alt="I Thought So! game card" className="mx-auto mb-6 block w-full max-w-3xl rounded-[24px] shadow-2xl ring-1 ring-white/15" />
         <div className="overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/15">
-          <iframe title="I Thought So!" src="/games-src/i-thought-so.html" className="w-full border-0" style={{ height: "min(85vh, 1000px)", minHeight: "620px" }} allow="fullscreen; clipboard-write" />
+          <iframe title="I Thought So!" src="/games-src/i-thought-so.html" onLoad={(event) => {
+            // Display-only correction for the embedded legacy footer; game logic unchanged.
+            try {
+              const strongs = event.currentTarget.contentDocument?.querySelectorAll('footer strong') || [];
+              strongs.forEach((node) => { if (node.textContent?.includes('BUILD v1.1.0')) node.textContent = node.textContent.replace('BUILD v1.1.0', 'BUILD v1.1.2'); });
+            } catch (_) {}
+          }} className="w-full border-0" style={{ height: "min(85vh, 1000px)", minHeight: "620px" }} allow="fullscreen; clipboard-write" />
         </div>
         <p className="mt-4 text-center text-xs text-white/50">Copyright © 2026 EPS Venture Group. All rights reserved.</p>
       </div>

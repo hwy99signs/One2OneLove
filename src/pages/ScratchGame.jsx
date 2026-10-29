@@ -23,8 +23,17 @@ const copy = {
   de: { back:"Zurück zu Spielen", full:"Vollbild Öffnen", title:"LOVE SCRATCH GAME", preview:"Rubbeln. Teilen. Näher zusammenwachsen. Dieses Spiel kostet $0.49 pro Spiel.", loading:"Dein One2OneLove-Spiel wird geöffnet…", error:"Das Rubbelspiel kann nicht geöffnet werden.", howTo: "Wähle ein Kartendeck, ziehe eine Karte, rubbele eine Frage frei und sprecht darüber. Allein, als Paar oder mit zwei Paaren. Keine Punkte – nur Gespräche." },
 };
 
+const scratchPromoCopy = {
+  en:{ howTitle:'How to Play', freePreview:'Pick a deck and enjoy LOVE SCRATCH for 0 Credit during the free promotion.', free:'100% FREE until Dec 31, 2026. No Credit will be used.', active:'This game is FREE while the promotion lasts. No Credit will be used.', play:'Play FREE', view:'View price to play' },
+  es:{ howTitle:'Cómo jugar', freePreview:'Elige un mazo y disfruta de LOVE SCRATCH por 0 Crédito durante la promoción.', free:'100% GRATIS hasta el 31 de diciembre de 2026. No se usará Crédito.', active:'Este juego es GRATIS mientras dure la promoción. No se usará Crédito.', play:'Jugar GRATIS', view:'Ver el precio para jugar' },
+  fr:{ howTitle:'Comment jouer', freePreview:'Choisissez un paquet et profitez de LOVE SCRATCH pour 0 Crédit pendant l’offre.', free:'100 % GRATUIT jusqu’au 31 décembre 2026. Aucun Crédit ne sera déduit.', active:'Ce jeu est GRATUIT pendant l’offre. Aucun Crédit ne sera déduit.', play:'Jouer GRATUITEMENT', view:'Voir le prix pour jouer' },
+  it:{ howTitle:'Come giocare', freePreview:'Scegli un mazzo e gioca a LOVE SCRATCH per 0 Credito durante la promozione.', free:'100% GRATIS fino al 31 dicembre 2026. Nessun Credito verrà addebitato.', active:'Questo gioco è GRATIS durante la promozione. Nessun Credito verrà addebitato.', play:'Gioca GRATIS', view:'Vedi prezzo per giocare' },
+  de:{ howTitle:'Spielanleitung', freePreview:'Wähle ein Kartendeck und spiele LOVE SCRATCH während der Aktion für 0 Credit.', free:'100 % KOSTENLOS bis 31. Dezember 2026. Kein Credit wird abgezogen.', active:'Dieses Spiel ist während der Aktion GRATIS. Kein Credit wird abgezogen.', play:'GRATIS spielen', view:'Spielpreis anzeigen' },
+};
+
 export default function ScratchGame() {
   const { currentLanguage } = useLanguage();
+  const promoT = scratchPromoCopy[currentLanguage] || scratchPromoCopy.en;
   const { user } = useAuth();
   const fullMemberAccess = hasFullMemberAccess(user);
   const t = copy[currentLanguage] || copy.en;
@@ -88,27 +97,27 @@ export default function ScratchGame() {
       {!fullMemberAccess&&<div className="mb-4"><OpenHouseBrowseNotice/></div>}
       <img src="/game-cards/card-love-scratch.jpg" alt="game card" className="mx-auto mb-6 block w-full max-w-3xl rounded-[24px] shadow-2xl ring-1 ring-white/15" />
       <section aria-label="How to Play" className="mx-auto mb-5 max-w-3xl rounded-2xl border border-pink-300/30 bg-white/10 px-6 py-4 text-white">
-        <h2 className="mb-2 text-xl font-black">How to Play</h2>
+        <h2 className="mb-2 text-xl font-black">{promoT.howTitle}</h2>
         <p className="text-sm leading-7 text-white/90">{t.howTo}</p>
       </section>
         {!fullMemberAccess?(
-          <div className="p-8 text-center sm:p-12"><h1 className="text-3xl font-black text-white">{t.title}</h1><p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-white/75">{t.preview}</p></div>
+          <div className="p-8 text-center sm:p-12"><h1 className="text-3xl font-black text-white">{t.title}</h1><p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-white/75">{isO2OLFreePromoActive() ? promoT.freePreview : t.preview}</p></div>
         ):gameUrl?(
           <div className="overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/15"><iframe title="LOVE SCRATCH GAME" src={gameUrl} className="w-full border-0" style={{height:"min(60vh, 720px)",minHeight:"520px"}} allow="fullscreen"/></div>
         ):promotion?.free?(
           <div className="p-10 text-center sm:p-14">
             <div className="mx-auto w-fit rounded-full bg-emerald-100 px-4 py-2 text-sm font-black text-emerald-800">{promotion?.name||'FREE GAME'}</div>
             <h1 className="mt-4 text-3xl font-black text-white">{t.title}</h1>
-            <p className="mx-auto mt-3 max-w-xl text-white/75">{promotion?.temporary && isO2OLFreePromoActive() ? '100% FREE until Dec 31, 2026. No Credit will be used.' : `${promotion?.name||'Promotion'} — this game is FREE while the active promotion lasts. No Credit will be used.`}</p>
+            <p className="mx-auto mt-3 max-w-xl text-white/75">{promotion?.temporary && isO2OLFreePromoActive() ? promoT.free : promoT.active}</p>
             {error&&<div className="mx-auto mt-4 max-w-xl rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-900">{error}</div>}
-            <Button onClick={launchGame} disabled={unlocking} className="mt-6 bg-emerald-600 font-black hover:bg-emerald-700">{unlocking?'Opening…':'Play FREE'}</Button>
+            <Button onClick={launchGame} disabled={unlocking} className="mt-6 bg-emerald-600 font-black hover:bg-emerald-700">{unlocking?t.loading:promoT.play}</Button>
           </div>
         ):(
           <div className="p-10 text-center sm:p-14">
             <LockKeyhole className="mx-auto h-12 w-12 text-pink-400"/>
             <h1 className="mt-4 text-3xl font-black text-white">{t.title}</h1>
             <p className="mx-auto mt-3 max-w-xl text-white/75">{t.preview}</p>
-            <Button onClick={()=>setShowUnlock(true)} className="mt-6 bg-pink-600 font-black hover:bg-pink-700">View price to play</Button>
+            <Button onClick={()=>setShowUnlock(true)} className="mt-6 bg-pink-600 font-black hover:bg-pink-700">{promoT.view}</Button>
           </div>
         )}
     </div>
