@@ -19,8 +19,7 @@ export const O2OL_FREE_PROMO_FEATURES = Object.freeze([
   'memories_unlock', 'journals_unlock', 'milestones_unlock', 'goals_unlock', 'calendar_unlock',
   'studio_episode_unlock', 'podcast_episode_unlock', 'date_idea_unlock',
   'love_note_template_unlock', 'love_language_report', 'compatibility_report',
-  'relationship_pattern_report', 'premium_game_session', 'like_minded_session',
-  'scratch_game_session',
+  'relationship_pattern_report',
 ]);
 
 const freeFeatureSet = new Set(O2OL_FREE_PROMO_FEATURES);
