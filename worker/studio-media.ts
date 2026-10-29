@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { Client } from 'pg';
+import { isO2OLPromoFreeFeature } from '../src/lib/o2olFreePromo2026';
 
 const EPISODES=[
   {
@@ -109,14 +110,16 @@ async function accessState(request,env,episode){
   // unlock is the only door (owner call, 2026-10-09).
   const publicAvailable=!paywalled&&Date.now()>=availableAt.getTime();
   const {unlocked,isAdmin}=await unlockState(request,env,episode).catch(()=>({unlocked:false,isAdmin:false}));
-  const canWatch=paywalled?(unlocked||isAdmin):(member||publicAvailable);
+  const promoAccess=paywalled&&member&&isO2OLPromoFreeFeature(episode.unlockFeatureCode);
+  const canWatch=paywalled?(unlocked||isAdmin||promoAccess):(member||publicAvailable);
   return {
     member,
     publicAvailable,
     canWatch,
     unlocked,
+    promoAccess,
     isAdmin,
-    unlockPriceCents:episode.unlockPriceCents||null,
+    unlockPriceCents:promoAccess?0:(episode.unlockPriceCents||null),
     publicAvailableAt:availableAt.toISOString(),
     releasedAt:episode.releasedAt,
   };
