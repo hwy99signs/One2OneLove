@@ -294,7 +294,7 @@ calibStateUpdate();
 // Show the calibration guidance once on this device before starting an uncalibrated run.
 var pendingStartMode=null;
 var calibrationReminderSeen=false;
-try{ calibrationReminderSeen=sessionStorage.getItem('poolSlideCalibrationReminderSeen')==='1'; }catch(e){}
+try{ calibrationReminderSeen=localStorage.getItem('poolSlideCalibrationReminderSeen')==='1'; }catch(e){}
 function actuallyStart(mode){
   if(mode==='swipe'){ beginPlay(); return; }
   ensureSensor(function(ok){
@@ -306,7 +306,7 @@ function requestStart(mode){
   if(!calib&&!calibrationReminderSeen){
     pendingStartMode=mode;
     calibrationReminderSeen=true;
-    try{sessionStorage.setItem('poolSlideCalibrationReminderSeen','1');}catch(e){}
+    try{localStorage.setItem('poolSlideCalibrationReminderSeen','1');}catch(e){}
     document.getElementById('calibReminderDialog').style.display='flex';
     document.getElementById('calibContinueBtn').focus();
     return;
