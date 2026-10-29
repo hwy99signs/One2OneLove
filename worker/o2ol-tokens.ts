@@ -4,6 +4,7 @@ import { recordCostEvent } from './o2ol-cost-ledger';
 import { CREDIT_CONFIG } from './credit-config';
 import { ensureCreditSchema } from './love-note-credit';
 import { gameCreditWallet } from './game-economy';
+import { isO2OLPromoFreeFeature } from '../src/lib/o2olFreePromo2026';
 
 const HEADERS = {
   'content-type':'application/json; charset=utf-8',
@@ -175,6 +176,11 @@ export async function reserveTokenCharge(db,userId,featureCode,{idempotencyKey,m
     }
 
     const price=await getTokenFeaturePrice(db,featureCode);
+    // Time-boxed Credit bypass; the stored owner price is never modified.
+    if(isO2OLPromoFreeFeature(featureCode)){
+      await db.query('COMMIT');
+      return {id:null,user_id:userId,feature_code:featureCode,tokens:0,status:'consumed',idempotency_key:key,balance_after:null,free:true,promo:true};
+    }
     if(price.token_cost<=0){
       await db.query('COMMIT');
       return {id:null,user_id:userId,feature_code:featureCode,tokens:0,status:'consumed',idempotency_key:key,balance_after:null,free:true};
@@ -872,13 +878,16 @@ async function listContentUnlocks(db,userId,featureCode){
   await ensureContentUnlockSchema(db);
   const feature=String(featureCode||'').trim();
   if(!feature)return [];
-  return (await db.query(
+  const purchased=(await db.query(
     `SELECT feature_code,content_key,tokens_charged,unlocked_at,metadata
        FROM public.o2ol_token_content_unlocks
       WHERE user_id=$1::uuid AND feature_code=$2
       ORDER BY unlocked_at DESC`,
     [userId,feature],
   )).rows;
+  // A virtual, ephemeral unlock keeps the member UI open without a permanent grant.
+  if(isO2OLPromoFreeFeature(feature))return [...purchased,{feature_code:feature,content_key:'feature',tokens_charged:0,promo:true,temporary:true,metadata:{promo:true}}];
+  return purchased;
 }
 
 async function unlockTokenContent(db,auth,input){
@@ -899,6 +908,10 @@ async function unlockTokenContent(db,auth,input){
     [auth.user.id,featureCode,contentKey],
   )).rows[0];
   if(existing)return {unlock:existing,reused:true,tokens:{charged:0}};
+  if(isO2OLPromoFreeFeature(featureCode)){
+    // Virtual for this request only. Nothing written to the permanent unlock table.
+    return {unlock:{feature_code:featureCode,content_key:contentKey,tokens_charged:0,promo:true,temporary:true},reused:false,promo:true,tokens:{charged:0}};
+  }
 
   const idempotencyKey=String(input?.idempotencyKey||`unlock:${featureCode}:${contentKey}:${auth.user.id}`).slice(0,220);
   const reservation=await reserveTokenCharge(db,auth.user.id,featureCode,{
