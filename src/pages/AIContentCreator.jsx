@@ -42,7 +42,11 @@ const translations = {
     copied: "Copied!",
     download: "Download",
     regenerate: "Generate Again",
-    edit: "Edit & Personalize"
+    edit: "Edit & Personalize",
+    whoWrites: "Who should write it?",
+    amoraStyle: "Warm, romantic & heartfelt",
+    biancaStyle: "Direct, insightful & playful",
+    writtenBy: "Written by"
   },
   es: {
     title: "Creador de Contenido IA",
@@ -72,7 +76,11 @@ const translations = {
     copied: "¡Copiado!",
     download: "Descargar",
     regenerate: "Generar Nuevamente",
-    edit: "Editar y Personalizar"
+    edit: "Editar y Personalizar",
+    whoWrites: "¿Quién debería escribirlo?",
+    amoraStyle: "Cálida, romántica y sincera",
+    biancaStyle: "Directa, perspicaz y divertida",
+    writtenBy: "Escrito por"
   },
   fr: {
     title: "Créateur de Contenu IA",
@@ -102,7 +110,11 @@ const translations = {
     copied: "Copié!",
     download: "Télécharger",
     regenerate: "Générer à Nouveau",
-    edit: "Modifier et Personnaliser"
+    edit: "Modifier et Personnaliser",
+    whoWrites: "Qui devrait l’écrire ?",
+    amoraStyle: "Chaleureuse, romantique et sincère",
+    biancaStyle: "Directe, perspicace et enjouée",
+    writtenBy: "Écrit par"
   },
   it: {
     title: "Creatore di Contenuti IA",
@@ -132,7 +144,11 @@ const translations = {
     copied: "Copiato!",
     download: "Scarica",
     regenerate: "Genera di Nuovo",
-    edit: "Modifica e Personalizza"
+    edit: "Modifica e Personalizza",
+    whoWrites: "Chi dovrebbe scriverlo?",
+    amoraStyle: "Calda, romantica e sincera",
+    biancaStyle: "Diretta, intuitiva e giocosa",
+    writtenBy: "Scritto da"
   },
   de: {
     title: "KI-Content-Ersteller",
@@ -162,17 +178,36 @@ const translations = {
     copied: "Kopiert!",
     download: "Herunterladen",
     regenerate: "Erneut Generieren",
-    edit: "Bearbeiten & Personalisieren"
+    edit: "Bearbeiten & Personalisieren",
+    whoWrites: "Wer soll es schreiben?",
+    amoraStyle: "Warm, romantisch und von Herzen",
+    biancaStyle: "Direkt, einfühlsam und verspielt",
+    writtenBy: "Geschrieben von"
   }
+};
+
+const PERSONA_PRESETS = {
+  amora: {
+    image: '/assets/amora-relationship-coach-official.webp',
+    tone: 'romantic',
+    order: ['loveNote', 'appreciation', 'apology', 'anniversary', 'dateIdea', 'conversation'],
+  },
+  bianca: {
+    image: '/assets/bianca-mymatchiq-portrait-v2.webp',
+    tone: 'playful',
+    order: ['conversation', 'dateIdea', 'anniversary', 'loveNote', 'appreciation', 'apology'],
+  },
 };
 
 export default function AIContentCreator() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
+  const [persona, setPersona] = useState('amora');
+  const [generatedPersona, setGeneratedPersona] = useState('amora');
 
   const [formData, setFormData] = useState({
     contentType: "",
-    tone: "",
+    tone: "romantic",
     length: "medium",
     details: "",
     partnerName: ""
@@ -190,6 +225,12 @@ export default function AIContentCreator() {
     appreciation: Heart
   };
 
+  const handlePersonaChange = (choice) => {
+    if (isGenerating) return;
+    setPersona(choice);
+    setFormData((current) => ({ ...current, tone: PERSONA_PRESETS[choice].tone }));
+  };
+
   const handleGenerate = async () => {
     if (!formData.contentType || !formData.tone) {
       toast.error("Please select content type and tone");
@@ -200,10 +241,12 @@ export default function AIContentCreator() {
     try {
       const content = await generateRelationshipContent({
         ...formData,
+        persona,
         language: currentLanguage,
       });
       if (!content) throw new Error('AI Content Creator returned no content.');
       setGeneratedContent(content);
+      setGeneratedPersona(persona);
     } catch (error) {
       toast.error(error?.message || "Failed to generate content. Please try again.");
       console.error(error);
@@ -261,6 +304,42 @@ export default function AIContentCreator() {
           </p>
         </motion.div>
 
+        <section aria-label={t.whoWrites} className="mb-10">
+          <h2 className="mb-5 text-center text-2xl font-bold text-slate-900">{t.whoWrites}</h2>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            {(['amora', 'bianca']).map((choice) => {
+              const selected = persona === choice;
+              const name = choice === 'amora' ? 'Amora' : 'Bianca';
+              return (
+                <button
+                  key={choice}
+                  type="button"
+                  data-persona-choice={choice}
+                  aria-pressed={selected}
+                  disabled={isGenerating}
+                  onClick={() => handlePersonaChange(choice)}
+                  className={selected
+                    ? 'group rounded-3xl border-4 border-fuchsia-500 bg-white p-4 text-left shadow-xl ring-2 ring-fuchsia-200 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-fuchsia-700 disabled:opacity-70'
+                    : 'group rounded-3xl border-2 border-slate-200 bg-white p-4 text-left shadow-md transition hover:border-violet-300 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet-700 disabled:opacity-70'}
+                >
+                  <div className={choice === 'amora' ? 'flex h-56 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-50 to-pink-100 sm:h-64' : 'flex h-56 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-50 to-blue-100 sm:h-64'}>
+                    <img src={PERSONA_PRESETS[choice].image} alt={name} className="h-full w-full object-contain" />
+                  </div>
+                  <div className="mt-4 flex items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-2xl font-bold text-slate-900">{name}</h3>
+                      <p className="mt-1 text-sm text-slate-600">{choice === 'amora' ? t.amoraStyle : t.biancaStyle}</p>
+                    </div>
+                    <span aria-hidden="true" className={selected ? 'rounded-full bg-fuchsia-600 px-3 py-1 text-sm font-bold text-white' : 'rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-500'}>
+                      {selected ? '✓' : '○'}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <Card>
             <CardHeader>
@@ -279,7 +358,8 @@ export default function AIContentCreator() {
                     <SelectValue placeholder={t.contentType} />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(t.contentTypes).map(([key, label]) => {
+                    {PERSONA_PRESETS[persona].order.map((key) => {
+                       const label = t.contentTypes[key];
                       const Icon = contentTypeIcons[key];
                       return (
                         <SelectItem key={key} value={key}>
@@ -304,7 +384,7 @@ export default function AIContentCreator() {
                   </SelectTrigger>
                   <SelectContent>
                     {Object.entries(t.tones).map(([key, label]) => (
-                      <SelectItem key={key} value={label.toLowerCase()}>
+                      <SelectItem key={key} value={key}>
                         {label}
                       </SelectItem>
                     ))}
@@ -387,6 +467,16 @@ export default function AIContentCreator() {
                     exit={{ opacity: 0, y: -20 }}
                     className="space-y-4"
                   >
+                    <div className="flex items-center gap-3 rounded-xl bg-white p-3 shadow-sm">
+                      <img
+                        src={PERSONA_PRESETS[generatedPersona].image}
+                        alt={generatedPersona === 'amora' ? 'Amora' : 'Bianca'}
+                        className="h-12 w-12 rounded-full object-contain"
+                      />
+                      <span className="font-semibold text-slate-800">
+                        {t.writtenBy} {generatedPersona === 'amora' ? 'Amora' : 'Bianca'}
+                      </span>
+                    </div>
                     <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-6 border-2 border-purple-200">
                       <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
                         {generatedContent}
