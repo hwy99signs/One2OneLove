@@ -72,12 +72,13 @@
   <div id="speedState" style="font-size:14px;color:#555;line-height:1.45">A hole stays open 3 seconds, then closes and another opens</div>
   <div id="sensState" style="font-size:14px;color:#555;line-height:1.45">Ball rolls at 1× sensitivity — the game's normal feel</div>
   <div id="bestLine" style="margin-top:12px;font-size:15px;color:#274b63">🏆 Best score: 0</div>
+  <div id="startCalibReminder" style="margin:14px 0 8px;padding:10px 12px;border-radius:10px;background:#fff5d7;border:1px solid #d0a952;color:#573d1a;font-size:12.5px;line-height:1.5;text-align:left">Before you start: lay the phone flat where you'll play and tap 🎯 Set flat (in Settings). That sets YOUR flat as level, so the ball stays still when the phone is flat. Skip it and the game uses the phone's true flat — on a tilted surface the ball will drift.</div>
   <button class="sbtn" id="motionStartBtn" style="margin-top:14px">📳 Enable angle controls &amp; start</button>
   <button class="sbtn alt" id="swipeStartBtn">Start — play by swiping</button>
-  <button id="howtoBtn" aria-expanded="false" style="display:flex;justify-content:space-between;align-items:center;width:100%;margin-top:16px;padding:12px 14px;border:1.5px solid #d8e2d8;border-radius:11px;background:#f7faf7;font-size:13px;font-weight:800;letter-spacing:1.2px;color:#274b63;cursor:pointer;box-sizing:border-box"><span>❓ HOW TO PLAY</span><span id="howtoChev">▾</span></button>
-  <div id="howtoBody" style="display:none;text-align:left">
-  <div class="sub">Put the phone on a <b>flat surface, screen up</b>: the ball stays still. Then <b>angle the phone</b> left, right, back or forth to roll the ball — <b>any slight angle moves it, a bigger angle rolls it faster</b>.<br><b>Middle hole wins</b> — the two middle pockets have <b>gold rims</b>: those are the good pots, and the only ones that count. <b>Any of the 6 outer holes loses</b> — the <b>red pockets are fouls</b>.<br>Only <b>one hole is open at a time</b> — it closes and another opens at the <b>closing speed you set below</b>. Covered holes are safe to roll over.<br>Your ball is the <b>8-ball</b>. The <b>angry red ball</b>, bigger than your ball, roams the table and will knock your ball — it runs at <b>twice your sensitivity speed</b>, and it can never fall in a hole. <b>Every 3 balls you pot, another angry red ball joins the table — up to 3 of them.</b> Only your 8-ball can.</div>
-  <div class="sub" style="margin-top:8px">The feature tabs above set your game: 🏃 <b>Speed ramp</b> makes the holes close faster after each win · ✨ <b>Golden holes</b> are worth double points · 🎲 <b>Moving start</b> puts the ball in a new spot each round · 😡 <b>Red balls</b> can be switched off for a clear table.</div>
+  <button id="howtoBtn" aria-expanded="true" style="display:flex;justify-content:space-between;align-items:center;width:100%;margin-top:16px;padding:12px 14px;border:1.5px solid #d8e2d8;border-radius:11px;background:#f7faf7;font-size:13px;font-weight:800;letter-spacing:1.2px;color:#274b63;cursor:pointer;box-sizing:border-box"><span>❓ HOW TO PLAY</span><span id="howtoChev">▴</span></button>
+  <div id="howtoBody" style="display:block;text-align:left">
+  <div class="sub">Before you start: lay the phone flat where you'll play and tap 🎯 Set flat (in Settings). That sets YOUR flat as level, so the ball stays still when the phone is flat. Skip it and the game uses the phone's true flat — on a tilted surface the ball will drift.<br><br>Put the phone on a <b>flat surface, screen up</b> and <b>angle the phone</b> left, right, back or forth to roll the ball — a slight angle moves it, and a bigger angle rolls it faster — <b>or swipe to roll</b>.<br><b>Middle hole wins</b> — the two middle pockets have permanent <b>gold rims</b>: those are the good pots, and the only ones that count. The six <b>outer holes are fouls</b>.<br><b>Classic: one foul ends your run. 60-Second Challenge: a foul costs 5 seconds and your streak — play continues until the clock runs out.</b><br><b>Each pot scores 100 × your current streak. A golden hole pays double.</b><br>Only <b>one hole is open at a time</b> — it closes and another opens at the <b>Hole Speed slider in the Settings grid above</b>. Covered holes are safe to roll over.<br>Your ball is the <b>8-ball</b>. The <b>angry red ball</b>, bigger than your ball, roams the table and will knock your ball — it runs at <b>twice your sensitivity speed</b>, and it can never fall in a hole. <b>Every 3 balls you pot, another angry red ball joins the table — up to 3 of them.</b> Only your 8-ball can fall in a hole.</div>
+  <div class="sub" style="margin-top:8px">The feature tabs above set your game: 🏃 <b>Speed ramp</b> makes the holes close faster after each win · ✨ <b>Golden holes</b> (when enabled) give a random <b>open</b> hole a golden bonus, with a 25% chance each time one opens, worth double points — different from the permanent gold rims on the two middle pockets · 🎲 <b>Moving start</b> puts the ball in a new spot each round · 😡 <b>Red balls</b> can be switched off for a clear table.</div>
   </div>
   <div style="margin-top:12px;font-size:12.5px;color:#999">Copyright © 2026 EPS Venture Group. All rights reserved.</div>
   <div style="margin-top:3px;font-size:12px;color:#bbb">Pool Ping Pong · Build v29</div>
@@ -278,11 +279,23 @@ document.getElementById('calibResetBtn').addEventListener('click', function(){
   calibStateUpdate(); setStatus('Calibration cleared — level is the phone\'s true flat again.');
 });
 calibStateUpdate();
-document.getElementById('swipeStartBtn').addEventListener('click', beginPlay);
+var calibrationPromptSeen=false;
+try{calibrationPromptSeen=localStorage.getItem('poolSlideCalibPromptSeen')==='1';}catch(e){}
+function confirmCalibrationBeforeStart(next){
+  if(!calib&&!calibrationPromptSeen){
+    calibrationPromptSeen=true;
+    try{localStorage.setItem('poolSlideCalibPromptSeen','1');}catch(e){}
+    if(!window.confirm("Before you start: lay the phone flat where you'll play and tap 🎯 Set flat (in Settings). That sets YOUR flat as level, so the ball stays still when the phone is flat. Skip it and the game uses the phone's true flat — on a tilted surface the ball will drift."+'\n\nContinue without calibrating?'))return;
+  }
+  next();
+}
+document.getElementById('swipeStartBtn').addEventListener('click', function(){confirmCalibrationBeforeStart(beginPlay);});
 document.getElementById('motionStartBtn').addEventListener('click', function(){
-  ensureSensor(function(ok){
-    beginPlay();
-    setStatus(ok?'Angle controls ON — angle the phone to roll the ball.':'Angle controls not granted — swipe to test.');
+  confirmCalibrationBeforeStart(function(){
+    ensureSensor(function(ok){
+      beginPlay();
+      setStatus(ok?'Angle controls ON — angle the phone to roll the ball.':'Angle controls not granted — swipe to test.');
+    });
   });
 });
 function onOrient(e){
