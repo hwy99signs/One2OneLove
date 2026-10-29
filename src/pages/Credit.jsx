@@ -199,7 +199,7 @@ export default function Credit(){
      <div className="min-w-[230px] rounded-3xl border border-white/15 bg-white/10 p-5 text-center backdrop-blur"><div className="text-xs font-black uppercase tracking-wider text-white/60">{t.balance}</div><div className="mt-1 text-5xl font-black">{money(state?.wallet?.balance)}</div><div className="mt-1 text-sm font-bold text-fuchsia-200">$ CREDIT</div><div className="mx-auto my-4 h-px w-full bg-white/15"/><div className="text-3xl font-black text-emerald-300">{money(state?.gameCredit?.balanceCents)}</div><div className="mt-1 text-sm font-bold text-emerald-200">O2OL BONUS GAME CREDITS</div>{state?.gameCredit?.nextExpiryAt&&<div className="mt-2 text-xs font-semibold text-white/60">{gameCreditExpiryText(state.gameCredit.nextExpiryAt)} · {money(state?.gameCredit?.nextExpiryCents)} expires next</div>}</div>
     </div>
    </div>
-   <p className="mt-5 max-w-3xl text-sm font-semibold text-slate-600">O2OL Bonus Game Credits are applied before paid Credit when you play a One2OneLove game. They cannot be purchased, transferred, withdrawn, or used for non-game features.</p>
+   <p className="mt-5 max-w-3xl text-sm font-semibold text-slate-600">ALL current and future One2OneLove games are permanently FREE. No Game Credits or paid Credit are deducted for gameplay. Historical Bonus Game Credit balances and activity remain visible for your records.</p>
 
    <section className="mt-7">
     <h2 className="text-2xl font-black text-slate-950">{t.packages}</h2>
