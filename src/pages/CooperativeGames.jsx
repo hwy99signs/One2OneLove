@@ -128,7 +128,7 @@ export default function CooperativeGames() {
     const cents=q?.priceCents!=null ? Number(q.priceCents) : 0;
     return {
       priceCents:cents,
-      priceLabel:cents===0 ? 'FREE' : '
+      priceLabel:cents===0 ? 'FREE' : (String.fromCharCode(36)+(cents/100).toFixed(2)),
       free:cents===0,
       leaderboard:Boolean(q?.leaderboard),
       scoreLabel:q?.scoreLabel||null
