@@ -19,6 +19,14 @@ import { createCalendarEvent } from "@/lib/calendarService";
 import { listDateIdeas, createDateIdea, updateDateIdea } from "@/lib/dateIdeasService";
 import { getTokenWallet, isTokensRequiredError, listTokenUnlocks, tokenRequiredDetails, unlockTokenContent } from "@/lib/tokenService";
 
+const creditUnlockCopy = {
+  en: { free: 'FREE during the promotion — no Credit deducted.', paid: 'Unlocked with {amount} Credit.' },
+  es: { free: 'GRATIS durante la promoción — no se descontó Crédito.', paid: 'Desbloqueado con {amount} de Crédito.' },
+  fr: { free: 'GRATUIT pendant l’offre — aucun Crédit débité.', paid: 'Débloqué avec {amount} de Crédit.' },
+  it: { free: 'GRATIS durante la promozione — nessun Credito addebitato.', paid: 'Sbloccato con {amount} di Credito.' },
+  de: { free: 'Während der Aktion KOSTENLOS — kein Credit abgezogen.', paid: 'Für {amount} Credit freigeschaltet.' },
+};
+
 const translations = {
   en: {
     title: "Date Ideas for Couples",
@@ -556,7 +564,11 @@ export default function DateIdeas() {
       const full=await loadPrivateIdea(lockedIdea);
       setSelectedIdea({...lockedIdea,...full});
       setLockedIdea(null);
-      toast.success(`Unlocked with $${(Number(result?.tokens?.charged || dateIdeaTokenCost)/100).toFixed(2)} Credit.`);
+      const chargedCents = Number(result?.tokens?.charged ?? 0);
+      const unlockCopy = creditUnlockCopy[currentLanguage] || creditUnlockCopy.en;
+      toast.success(result?.promo || chargedCents === 0
+        ? unlockCopy.free
+        : unlockCopy.paid.replace('{amount}', '$' + (chargedCents / 100).toFixed(2)));
     } catch (error) {
       if (isTokensRequiredError(error)) {
         const info = tokenRequiredDetails(error);

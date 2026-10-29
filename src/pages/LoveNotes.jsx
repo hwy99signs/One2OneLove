@@ -22,6 +22,14 @@ import { getAiConfig } from "@/lib/aiService";
 import { getTokenWallet, isTokensRequiredError, isPhoneVerificationError, tokenRequiredDetails, listTokenUnlocks, unlockTokenContent } from "@/lib/tokenService";
 import { apiRequest } from "@/lib/apiClient";
 
+const libraryAccessCopy = {
+  en: { bought:'Purchased — select to read your note.', permanent:'Permanently unlocked', promo:'FREE during the promo — select to read your note.', temporary:'Temporary free access · relocks Jan 1', locked:'Note text hidden until unlocked.', paid:'$0.49 Credit to unlock', unlock:'Unlock $0.49' },
+  es: { bought:'Comprada — selecciónala para leerla.', permanent:'Desbloqueada permanentemente', promo:'GRATIS durante la promoción — selecciónala para leerla.', temporary:'Acceso gratuito temporal · se bloquea el 1 de enero', locked:'Texto oculto hasta desbloquearlo.', paid:'$0.49 de Crédito para desbloquear', unlock:'Desbloquear $0.49' },
+  fr: { bought:'Achetée — sélectionnez-la pour la lire.', permanent:'Débloquée définitivement', promo:'GRATUITE pendant l’offre — sélectionnez-la pour la lire.', temporary:'Accès gratuit temporaire · reverrouillage le 1er janvier', locked:'Texte masqué avant déblocage.', paid:'0,49 $ de Crédit pour débloquer', unlock:'Débloquer pour 0,49 $' },
+  it: { bought:'Acquistata — selezionala per leggerla.', permanent:'Sbloccata definitivamente', promo:'GRATIS durante la promozione — selezionala per leggerla.', temporary:'Accesso gratis temporaneo · si blocca il 1° gennaio', locked:'Testo nascosto fino allo sblocco.', paid:'$0.49 di Credito per sbloccare', unlock:'Sblocca $0.49' },
+  de: { bought:'Gekauft — zum Lesen auswählen.', permanent:'Dauerhaft freigeschaltet', promo:'Während der Aktion KOSTENLOS — zum Lesen auswählen.', temporary:'Vorübergehend kostenlos · ab 1. Januar wieder gesperrt', locked:'Text bis zur Freischaltung verborgen.', paid:'Für $0.49 Credit freischalten', unlock:'Für $0.49 freischalten' },
+};
+
 const LOVE_NOTE_MAX_CHARACTERS = 171;
 const clampLoveNote = (value) => Array.from(String(value || '')).slice(0, LOVE_NOTE_MAX_CHARACTERS).join('');
 // Total SMS body limit — title + note + signature line + sign-off — mirrored
@@ -851,6 +859,7 @@ export default function LoveNotes() {
     enabled:Boolean(currentUser?.id),
   });
   const purchasedNoteKeys = new Set((purchasedNoteData?.unlocks||[]).map(x=>String(x.content_key)));
+  const libraryT = libraryAccessCopy[currentLanguage] || libraryAccessCopy.en;
   const notePromoAccess = Boolean((purchasedNoteData?.unlocks || []).some(x => x.promo === true));
   const [noteToUnlock,setNoteToUnlock] = useState(null);
   const [noteUnlockError,setNoteUnlockError] = useState('');
@@ -1662,7 +1671,8 @@ export default function LoveNotes() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           <AnimatePresence>
             {displayedNotes.map((note) => {
-              const owned = notePromoAccess || purchasedNoteKeys.has(String(note.id));
+              const bought = purchasedNoteKeys.has(String(note.id));
+              const owned = notePromoAccess || bought;
               return (
               <motion.div
                 key={note.id}
@@ -1680,9 +1690,9 @@ export default function LoveNotes() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-gray-500 leading-relaxed mb-4">
-                      {owned ? 'Purchased — select to read your note.' : '🔒 Note description hidden until purchased.'}
+                      {bought ? libraryT.bought : notePromoAccess ? libraryT.promo : libraryT.locked}
                     </p>
-                    <div className="flex items-center gap-2 mb-4 text-sm text-gray-500">{owned ? 'Unlocked for your account' : <><Lock className="w-4 h-4" /> $0.49 Credit to unlock</>}</div>
+                    <div className="flex items-center gap-2 mb-4 text-sm text-gray-500">{bought ? libraryT.permanent : notePromoAccess ? libraryT.temporary : <><Lock className="w-4 h-4" /> {libraryT.paid}</>}</div>
                     <Button
                       className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
                       onClick={(e) => {
@@ -1691,7 +1701,7 @@ export default function LoveNotes() {
                       }}
                     >
                       {owned ? <Send className="w-4 h-4 mr-2" /> : <Lock className="w-4 h-4 mr-2" />}
-                      {owned ? t.send : 'Unlock $0.49'}
+                      {owned ? t.send : libraryT.unlock}
                     </Button>
                   </CardContent>
                 </Card>

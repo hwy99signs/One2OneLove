@@ -5,7 +5,15 @@ import { useLanguage } from './Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { getTokenWallet, isTokensRequiredError, tokenRequiredDetails, unlockTokenContent } from '@/lib/tokenService';
 import UnlockPriceDialog from '@/components/pricing/UnlockPriceDialog';
+import { isO2OLFreePromoActive } from '@/lib/o2olFreePromo2026';
 
+const studioPromoNote = {
+  en: 'Episode 1 is free. Episode 2 is also FREE for verified members through Dec 31, 2026. From Jan 1, standard Credit prices return; previously paid permanent unlocks remain. Bianca and other paid AI actions still use Credit.',
+  es: 'El Episodio 1 es gratis. El Episodio 2 también es GRATIS para miembros verificados hasta el 31 de diciembre de 2026. Desde el 1 de enero vuelven los precios en Crédito; se conservan las compras permanentes. Las funciones de IA de pago siguen usando Crédito.',
+  fr: 'L’épisode 1 est gratuit. L’épisode 2 est également GRATUIT pour les membres vérifiés jusqu’au 31 décembre 2026. Dès le 1er janvier, les tarifs habituels en Crédit reviennent ; les achats définitifs restent acquis. Les services IA payants restent facturés en Crédit.',
+  it: 'L’episodio 1 è gratuito. Anche l’episodio 2 è GRATIS per gli iscritti verificati fino al 31 dicembre 2026. Dal 1° gennaio tornano i prezzi normali in Credito; gli sblocchi già acquistati restano. Le funzioni IA a pagamento usano ancora Credito.',
+  de: 'Folge 1 ist kostenlos. Auch Folge 2 ist bis zum 31. Dezember 2026 für verifizierte Mitglieder KOSTENLOS. Ab 1. Januar gelten wieder die regulären Credit-Preise; dauerhaft gekaufte Freischaltungen bleiben. Kostenpflichtige KI-Funktionen kosten weiterhin Credit.',
+};
 const COPY={
   en:{
     eyebrow:'O2OL Studio Show',seasonLabel:'Season',episodeLabel:'Episode',
@@ -237,7 +245,7 @@ export default function O2OLStudio(){
             <Link to="/O2OLStudio/Episodes" className="inline-flex items-center gap-2 rounded-full border border-fuchsia-200/30 bg-fuchsia-500/15 px-5 py-3 text-sm font-black text-white hover:bg-fuchsia-500/25"><Film className="h-4 w-4"/>{t.episodes}</Link>
             <Link to="/MyMatchIQ" className="inline-flex rounded-full border border-white/20 bg-white/10 px-5 py-3 text-sm font-black text-white hover:bg-white/15">{t.explore}</Link>
           </div>
-          <p className="mx-auto mt-5 max-w-3xl text-center text-xs leading-5 text-white/70">{t.note}</p>
+          <p className="mx-auto mt-5 max-w-3xl text-center text-xs leading-5 text-white/70">{isO2OLFreePromoActive() ? (studioPromoNote[currentLanguage] || studioPromoNote.en) : t.note}</p>
         </div>
       </section>
       <UnlockPriceDialog
