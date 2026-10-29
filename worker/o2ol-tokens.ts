@@ -420,7 +420,13 @@ async function featurePrices(db){
   return (await db.query(
     `SELECT feature_code,label,token_cost,pricing_unit,active,calibration_only,metadata
        FROM public.o2ol_token_feature_prices WHERE active=true ORDER BY feature_code`
-  )).rows.map(x=>({...x,token_cost:Number(x.token_cost)}));
+  )).rows.map(x=>({
+    ...x,
+    // Effective display price for all current game session codes is zero.
+    // Database pricing rows and the separate Game Credit wallet are untouched.
+    token_cost:['like_minded_session','scratch_game_session','premium_game_session'].includes(x.feature_code)
+      ? 0 : Number(x.token_cost)
+  }));
 }
 async function recentTransactions(db,userId){
   return (await db.query(
