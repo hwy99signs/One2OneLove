@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/fix-i-thought-so-footer.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "deploy:production": "printf '%s' \"$STRIPE_SECRET_KEY\" | npx wrangler secret put STRIPE_SECRET_KEY --config cloudflare/wrangler.production.jsonc && npx wrangler deploy --config cloudflare/wrangler.production.jsonc"
