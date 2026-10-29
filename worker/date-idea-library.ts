@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { Client } from 'pg';
+import { isO2OLPromoFreeFeature } from '../src/lib/o2olFreePromo2026';
 import { getDateIdeasForLanguage } from '../src/components/dateideas/dateIdeasLibrary';
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}});
 async function identity(request,env){
@@ -30,7 +31,7 @@ export async function handleDateIdeaLibraryRequest(request,env,url){
     const m=(await db.query('SELECT COALESCE(p.is_active,true) AS active,COALESCE(u.banned,false) AS banned,u.role FROM neon_auth."user" u LEFT JOIN public.users p ON p.id=u.id WHERE u.id=$1::uuid',[user.id])).rows[0];
     if(!m||!m.active||m.banned)return json({ok:false,error:{code:'forbidden'}},403);
     const owned=(await db.query(`SELECT EXISTS(SELECT 1 FROM public.o2ol_token_content_unlocks WHERE user_id=$1::uuid AND feature_code='date_idea_unlock' AND content_key=$2) AS owned`,[user.id,id])).rows[0]?.owned===true;
-    if(!owned)return json({ok:false,error:{code:'content_unlock_required',message:'Unlock this Date Idea for $0.49 Credit.'}},402);
+    if(!owned&&!isO2OLPromoFreeFeature('date_idea_unlock'))return json({ok:false,error:{code:'content_unlock_required',message:'Unlock this Date Idea for $0.49 Credit.'}},402);
     return json({ok:true,idea});
   }finally{await db.end();}
 }
