@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, CreditCard, Film, Loader2, LockKeyhole, PlayCircle } from 'lucide-react';
+import { ArrowLeft, CreditCard, Film, Loader2, LockKeyhole, PlayCircle, UserPlus } from 'lucide-react';
 import { useLanguage } from './Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { getTokenWallet, isTokensRequiredError, tokenRequiredDetails, unlockTokenContent } from '@/lib/tokenService';
 import UnlockPriceDialog from '@/components/pricing/UnlockPriceDialog';
+import { isO2OLPromoFreeFeature } from '@/lib/o2olFreePromo2026';
 
 const COPY={
   en:{title:'Previous Episodes',sub:'Watch earlier O2OL Studio conversations anytime they are available to your account.',back:'Back to O2OL Studio',season:'Season',episode:'Episode',watch:'Watch Episode',locked:'Replay not available yet',opens:'Public replay opens',empty:'No Studio episodes are available yet.',loading:'Loading episodes…',unlockBtn:'Unlock for $1 Credit',unlockPrice:'Episode unlock — $1 Credit',unlocking:'Unlocking…',needCredit:'You need {required} Credit. Balance: {balance}.',addCredit:'Add Credit',unlockFailed:'Unable to unlock. Please try again.'},
@@ -14,6 +15,11 @@ const COPY={
   de:{title:'Frühere Folgen',sub:'Sieh frühere O2OL-Studio-Gespräche an, sobald sie für dein Konto verfügbar sind.',back:'Zurück zu O2OL Studio',season:'Staffel',episode:'Folge',watch:'Folge ansehen',locked:'Wiederholung noch nicht verfügbar',opens:'Öffentliche Wiederholung ab',empty:'Noch keine Studio-Folgen verfügbar.',loading:'Folgen werden geladen…',unlockBtn:'Für 1 $ Credit freischalten',unlockPrice:'Folge freischalten — 1 $ Credit',unlocking:'Wird freigeschaltet…',needCredit:'Du brauchst {required} Credit. Guthaben: {balance}.',addCredit:'Credit hinzufügen',unlockFailed:'Freischalten nicht möglich. Bitte erneut versuchen.'}
 };
 
+const FREE_EPISODE_NOTE = {
+  en:'FREE for verified members during promotion',es:'GRATIS para miembros verificados durante la promoción',
+  fr:'GRATUIT pour les membres vérifiés pendant l’offre',it:'GRATIS per membri verificati durante la promozione',
+  de:'Während der Aktion KOSTENLOS für bestätigte Mitglieder'
+};
 const EPISODE_TITLES={
   en:{'season-1-episode-1':'Who Should Apologize First?','season-1-episode-2':'Who Pays for the First Date?'},
   es:{'season-1-episode-1':'¿Quién debería disculparse primero?','season-1-episode-2':'¿Quién paga en la primera cita?'},
@@ -26,6 +32,8 @@ export default function O2OLStudioEpisodes(){
   const {currentLanguage}=useLanguage();
   const {isAuthenticated,user}=useAuth();
   const t=COPY[currentLanguage]||COPY.en;
+  const promoFree=isO2OLPromoFreeFeature('studio_episode_unlock');
+  const freeNote=FREE_EPISODE_NOTE[currentLanguage]||FREE_EPISODE_NOTE.en;
   const [episodes,setEpisodes]=useState([]);
   const [loading,setLoading]=useState(true);
   const [failedMedia,setFailedMedia]=useState({});
@@ -86,13 +94,14 @@ export default function O2OLStudioEpisodes(){
             const canOpen=Boolean(ep?.canWatch&&ep?.mediaPath);
             const playable=Boolean(canOpen&&!failedMedia[ep.id]);
             return <article key={ep.id} className="relative overflow-hidden rounded-[1.5rem] border border-white/15 bg-white/[0.06] shadow-xl">
-              {canOpen && !ep?.unlockPriceCents && <span className="absolute right-3 top-3 z-10 rounded-full bg-yellow-300 px-2 py-0.5 text-[10px] font-black tracking-wide text-yellow-950 shadow">FREE</span>}
+              {canOpen && (!ep?.unlockPriceCents || promoFree) && <span className="absolute right-3 top-3 z-10 rounded-full bg-yellow-300 px-2 py-0.5 text-[10px] font-black tracking-wide text-yellow-950 shadow">FREE</span>}
               <div className="aspect-video bg-black">
                 {playable?<video className="h-full w-full bg-black" controls playsInline preload="metadata" poster={ep.posterPath||undefined} src={ep.mediaPath+'#t=0.1'} onError={()=>setFailedMedia(v=>({...v,[ep.id]:true}))}>Your browser does not support HTML5 video.</video>:
-                <div className="flex h-full items-center justify-center bg-[radial-gradient(circle_at_center,rgba(124,58,237,0.32),transparent_45%),#030712] p-6 text-center"><div><LockKeyhole className="mx-auto h-11 w-11 text-amber-300"/><p className="mt-3 font-black">{t.locked}</p>{ep?.unlockPriceCents?<p className="mt-1 text-xs font-bold text-amber-200">{t.unlockPrice}</p>:(ep?.publicAvailableAt&&<p className="mt-1 text-xs text-white/55">{t.opens}: {new Date(ep.publicAvailableAt).toLocaleDateString()}</p>)}</div></div>}
+                <div className="flex h-full items-center justify-center bg-[radial-gradient(circle_at_center,rgba(124,58,237,0.32),transparent_45%),#030712] p-6 text-center"><div>{promoFree && ep?.unlockPriceCents ? <UserPlus className="mx-auto h-11 w-11 text-emerald-300"/> : ep?.unlockPriceCents ? <LockKeyhole className="mx-auto h-11 w-11 text-amber-300"/> : <PlayCircle className="mx-auto h-11 w-11 text-amber-300"/>}<p className="mt-3 font-black">{promoFree&&ep?.unlockPriceCents?freeNote:t.locked}</p>{ep?.unlockPriceCents&&!promoFree?<p className="mt-1 text-xs font-bold text-amber-200">{t.unlockPrice}</p>:(ep?.publicAvailableAt&&<p className="mt-1 text-xs text-white/55">{t.opens}: {new Date(ep.publicAvailableAt).toLocaleDateString()}</p>)}</div></div>}
               </div>
               <div className="p-5"><p className="text-xs font-black uppercase tracking-[.16em] text-cyan-200">{t.season} {ep.season} • {t.episode} {ep.episode}</p><h2 className="mt-2 text-2xl font-black">{EPISODE_TITLES[currentLanguage]?.[ep.id]||EPISODE_TITLES.en[ep.id]||ep.title}</h2>{canOpen&&<Link to={`/O2OLStudio?episode=${encodeURIComponent(ep.id)}`} className="mt-4 inline-flex items-center gap-2 rounded-full border border-fuchsia-300/30 bg-fuchsia-500/15 px-4 py-2 text-sm font-black text-fuchsia-100 hover:bg-fuchsia-500/25"><PlayCircle className="h-5 w-5"/>{t.watch} {ep.episode}</Link>}
-              {!canOpen&&ep?.unlockPriceCents&&(isAuthenticated?(
+              {!canOpen&&ep?.unlockPriceCents&&promoFree&&<Link to={`/O2OLStudio?episode=${encodeURIComponent(ep.id)}`} className="mt-4 inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-black text-white"><PlayCircle className="h-4 w-4"/>{freeNote}</Link>}
+              {!canOpen&&ep?.unlockPriceCents&&!promoFree&&(isAuthenticated?(
                 <span className="mt-4 block">
                   <button type="button" disabled={unlockingId===ep.id} onClick={()=>setConfirmEpisode(ep)} className="inline-flex items-center gap-2 rounded-full bg-fuchsia-600 px-4 py-2 text-sm font-black text-white transition hover:brightness-110 disabled:opacity-60">
                     {unlockingId===ep.id?<Loader2 className="h-4 w-4 animate-spin"/>:<CreditCard className="h-4 w-4"/>}{unlockingId===ep.id?t.unlocking:t.unlockBtn}
