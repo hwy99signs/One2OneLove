@@ -249,6 +249,7 @@ async function createContent(db, env, auth, input) {
   const details = cleanText(input?.details, 5000, false);
   const partnerName = cleanText(input?.partnerName, 200, false);
   const language = cleanText(input?.language || 'en', 20, true);
+  const persona = input?.persona === 'bianca' ? 'bianca' : 'amora';
   const requestId = String(input?.requestId || crypto.randomUUID()).slice(0,120);
   const isLoveNote = input?.purpose === 'love_note' && String(contentType).toLowerCase() === 'lovenote';
   const billingFeatureCode = isLoveNote ? 'love_note_ai' : 'ai_content_generation';
@@ -265,6 +266,11 @@ async function createContent(db, env, auth, input) {
     `Language code: ${language}.`,
     details ? `Context: ${details}` : '',
     'Make it heartfelt, natural, respectful, and ready for the member to personalize. Return only the requested content.',
+    !isLoveNote
+      ? (persona === 'bianca'
+        ? 'Write in Bianca\'s voice: direct, insightful, playful, compatibility-aware, and attentive to both partners\' sides.'
+        : 'Write in Amora\'s voice: warm, romantic, heartfelt, and tender.')
+      : '',
   ].filter(Boolean).join('\n');
   const instructions = 'You create personalized relationship messages for One2OneLove members. Follow the requested tone and language. Avoid manipulative, coercive, hateful, or sexually exploitative content. Do not claim to know facts the member did not provide.';
   let generated=null;

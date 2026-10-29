@@ -4,6 +4,8 @@ import { Client } from 'pg';
 const TOLERATED_DDL_CODES=new Set(['42501','42701','42P07','42710']);
 async function ddl(db,sql){try{await db.query(sql);}catch(e){if(!TOLERATED_DDL_CODES.has(e?.code))throw e;}}
 
+import { isO2OLPromoFreeFeature, O2OL_FREE_PROMO_END_EXCLUSIVE } from '../src/lib/o2olFreePromo2026';
+
 export const GAME_REGISTRY=Object.freeze({
   what_should_they_do:{id:'what_should_they_do',title:'What Should They Do?',category:'brain',chargeFeatureCode:'premium_game_session',route:'/WhatShouldTheyDo',leaderboard:false,scoreLabel:null,scoreCap:null,kind:'standard'},
   like_minded:{id:'like_minded',title:'Like Minded?',category:'brain',chargeFeatureCode:'like_minded_session',route:'/LikeMinded',leaderboard:true,scoreLabel:'matches',scoreCap:100,kind:'like_minded'},
@@ -151,6 +153,10 @@ function promoCoversGame(games,game){
   return false;
 }
 export async function resolveGamePromotion(db,userId,game,now=new Date()){
+  const promoFeature=gameDefinition(game)?.chargeFeatureCode;
+  if(isO2OLPromoFreeFeature(promoFeature,now)){
+    return {id:null,name:'100% FREE through Dec 31, 2026',kind:'free_play',free:true,percent:100,endsAt:O2OL_FREE_PROMO_END_EXCLUSIVE,timezone:'America/Chicago',temporary:true};
+  }
   // Owner-ordered launch window: every game is free through Sunday
   // 2026-10-11 11:59:59 PM America/Chicago (CDT). This deliberately
   // expires by absolute time and does not alter stored game prices.
@@ -265,7 +271,10 @@ export async function chargeGameAndCreatePass(db,userId,game,requestId){
       creditCents=price-gameCreditCents;
       paid=await debitPaidCreditInTx(db,userId,def.chargeFeatureCode,creditCents,`paid:${key}`,{game,request_id:requestId,promotion_id:promo?.id||null});
     }
-    const expiresAt=new Date(Date.now()+120*60*1000).toISOString();
+    // A free promo pass must not remain valid beyond the Jan 1 relock.
+    const expiresAt=new Date(promo?.free&&isO2OLPromoFreeFeature(def.chargeFeatureCode)
+      ?Math.min(Date.now()+120*60*1000,Date.parse(O2OL_FREE_PROMO_END_EXCLUSIVE))
+      :Date.now()+120*60*1000).toISOString();
     const pass=(await db.query(`INSERT INTO public.o2ol_game_access_passes
       (user_id,game,token_transaction_id,tokens_charged,status,expires_at,metadata,promotion_id,game_credit_cents,credit_cents,promo_free)
       VALUES($1::uuid,$2,$3::uuid,$4,'active',$5,$6::jsonb,$7::uuid,$8,$9,$10)

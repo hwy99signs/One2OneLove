@@ -227,10 +227,11 @@ export default function DateIdeas() {
     enabled: Boolean(currentUser?.id),
   });
   const unlockedDateKeys = new Set((tokenUnlockData?.unlocks || []).map(item => String(item.content_key)));
+  const dateIdeasPromoAccess = Boolean((tokenUnlockData?.unlocks || []).some(item => item.promo === true));
   const dateIdeaTokenCost = Number(tokenWalletData?.featurePrices?.find(item => item.feature_code === 'date_idea_unlock')?.token_cost || 49);
   const hasDateIdeaAccess = (idea) => {
     if (!idea?.week) return hasMemberAccess;
-    return unlockedDateKeys.has(String(idea.id));
+    return dateIdeasPromoAccess || unlockedDateKeys.has(String(idea.id));
   };
 
   const { data: customDates = [] } = useQuery({

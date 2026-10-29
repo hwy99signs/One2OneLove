@@ -1,4 +1,5 @@
 
+import { isO2OLFreePromoActive, O2OL_FREE_PROMO_MESSAGE } from '@/lib/o2olFreePromo2026';
 import React, { useState, createContext, useContext, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -391,8 +392,8 @@ function LanguageContent({ children, currentPageName }) {
       {t.announcement && location.pathname.toLowerCase() !== '/subscription' && (
         <div className="relative w-full max-w-[100vw] overflow-hidden bg-indigo-950 py-2 text-white" style={{ contain: 'layout paint' }}>
           <div className="o2ol-announcement-track whitespace-nowrap text-lg md:text-xl font-medium tracking-wide" style={{ fontFamily: "'Outfit', 'Inter', sans-serif" }}>
-            <span className="font-extrabold text-yellow-400 uppercase tracking-widest text-sm mr-3">{t.announcement.label}</span> 
-            <span className="text-white/90">{t.announcement.text}</span>
+            <span className="font-extrabold text-yellow-400 uppercase tracking-widest text-sm mr-3">{isO2OLFreePromoActive() ? 'FREE PROMO' : t.announcement.label}</span> 
+            <span className="text-white/90">{isO2OLFreePromoActive() ? O2OL_FREE_PROMO_MESSAGE : t.announcement.text}</span>
           </div>
         </div>
       )}
@@ -471,6 +472,15 @@ function LanguageContent({ children, currentPageName }) {
                 </div>
               )}
             </div>
+
+            {!isMyMatchIQPage && (
+              <Link
+                to="/AIContentCreator"
+                className="inline-flex max-w-[112px] items-center justify-center rounded-full border border-white/30 bg-white/15 px-2 py-2 text-center text-xs font-bold leading-tight text-white transition hover:bg-white/25 2xl:max-w-none 2xl:px-3 2xl:text-sm"
+              >
+                ✨ {t.nav.aiCreator}
+              </Link>
+            )}
 
             <Link
               to="/Credit"
@@ -616,6 +626,17 @@ function LanguageContent({ children, currentPageName }) {
                     </div>
                   )}
                 </div>
+
+                {!isMyMatchIQPage && (
+                  <Link
+                    to="/AIContentCreator"
+                    className="flex items-center gap-2 rounded-lg bg-white/15 px-3 py-2.5 font-bold text-white transition hover:bg-white/25"
+                    onClick={() => { setMobileMenuOpen(false); setMobileActionOpen(false); }}
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    {t.nav.aiCreator}
+                  </Link>
+                )}
 
                 <Link
                   to={createPageUrl("Community")}
