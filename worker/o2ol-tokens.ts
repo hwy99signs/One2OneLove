@@ -5,6 +5,7 @@ import { CREDIT_CONFIG } from './credit-config';
 import { ensureCreditSchema } from './love-note-credit';
 import { gameCreditWallet } from './game-economy';
 import { isO2OLPromoFreeFeature } from '../src/lib/o2olFreePromo2026';
+import { isO2OLPermanentFreeGameFeature } from '../src/lib/o2olGamePolicy';
 
 const HEADERS = {
   'content-type':'application/json; charset=utf-8',
@@ -102,9 +103,9 @@ async function ensureOwnerPricing(db){
     ['podcast_episode_unlock','Podcast episode unlock',199,'episode'],
     ['premium_content_unlock','Premium content unlock',299,'item'],
     ['studio_episode_unlock','Studio episode unlock',100,'episode'],
-    ['like_minded_session','Like Minded session',49,'session'],
-    ['scratch_game_session','Scratch Game session',49,'session'],
-    ['premium_game_session','Premium game session',49,'session'],
+    ['like_minded_session','Like Minded session — always free',0,'session'],
+    ['scratch_game_session','Scratch Game session — always free',0,'session'],
+    ['premium_game_session','All current and future game sessions — always free',0,'session'],
     ['memories_unlock','Memories & Memory Photos unlock',299,'item'],
     ['journals_unlock','Journals unlock',299,'item'],
     ['milestones_unlock','Milestones unlock',299,'item'],
@@ -161,6 +162,11 @@ export async function getTokenFeaturePrice(db,featureCode){
 export async function reserveTokenCharge(db,userId,featureCode,{idempotencyKey,metadata={}}={}){
   const key=String(idempotencyKey||'').trim();
   if(!key)throw Object.assign(new Error('A token idempotency key is required.'),{status:400,code:'idempotency_required'});
+  // The permanent games ruling takes precedence over old paid idempotency records
+  // and requires no wallet, promo window or database write.
+  if(isO2OLPermanentFreeGameFeature(featureCode)){
+    return {id:null,user_id:userId,feature_code:featureCode,tokens:0,status:'consumed',idempotency_key:key,balance_after:null,free:true,permanent:true};
+  }
   await db.query('BEGIN');
   try{
     const existing=(await db.query(

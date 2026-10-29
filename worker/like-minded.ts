@@ -138,15 +138,10 @@ async function requirePremiumGamePass(db,userId){
     [userId],
   )).rows[0];
   if(pass)return pass;
-  const wallet=(await db.query('SELECT balance FROM public.o2ol_token_wallets WHERE user_id=$1::uuid',[userId])).rows[0];
-  const price=(await db.query(
-    `SELECT token_cost,label FROM public.o2ol_token_feature_prices
-      WHERE feature_code='like_minded_session' AND active=true LIMIT 1`
-  )).rows[0];
-  throw Object.assign(new Error('Add Credit To Access'),{
-    status:402,code:'tokens_required',
-    balance:Number(wallet?.balance||0),required:Number(price?.token_cost||2),
-    featureCode:'like_minded_session',featureLabel:price?.label||'Like Minded session',
+  // The game is permanently free. A short-lived pass is still required to
+  // link multiplayer activity to a verified play session, never to payment.
+  throw Object.assign(new Error('Start a new FREE Like Minded game session to continue.'),{
+    status:409,code:'free_session_required',featureCode:'like_minded_session',
   });
 }
 

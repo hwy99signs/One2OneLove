@@ -28,9 +28,9 @@ export const FEATURE_PRICING = [
   { code:'date_idea_unlock', category:'Content unlocks', feature:'Date Ideas', free:'Designated free sample ideas remain available.', paid:'Each locked Date Idea is individually unlocked.', priceLabel:'$0.49 per locked idea', cents:49 },
   { code:'studio_episode_unlock', category:'Content unlocks', feature:'O2OL Studio Episodes', free:'Designated free episode(s), clips and previews.', paid:'Each locked episode; pay once and watch anytime.', priceLabel:'$1.00 per locked episode', cents:100 },
   { code:'podcast_episode_unlock', category:'Content unlocks', feature:'Podcast Episodes', free:'Browsing the podcast library and episode listings.', paid:'Each podcast episode; pay once and listen anytime.', priceLabel:'$1.99 per episode', cents:199 },
-  { code:'like_minded_session', category:'Games', feature:'Like Minded Game', free:'Any designated sample/demo remains free.', paid:'Each new paid game/session.', priceLabel:'$0.49 per game', cents:49 },
-  { code:'scratch_game_session', category:'Games', feature:'LOVE SCRATCH GAME', free:'Any designated sample/demo remains free.', paid:'Each paid game/session.', priceLabel:'$0.49 per game', cents:49 },
-  { code:'premium_game_session', category:'Games', feature:'Other O2OL Games', free:'Any designated sample/demo remains free.', paid:'Each paid current or future premium game/session unless specifically exempted.', priceLabel:'$0.49 per game', cents:49 },
+  { code:'like_minded_session', category:'Games', feature:'Like Minded Game', free:'Entire game — permanently FREE for verified members.', paid:'None. All current and future games stay free forever.', priceLabel:'FREE FOREVER', cents:0 },
+  { code:'scratch_game_session', category:'Games', feature:'LOVE SCRATCH GAME', free:'Entire game — permanently FREE for verified members.', paid:'None. All current and future games stay free forever.', priceLabel:'FREE FOREVER', cents:0 },
+  { code:'premium_game_session', category:'Games', feature:'Other O2OL Games', free:'Entire game — permanently FREE for verified members.', paid:'None. All current and future games stay free forever.', priceLabel:'FREE FOREVER', cents:0 },
 ];
 export const FEATURE_PRICE_BY_CODE = Object.fromEntries(FEATURE_PRICING.map(row => [row.code,row]));
 export function formatCreditCents(cents){ if(cents==null) return null; return '$'+(Number(cents)/100).toFixed(2); }

@@ -3,13 +3,13 @@ import { Link } from 'react-router-dom';
 import {
   ArrowLeft, CheckCircle2, ChevronRight, Copy, Globe2, HeartHandshake,
   LockKeyhole, MessageCircle, Radio, RotateCcw, ShieldCheck, Sparkles,
-  Trophy, UserRound, Users, Coins
+  Trophy, UserRound, Users
 } from 'lucide-react';
 import { useLanguage } from './Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { createPageUrl } from '@/utils';
-import { getTokenWallet, isTokensRequiredError, tokenRequiredDetails } from '@/lib/tokenService';
-import UnlockPriceDialog from '@/components/pricing/UnlockPriceDialog';
+
+
 import GameLeaderboard from '@/components/activities/GameLeaderboard';
 
 const LANGS = ['en','es','fr','it','de'];
@@ -33,13 +33,13 @@ const UI = {
     keepPlaying:'Keep Playing', finish:'Finish Self-Check', yourAnswer:'Your answer', waiting:'Waiting for the other player…',
     room:'Game Room', roomCode:'Room code', copyInvite:'Copy Invite Link', copied:'Copied', player2:'Waiting for Player 2',
     createRoom:'Create Invitation', joinRoom:'Join a Room', join:'Join', codePlaceholder:'Enter room code',
-    signin:'Sign in to use multiplayer', signinBody:'Create a free verified O2OL account, then use Credit to start a Like Minded session.',
+    signin:'Sign in to use multiplayer', signinBody:'Create a free verified O2OL account to play Like Minded for free forever.',
     available:'Available now', lobbyEmpty:'No other players are available right now.', leaveLobby:'Leave Player Lobby',
     location:'General location', city:'City', state:'State / Region (optional)', country:'Country', enterLobby:'Enter Player Lobby',
     locationNote:'Only your first name and general location are shown. Never your street address or precise location.',
     inviteToPlay:'Invite to Play', block:'Block', report:'Report', score:'Like-Minded Score', matches:'matches',
     talk:'Talk About It', talkPrompt:'What made each of you choose that answer?', difference:'Different answers', match:'You matched', back:'Back to Relationship Games',
-    category:'Category', questionDepth:'Depth', reset:'Start Over', unavailable:'Multiplayer service is not available in this preview yet.', premium:'Premium Credit Game',premiumBody:"Like Minded uses Credit. One purchase opens a 2-hour timed play session; you are not charged again while that pass remains active.",buyTokens:'Add Credit To Access',startPremium:'Start Credit Session',
+    category:'Category', questionDepth:'Depth', reset:'Start Over', unavailable:'Multiplayer service is not available in this preview yet.', premium:'FREE FOREVER',premiumBody:"Like Minded is permanently FREE. Each session lasts 2 hours; you can start another for free whenever you like.",buyTokens:'Start a Free Session',startPremium:'Play FREE',
     categoriesList:['Relationship Goals','Communication','Values','Family','Lifestyle','Money & Ambition','Boundaries','Future Priorities','Fun Scenarios','Humor','Activities','Food & Travel','Entertainment','Daily Preferences','Wild Card']
   },
   es: {
@@ -60,13 +60,13 @@ const UI = {
     keepPlaying:'Seguir Jugando', finish:'Finalizar', yourAnswer:'Tu respuesta', waiting:'Esperando al otro jugador…',
     room:'Sala de Juego', roomCode:'Código', copyInvite:'Copiar Enlace', copied:'Copiado', player2:'Esperando al Jugador 2',
     createRoom:'Crear Invitación', joinRoom:'Unirse a una Sala', join:'Unirse', codePlaceholder:'Ingresa el código',
-    signin:'Inicia sesión para multijugador', signinBody:'Crea una cuenta O2OL gratuita y verificada, luego usa Crédito para iniciar una sesión de Like Minded.',
+    signin:'Inicia sesión para multijugador', signinBody:'Crea una cuenta O2OL gratuita y verificada para jugar gratis para siempre.',
     available:'Disponibles ahora', lobbyEmpty:'No hay otros jugadores disponibles ahora.', leaveLobby:'Salir de la Sala',
     location:'Ubicación general', city:'Ciudad', state:'Estado / Región (opcional)', country:'País', enterLobby:'Entrar a la Sala',
     locationNote:'Solo se muestra tu nombre y ubicación general. Nunca tu dirección ni ubicación exacta.',
     inviteToPlay:'Invitar a Jugar', block:'Bloquear', report:'Reportar', score:'Puntuación Like-Minded', matches:'coincidencias',
     talk:'Hablar de Esto', talkPrompt:'¿Qué hizo que cada uno eligiera esa respuesta?', difference:'Respuestas diferentes', match:'Coincidieron', back:'Volver a Juegos',
-    category:'Categoría', questionDepth:'Profundidad', reset:'Empezar de Nuevo', unavailable:'El servicio multijugador aún no está disponible en esta vista previa.', premium:'Juego Premium con Crédito',premiumBody:"Like Minded usa Crédito. Una compra abre una sesión de juego de 2 horas; no vuelves a pagar mientras el pase siga activo.",buyTokens:'Agregar Crédito para Acceder',startPremium:'Iniciar Sesión con Crédito',
+    category:'Categoría', questionDepth:'Profundidad', reset:'Empezar de Nuevo', unavailable:'El servicio multijugador aún no está disponible en esta vista previa.', premium:'GRATIS PARA SIEMPRE',premiumBody:"Like Minded es gratis para siempre. Cada sesión dura 2 horas; puedes iniciar otra sin pagar.",buyTokens:'Iniciar sesión gratis',startPremium:'Jugar GRATIS',
     categoriesList:['Metas de Relación','Comunicación','Valores','Familia','Estilo de Vida','Dinero y Ambición','Límites','Prioridades Futuras','Escenarios Divertidos','Humor','Actividades','Comida y Viajes','Entretenimiento','Preferencias Diarias','Comodín']
   },
   fr: {
@@ -87,13 +87,13 @@ const UI = {
     keepPlaying:'Continuer', finish:'Terminer', yourAnswer:'Votre réponse', waiting:'En attente de l’autre joueur…',
     room:'Salle de Jeu', roomCode:'Code', copyInvite:'Copier le Lien', copied:'Copié', player2:'En attente du Joueur 2',
     createRoom:'Créer une Invitation', joinRoom:'Rejoindre une Salle', join:'Rejoindre', codePlaceholder:'Entrez le code',
-    signin:'Connectez-vous pour le multijoueur', signinBody:'Créez un compte O2OL gratuit et vérifié, puis utilisez des Crédit pour démarrer une session Like Minded.',
+    signin:'Connectez-vous pour le multijoueur', signinBody:'Créez un compte O2OL gratuit et vérifié pour jouer gratuitement pour toujours.',
     available:'Disponibles maintenant', lobbyEmpty:'Aucun autre joueur n’est disponible.', leaveLobby:'Quitter le Salon',
     location:'Localisation générale', city:'Ville', state:'État / Région (facultatif)', country:'Pays', enterLobby:'Entrer dans le Salon',
     locationNote:'Seuls votre prénom et votre localisation générale sont visibles. Jamais votre adresse précise.',
     inviteToPlay:'Inviter à Jouer', block:'Bloquer', report:'Signaler', score:'Score Like-Minded', matches:'accords',
     talk:'En Parler', talkPrompt:'Pourquoi chacun de vous a-t-il choisi cette réponse ?', difference:'Réponses différentes', match:'Vous êtes d’accord', back:'Retour aux Jeux',
-    category:'Catégorie', questionDepth:'Profondeur', reset:'Recommencer', unavailable:'Le service multijoueur n’est pas encore disponible dans cet aperçu.', premium:'Jeu Premium à Crédit',premiumBody:"Like Minded utilise des Crédits. Un achat ouvre une session de jeu de 2 heures ; aucun nouveau débit tant que le pass reste actif.",buyTokens:'Ajouter du Crédit pour Accéder',startPremium:'Démarrer la Session Crédit',
+    category:'Catégorie', questionDepth:'Profondeur', reset:'Recommencer', unavailable:'Le service multijoueur n’est pas encore disponible dans cet aperçu.', premium:'GRATUIT POUR TOUJOURS',premiumBody:"Like Minded est gratuit pour toujours. Chaque session dure 2 heures ; vous pouvez en commencer une autre gratuitement.",buyTokens:'Démarrer gratuitement',startPremium:'Jouer GRATUITEMENT',
     categoriesList:['Objectifs Relationnels','Communication','Valeurs','Famille','Style de Vie','Argent & Ambition','Limites','Priorités Futures','Scénarios Amusants','Humour','Activités','Cuisine & Voyage','Divertissement','Préférences Quotidiennes','Joker']
   },
   it: {
@@ -114,13 +114,13 @@ const UI = {
     keepPlaying:'Continua', finish:'Termina', yourAnswer:'La tua risposta', waiting:'In attesa dell’altro giocatore…',
     room:'Stanza di Gioco', roomCode:'Codice', copyInvite:'Copia Link', copied:'Copiato', player2:'In attesa del Giocatore 2',
     createRoom:'Crea Invito', joinRoom:'Entra in una Stanza', join:'Entra', codePlaceholder:'Inserisci il codice',
-    signin:'Accedi per il multigiocatore', signinBody:'Crea un account O2OL gratuito e verificato, quindi usa Credito per avviare una sessione Like Minded.',
+    signin:'Accedi per il multigiocatore', signinBody:'Crea un account O2OL gratuito e verificato per giocare gratis per sempre.',
     available:'Disponibili ora', lobbyEmpty:'Nessun altro giocatore è disponibile.', leaveLobby:'Esci dalla Lobby',
     location:'Posizione generale', city:'Città', state:'Stato / Regione (opzionale)', country:'Paese', enterLobby:'Entra nella Lobby',
     locationNote:'Vengono mostrati solo nome e posizione generale. Mai indirizzo o posizione precisa.',
     inviteToPlay:'Invita a Giocare', block:'Blocca', report:'Segnala', score:'Punteggio Like-Minded', matches:'corrispondenze',
     talk:'Parlatene', talkPrompt:'Cosa ha portato ciascuno di voi a scegliere quella risposta?', difference:'Risposte diverse', match:'Corrispondenza', back:'Torna ai Giochi',
-    category:'Categoria', questionDepth:'Profondità', reset:'Ricomincia', unavailable:'Il servizio multigiocatore non è ancora disponibile in questa anteprima.', premium:'Gioco Premium a Credito',premiumBody:"Like Minded usa Credito. Un acquisto apre una sessione di gioco di 2 ore; nessun nuovo addebito finché il pass resta attivo.",buyTokens:'Aggiungi Credito per Accedere',startPremium:'Avvia Sessione Credito',
+    category:'Categoria', questionDepth:'Profondità', reset:'Ricomincia', unavailable:'Il servizio multigiocatore non è ancora disponibile in questa anteprima.', premium:'GRATIS PER SEMPRE',premiumBody:"Like Minded è gratis per sempre. Ogni sessione dura 2 ore; puoi avviarne un’altra gratuitamente.",buyTokens:'Inizia sessione gratis',startPremium:'Gioca GRATIS',
     categoriesList:['Obiettivi di Coppia','Comunicazione','Valori','Famiglia','Stile di Vita','Denaro & Ambizione','Confini','Priorità Future','Scenari Divertenti','Umorismo','Attività','Cibo & Viaggi','Intrattenimento','Preferenze Quotidiane','Jolly']
   },
   de: {
@@ -141,13 +141,13 @@ const UI = {
     keepPlaying:'Weiterspielen', finish:'Selbst-Check Beenden', yourAnswer:'Deine Antwort', waiting:'Warte auf die andere Person…',
     room:'Spielraum', roomCode:'Raumcode', copyInvite:'Einladungslink Kopieren', copied:'Kopiert', player2:'Warte auf Spieler 2',
     createRoom:'Einladung Erstellen', joinRoom:'Raum Beitreten', join:'Beitreten', codePlaceholder:'Raumcode eingeben',
-    signin:'Für Mehrspieler anmelden', signinBody:'Erstelle ein kostenloses verifiziertes O2OL-Konto und verwende dann Credit, um eine Like Minded-Sitzung zu starten.',
+    signin:'Für Mehrspieler anmelden', signinBody:'Erstelle ein kostenloses verifiziertes O2OL-Konto und spiele für immer kostenlos.',
     available:'Jetzt verfügbar', lobbyEmpty:'Zurzeit sind keine anderen Spieler verfügbar.', leaveLobby:'Lobby Verlassen',
     location:'Allgemeiner Standort', city:'Stadt', state:'Bundesland / Region (optional)', country:'Land', enterLobby:'Lobby Betreten',
     locationNote:'Nur Vorname und allgemeiner Standort werden gezeigt. Niemals Straße oder genauer Standort.',
     inviteToPlay:'Zum Spielen Einladen', block:'Blockieren', report:'Melden', score:'Like-Minded Score', matches:'Treffer',
     talk:'Darüber Reden', talkPrompt:'Was hat euch jeweils zu dieser Antwort gebracht?', difference:'Unterschiedliche Antworten', match:'Ihr stimmt überein', back:'Zurück zu Spielen',
-    category:'Kategorie', questionDepth:'Tiefe', reset:'Neu Starten', unavailable:'Der Mehrspieler-Dienst ist in dieser Vorschau noch nicht verfügbar.', premium:'Premium-Credit-Spiel',premiumBody:"Like Minded verwendet Credit. Ein Kauf öffnet eine 2-stündige Spielsitzung; solange der Pass aktiv ist, wird nicht erneut berechnet.",buyTokens:'Credit Hinzufügen für Zugriff',startPremium:'Credit-Sitzung Starten',
+    category:'Kategorie', questionDepth:'Tiefe', reset:'Neu Starten', unavailable:'Der Mehrspieler-Dienst ist in dieser Vorschau noch nicht verfügbar.', premium:'FÜR IMMER KOSTENLOS',premiumBody:"Like Minded ist für immer kostenlos. Jede Sitzung dauert 2 Stunden; neue Sitzungen sind ebenfalls kostenlos.",buyTokens:'Gratis-Sitzung starten',startPremium:'GRATIS spielen',
     categoriesList:['Beziehungsziele','Kommunikation','Werte','Familie','Lebensstil','Geld & Ehrgeiz','Grenzen','Zukunftsprioritäten','Spaßszenarien','Humor','Aktivitäten','Essen & Reisen','Unterhaltung','Alltagsvorlieben','Wildcard']
   }
 };
@@ -328,94 +328,55 @@ export default function LikeMinded() {
   const displayCategory = t.categoriesList[CANONICAL_CATEGORIES.indexOf(activeCanonicalCategory)] || activeCanonicalCategory;
 
   const refreshTokenState=async()=>{
-    if(!isAuthenticated){setGamePass(null);setTokenBalance(0);return null;}
+    if(!isAuthenticated){setGamePass(null);return null;}
     try{
-      const [wallet,access]=await Promise.all([
-        getTokenWallet(),
-        api('/api/games/like-minded/access',{method:'GET',headers:{}}),
-      ]);
+      const access=await api('/api/games/like-minded/access',{method:'GET',headers:{}});
       setGamePromotion(access?.promotion||null);
-      setTokenBalance(Number(wallet?.wallet?.balance||0));
-      setGameCreditBalance(Number(wallet?.gameCredit?.balanceCents||0));
-      setTokenCost(access?.priceCents!=null?Number(access.priceCents):(access?.promotion?.free?0:Number(wallet?.featurePrices?.find(x=>x.feature_code==='like_minded_session')?.token_cost||49)));
       let pass=access?.pass||null;
-      if(!pass&&access?.promotion?.free){
+      if(!pass){
         const requestId=globalThis.crypto?.randomUUID?.()||`like-minded-free-${Date.now()}`;
-        const freeAccess=await api('/api/games/like-minded/access',{method:'POST',body:JSON.stringify({requestId})});
-        pass=freeAccess?.pass||null;
-        setGamePromotion(freeAccess?.promotion||access.promotion);
+        const started=await api('/api/games/like-minded/access',{method:'POST',body:JSON.stringify({requestId})});
+        pass=started?.pass||null;
+        setGamePromotion(started?.promotion||access?.promotion||null);
       }
       setGamePass(pass);
       setWalletError(false);
       return pass;
     }catch(error){
-      if(error?.status===402||isTokensRequiredError(error)){setGamePass(null);}
-      // A failed wallet/access read is not a $0.00 balance: flag it so
-      // the header and the unlock dialog stop posing as an empty,
-      // signed-out wallet (click-pass defect, 2026-10-12).
-      else setWalletError(true);
+      setApiError(error?.message||t.unavailable);
+      setWalletError(true);
       return null;
     }
   };
   const handlePremiumError=(error)=>{
-    if(isTokensRequiredError(error)||error?.payload?.error?.code==='tokens_required'){
-      const info=tokenRequiredDetails(error);
-      setTokenBalance(Number(info.creditBalance||tokenBalance||0));
-      setGameCreditBalance(Number(info.gameCreditBalance||gameCreditBalance||0));
-      if(info.required)setTokenCost(Number(info.required));
-      setTokenPrompt(true);
-      setApiError(`${t.buyTokens} — ${info.required||tokenCost||49} Credit cents required. Balance: ${info.balance||0}.`);
-      return true;
-    }
     setApiError(error?.message||t.unavailable);
     return false;
   };
+  // Free session passes still bind leaderboard scoring and the 2-hour timer.
+  // Renew them at no charge; never display a purchase or Credit dialog.
   const ensurePremiumAccess=async()=>{
     if(!isAuthenticated){
       window.location.assign('/SignUp?source=like-minded&type=individual');
       return false;
     }
     if(gamePass&&new Date(gamePass.expires_at).getTime()>Date.now())return true;
-    setApiError('');
-    setTokenPrompt(true);
-    return new Promise(resolve=>{premiumResolveRef.current=resolve;});
-  };
-  const confirmPremiumAccess=async()=>{
-    if(accessLoading)return;
+    if(accessLoading)return false;
     setAccessLoading(true);setApiError('');
     try{
-      const requestId=globalThis.crypto?.randomUUID?.()||`like-minded-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const requestId=globalThis.crypto?.randomUUID?.()||`like-minded-${Date.now()}`;
       const data=await api('/api/games/like-minded/access',{method:'POST',body:JSON.stringify({requestId})});
-      setGamePass(data.pass||null);
-      if(data?.gameCredit?.balanceCents!=null)setGameCreditBalance(Number(data.gameCredit.balanceCents));
-      await refreshTokenState();
-      setTokenPrompt(false);
-      const resolve=premiumResolveRef.current; premiumResolveRef.current=null; resolve?.(true);
+      if(!data?.pass)throw new Error(t.unavailable);
+      setGamePass(data.pass);
+      setGamePromotion(data.promotion||null);
+      return true;
     }catch(error){
       handlePremiumError(error);
+      return false;
     }finally{setAccessLoading(false);}
   };
-  const closePremiumPrompt=()=>{
-    setTokenPrompt(false);setApiError('');
-    const resolve=premiumResolveRef.current; premiumResolveRef.current=null; resolve?.(false);
-  };
-  const withPremiumDialog=(content)=><>
-    {content}
-    <UnlockPriceDialog
-      open={Boolean(tokenPrompt)&&!(gamePass&&new Date(gamePass.expires_at).getTime()>Date.now())}
-      title="Like Minded?"
-      priceCents={Number(tokenCost||49)}
-      terms="Per game / session."
-      balanceCents={walletError?null:Number(tokenBalance||0)}
-      gameCreditCents={walletError?null:Number(gameCreditBalance||0)}
-      promotion={gamePromotion}
-      busy={accessLoading}
-      error={apiError}
-      onUnlock={confirmPremiumAccess}
-      onClose={closePremiumPrompt}
-      creditReturn="/LikeMinded"
-    />
-  </>;
+  const confirmPremiumAccess=ensurePremiumAccess;
+  const closePremiumPrompt=()=>{setTokenPrompt(false);setApiError('');};
+  const withPremiumDialog=(content)=>content;
 
   useEffect(() => {
     const pending=new URLSearchParams(window.location.search).get('room');
@@ -428,7 +389,7 @@ export default function LikeMinded() {
       const pass=await refreshTokenState();
       if(!active)return;
       // Opening an invite never spends tokens automatically.
-      if(!pass){setTokenPrompt(true);setScreen('invite');return;}
+      if(!pass){setApiError(t.unavailable);setScreen('invite');return;}
       try{
         const data=await api('/api/like-minded/rooms/join',{method:'POST',body:JSON.stringify({code:normalized,language:lang})});
         if(!active)return;
@@ -593,7 +554,7 @@ export default function LikeMinded() {
 
   const toggleAvailability = async () => {
     if (!isAuthenticated || inLobby) return;
-    if(!(gamePass&&new Date(gamePass.expires_at).getTime()>Date.now())){setTokenPrompt(true);setApiError(t.buyTokens);return;}
+    if(!(await ensurePremiumAccess()))return;
     setApiError('');
     try {
       const next=!available;
@@ -924,8 +885,10 @@ export default function LikeMinded() {
 
           <div className="mx-auto mt-4 w-full max-w-5xl rounded-2xl border border-amber-300/30 bg-amber-300/10 p-4 text-left text-amber-50">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div><div className="inline-flex items-center gap-2 font-black"><Coins className="h-5 w-5"/>{t.premium}</div><p className="mt-1 text-xs leading-5 text-amber-50/80">{t.premiumBody}</p></div>
-              {isAuthenticated ? <Link to="/Credit?return=/LikeMinded" className="rounded-xl bg-amber-300 px-4 py-2 text-sm font-black text-amber-950">{gamePass?'Pass Active':gamePromotion?.free?'🎉 FREE through Sunday · No Credit used':walletError?`🔒 ${(Number(tokenCost||49)/100).toFixed(2)} per game · Balance unavailable`:`🔒 ${(Number(tokenCost||49)/100).toFixed(2)} per game · Balance ${(Number(tokenBalance||0)/100).toFixed(2)}`}</Link> : <Link to="/SignUp?source=like-minded&type=individual" className="rounded-xl bg-amber-300 px-4 py-2 text-sm font-black text-amber-950">Create FREE Account</Link>}
+              <div><div className="inline-flex items-center gap-2 font-black"><Sparkles className="h-5 w-5"/>{t.premium}</div><p className="mt-1 text-xs leading-5 text-amber-50/80">{t.premiumBody}</p></div>
+              {isAuthenticated
+                ? <span className="rounded-xl bg-emerald-300 px-4 py-2 text-sm font-black text-emerald-950">{t.premium}</span>
+                : <Link to="/SignUp?source=like-minded&type=individual" className="rounded-xl bg-amber-300 px-4 py-2 text-sm font-black text-amber-950">{t.signin}</Link>}
             </div>
           </div>
 

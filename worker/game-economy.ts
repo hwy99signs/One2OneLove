@@ -4,7 +4,8 @@ import { Client } from 'pg';
 const TOLERATED_DDL_CODES=new Set(['42501','42701','42P07','42710']);
 async function ddl(db,sql){try{await db.query(sql);}catch(e){if(!TOLERATED_DDL_CODES.has(e?.code))throw e;}}
 
-import { isO2OLPromoFreeFeature, O2OL_FREE_PROMO_END_EXCLUSIVE } from '../src/lib/o2olFreePromo2026';
+import { PERMANENT_FREE_GAMES } from '../src/lib/o2olGamePolicy';
+// Policy is a permanent owner decision, not a promotional discount.
 
 export const GAME_REGISTRY=Object.freeze({
   what_should_they_do:{id:'what_should_they_do',title:'What Should They Do?',category:'brain',chargeFeatureCode:'premium_game_session',route:'/WhatShouldTheyDo',leaderboard:false,scoreLabel:null,scoreCap:null,kind:'standard'},
@@ -153,35 +154,12 @@ function promoCoversGame(games,game){
   return false;
 }
 export async function resolveGamePromotion(db,userId,game,now=new Date()){
-  const promoFeature=gameDefinition(game)?.chargeFeatureCode;
-  if(isO2OLPromoFreeFeature(promoFeature,now)){
-    return {id:null,name:'100% FREE through Dec 31, 2026',kind:'free_play',free:true,percent:100,endsAt:O2OL_FREE_PROMO_END_EXCLUSIVE,timezone:'America/Chicago',temporary:true};
-  }
-  // Owner-ordered launch window: every game is free through Sunday
-  // 2026-10-11 11:59:59 PM America/Chicago (CDT). This deliberately
-  // expires by absolute time and does not alter stored game prices.
-  const launchFreeEnds='2026-10-12T04:59:59.999Z';
-  if(now.getTime()<=Date.parse(launchFreeEnds)){
-    return {id:null,name:'ALL GAMES FREE',kind:'free_play',free:true,percent:100,endsAt:launchFreeEnds,timezone:'America/Chicago',temporary:true};
-  }
-  await ensureGameEconomySchema(db);
-  const ctx=await memberPromoContext(db,userId);
-  let tz=ctx.timezone;
-  try{new Intl.DateTimeFormat('en-US',{timeZone:tz}).format(now);}catch(_){tz='America/Chicago';}
-  const promos=(await db.query(`SELECT * FROM public.o2ol_game_promotions WHERE active=true
-    AND (starts_at IS NULL OR starts_at<=now()) AND (ends_at IS NULL OR ends_at>=now())
-    ORDER BY created_at ASC`)).rows;
-  const eligible=promos.filter(p=>{
-    if(!promoCoversGame(p.games,game))return false;
-    if(p.audience==='new_members'&&ctx.createdAt&&p.starts_at&&new Date(ctx.createdAt)<new Date(p.starts_at))return false;
-    if(p.recurrence==='weekly'&&Number(p.recurrence_day)!==localWeekday(now,tz))return false;
-    return p.kind!=='credit_grant';
-  });
-  const free=eligible.find(p=>p.kind==='free_play'||(p.kind==='percent_off'&&Number(p.percent)>=100));
-  if(free)return {id:free.id,name:free.name,kind:'free_play',free:true,percent:100,timezone:tz,endsAt:free.ends_at||null,temporary:Boolean(free.ends_at)};
-  const discounts=eligible.filter(p=>p.kind==='percent_off').sort((a,b)=>Number(b.percent||0)-Number(a.percent||0));
-  if(discounts[0])return {id:discounts[0].id,name:discounts[0].name,kind:'percent_off',free:false,percent:Number(discounts[0].percent||0),timezone:tz,endsAt:discounts[0].ends_at||null,temporary:Boolean(discounts[0].ends_at)};
-  return null;
+  // Owner ruling: all current and future registered O2OL games are free forever.
+  if(!PERMANENT_FREE_GAMES)throw new Error('Permanent game access policy is disabled.');
+  // This is NOT the Dec 31 feature promotion; there is no expiry or Jan 1 relock.
+  if(!gameDefinition(game))return null;
+  return {id:null,name:'ALL GAMES FREE FOREVER',kind:'free_play',free:true,percent:100,
+    endsAt:null,temporary:false,permanent:true};
 }
 
 async function currentPrice(db,featureCode){
@@ -189,13 +167,10 @@ async function currentPrice(db,featureCode){
   return Number(row?.token_cost||49);
 }
 export async function gamePriceQuote(db,userId,game){
-  const def=gameDefinition(game);if(!def)throw Object.assign(new Error('Unknown game.'),{status:400,code:'game_invalid'});
-  const promotion=await resolveGamePromotion(db,userId,game);
-  const normalPriceCents=await currentPrice(db,def.chargeFeatureCode);
-  const priceCents=promotion?.free?0:promotion?.kind==='percent_off'
-    ?Math.max(0,Math.round(normalPriceCents*(100-Math.max(0,Math.min(100,promotion.percent)))/100))
-    :normalPriceCents;
-  return {game,normalPriceCents,priceCents,promotion};
+  const def=gameDefinition(game);
+  if(!def)throw Object.assign(new Error('Unknown game.'),{status:400,code:'game_invalid'});
+  return {game,normalPriceCents:0,priceCents:0,
+    promotion:await resolveGamePromotion(db,userId,game),permanentlyFree:true};
 }
 
 async function allocateGameCreditInTx(db,userId,amount,game,idempotencyKey){
@@ -247,7 +222,7 @@ async function debitPaidCreditInTx(db,userId,featureCode,amount,key,metadata){
 
 export async function chargeGameAndCreatePass(db,userId,game,requestId){
   await ensureGameEconomySchema(db);
-  const def=gameDefinition(game);if(!def)throw Object.assign(new Error('This paid game is not available.'),{status:400,code:'game_invalid'});
+  const def=gameDefinition(game);if(!def)throw Object.assign(new Error('This game is not available.'),{status:400,code:'game_invalid'});
   const key=`game:${game}:${userId}:${String(requestId||'').slice(0,120)}`;
   await db.query('BEGIN');
   try{
@@ -256,25 +231,12 @@ export async function chargeGameAndCreatePass(db,userId,game,requestId){
       [userId,game,key])).rows[0];
     if(replay){await db.query('COMMIT');return {pass:replay,reused:true,promotion:replay.promotion_id?{id:replay.promotion_id,free:replay.promo_free}:null,gameCreditCents:Number(replay.game_credit_cents||0),creditCents:Number(replay.credit_cents||0)};}
     const promo=await resolveGamePromotion(db,userId,game);
-    const normal=await currentPrice(db,def.chargeFeatureCode);
-    const roleRow=(await db.query(`SELECT role FROM neon_auth."user" WHERE id=$1::uuid LIMIT 1`,[userId])).rows[0];
-    const isAdmin=roleRow?.role==='admin';
-    const price=isAdmin?0:promo?.free?0:promo?.kind==='percent_off'?Math.max(0,Math.round(normal*(100-Math.max(0,Math.min(100,promo.percent)))/100)):normal;
-    let gameCreditCents=0,creditCents=0,paid=null;
-    if(price>0){
-      const gc=(await db.query(`SELECT COALESCE(sum(remaining_cents),0)::int AS cents FROM public.o2ol_game_credit_ledger
-        WHERE user_id=$1::uuid AND kind IN ('signup_bonus','admin_grant','promo_grant') AND remaining_cents>0 AND (expires_at IS NULL OR expires_at>now())`,[userId])).rows[0];
-      const gcAvail=Number(gc?.cents||0);
-      const paidAvail=await paidBalanceInTx(db,userId);
-      if(gcAvail+paidAvail<price)throw Object.assign(new Error('Add Credit To Access'),{status:402,code:'tokens_required',balance:gcAvail+paidAvail,required:price,shortfall:price-gcAvail-paidAvail,gameCreditBalance:gcAvail,creditBalance:paidAvail,featureCode:def.chargeFeatureCode});
-      gameCreditCents=await allocateGameCreditInTx(db,userId,Math.min(price,gcAvail),game,key);
-      creditCents=price-gameCreditCents;
-      paid=await debitPaidCreditInTx(db,userId,def.chargeFeatureCode,creditCents,`paid:${key}`,{game,request_id:requestId,promotion_id:promo?.id||null});
-    }
-    // A free promo pass must not remain valid beyond the Jan 1 relock.
-    const expiresAt=new Date(promo?.free&&isO2OLPromoFreeFeature(def.chargeFeatureCode)
-      ?Math.min(Date.now()+120*60*1000,Date.parse(O2OL_FREE_PROMO_END_EXCLUSIVE))
-      :Date.now()+120*60*1000).toISOString();
+    // Never debit Game Credits or paid Credit for any game, regardless of date,
+    // previous transactions, admin promotions or future game registry entries.
+    const normal=0,price=0,gameCreditCents=0,creditCents=0,paid=null;
+    // Two-hour free session IDs still protect leaderboard and scratch launch.
+    // These passes can be renewed indefinitely at no cost, including after Jan 1.
+    const expiresAt=new Date(Date.now()+120*60*1000).toISOString();
     const pass=(await db.query(`INSERT INTO public.o2ol_game_access_passes
       (user_id,game,token_transaction_id,tokens_charged,status,expires_at,metadata,promotion_id,game_credit_cents,credit_cents,promo_free)
       VALUES($1::uuid,$2,$3::uuid,$4,'active',$5,$6::jsonb,$7::uuid,$8,$9,$10)

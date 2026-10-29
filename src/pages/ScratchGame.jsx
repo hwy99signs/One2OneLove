@@ -1,127 +1,61 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, ExternalLink, LockKeyhole } from "lucide-react";
+import { ArrowLeft, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createPageUrl } from "@/utils";
 import { useLanguage } from "@/Layout";
 import { apiRequest } from "@/lib/apiClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { hasFullMemberAccess } from "@/lib/openHouseAccess";
-import { getTokenWallet, isTokensRequiredError, tokenRequiredDetails } from "@/lib/tokenService";
 import OpenHouseBrowseNotice from "@/components/launch/OpenHouseBrowseNotice";
-import UnlockPriceDialog from "@/components/pricing/UnlockPriceDialog";
-
-import { isO2OLFreePromoActive } from '@/lib/o2olFreePromo2026';
 
 const GAME_URL = "https://play.one2onelove.com/";
-
 const copy = {
-  en: { back:"Back to Games", full:"Open Full Screen", title:"LOVE SCRATCH GAME", preview:"Scratch. Share. Grow closer. This game costs $0.49 per play.", loading:"Opening your One2OneLove game…", error:"Unable to open the Scratch Game.", howTo: "Pick a deck, draw a card, scratch to reveal a question, and talk it through. Solo, one couple, or two couples. No scoring — just conversation." },
-  es: { back:"Volver a Juegos", full:"Abrir Pantalla Completa", title:"LOVE SCRATCH GAME", preview:"Rasca. Comparte. Acérquense. Este juego cuesta $0.49 por partida.", loading:"Abriendo tu juego One2OneLove…", error:"No se pudo abrir el Juego de Rasca.", howTo: "Elige un mazo, toma una carta, rasca para revelar una pregunta y hablen sobre ella. En solitario, una pareja o dos parejas. Sin puntos, solo conversación." },
-  fr: { back:"Retour aux Jeux", full:"Ouvrir en Plein Écran", title:"LOVE SCRATCH GAME", preview:"Grattez. Partagez. Rapprochez-vous. Ce jeu coûte 0,49 $ par partie.", loading:"Ouverture de votre jeu One2OneLove…", error:"Impossible d’ouvrir le Jeu à Gratter.", howTo: "Choisissez un paquet, piochez une carte, grattez pour révéler une question et discutez-en. En solo, à un couple ou à deux couples. Pas de score, juste la conversation." },
-  it: { back:"Torna ai Giochi", full:"Apri a Schermo Intero", title:"LOVE SCRATCH GAME", preview:"Gratta. Condividi. Avvicinatevi. Questo gioco costa $0.49 a partita.", loading:"Apertura del gioco One2OneLove…", error:"Impossibile aprire il Gioco Gratta.", howTo: "Scegli un mazzo, pesca una carta, gratta per scoprire una domanda e parlatene. Da soli, in una coppia o in due coppie. Nessun punteggio: solo conversazione." },
-  de: { back:"Zurück zu Spielen", full:"Vollbild Öffnen", title:"LOVE SCRATCH GAME", preview:"Rubbeln. Teilen. Näher zusammenwachsen. Dieses Spiel kostet $0.49 pro Spiel.", loading:"Dein One2OneLove-Spiel wird geöffnet…", error:"Das Rubbelspiel kann nicht geöffnet werden.", howTo: "Wähle ein Kartendeck, ziehe eine Karte, rubbele eine Frage frei und sprecht darüber. Allein, als Paar oder mit zwei Paaren. Keine Punkte – nur Gespräche." },
+  en: { back:"Back to Games", full:"Open Full Screen", title:"LOVE SCRATCH GAME", howTitle:'How to Play', howTo:"Pick a deck, draw a card, scratch to reveal a question, and talk it through. Solo, one couple, or two couples. No scoring — just conversation.", forever:'FREE FOREVER', free:'LOVE SCRATCH and all current and future One2OneLove games are permanently FREE. No Credit needed, ever.', play:'Play FREE', loading:'Opening your game…',error:'Unable to open the Scratch Game.', signUp:'Create a free verified account to play.' },
+  es: { back:"Volver a Juegos", full:"Abrir Pantalla Completa", title:"LOVE SCRATCH GAME", howTitle:'Cómo jugar', howTo:"Elige un mazo, toma una carta, rasca para revelar una pregunta y hablen sobre ella. En solitario, una pareja o dos parejas. Sin puntos, solo conversación.", forever:'GRATIS PARA SIEMPRE', free:'LOVE SCRATCH y todos los juegos actuales y futuros de One2OneLove son GRATIS PARA SIEMPRE. Sin cobros de Crédito.', play:'Jugar GRATIS', loading:'Abriendo el juego…',error:'No se pudo abrir el Juego de Rasca.',signUp:'Crea una cuenta gratuita verificada para jugar.' },
+  fr: { back:"Retour aux Jeux", full:"Ouvrir en Plein Écran", title:"LOVE SCRATCH GAME", howTitle:'Comment jouer',howTo:"Choisissez un paquet, piochez une carte, grattez pour révéler une question et discutez-en. En solo, à un couple ou à deux couples. Pas de score, juste la conversation.", forever:'GRATUIT POUR TOUJOURS', free:'LOVE SCRATCH et tous les jeux One2OneLove actuels et futurs sont GRATUITS POUR TOUJOURS. Aucun Crédit nécessaire.', play:'Jouer GRATUITEMENT',loading:'Ouverture du jeu…',error:'Impossible d’ouvrir le jeu.',signUp:'Créez un compte gratuit vérifié pour jouer.' },
+  it: { back:"Torna ai Giochi", full:"Apri a Schermo Intero", title:"LOVE SCRATCH GAME",howTitle:'Come giocare',howTo:"Scegli un mazzo, pesca una carta, gratta per scoprire una domanda e parlatene. Da soli, in una coppia o in due coppie. Nessun punteggio: solo conversazione.",forever:'GRATIS PER SEMPRE',free:'LOVE SCRATCH e tutti i giochi One2OneLove attuali e futuri sono GRATIS PER SEMPRE. Nessun Credito necessario.',play:'Gioca GRATIS',loading:'Apertura del gioco…',error:'Impossibile aprire il gioco.',signUp:'Crea un account gratuito verificato per giocare.' },
+  de: { back:"Zurück zu Spielen",full:"Vollbild Öffnen",title:"LOVE SCRATCH GAME",howTitle:'Spielanleitung',howTo:"Wähle ein Kartendeck, ziehe eine Karte, rubbele eine Frage frei und sprecht darüber. Allein, als Paar oder mit zwei Paaren. Keine Punkte – nur Gespräche.",forever:'FÜR IMMER KOSTENLOS',free:'LOVE SCRATCH und alle aktuellen und zukünftigen One2OneLove-Spiele sind FÜR IMMER KOSTENLOS. Kein Credit nötig.',play:'GRATIS spielen',loading:'Spiel wird geöffnet…',error:'Spiel konnte nicht geöffnet werden.',signUp:'Erstelle ein kostenloses verifiziertes Konto zum Spielen.' },
 };
-
-const scratchPromoCopy = {
-  en:{ howTitle:'How to Play', freePreview:'Pick a deck and enjoy LOVE SCRATCH for 0 Credit during the free promotion.', free:'100% FREE until Dec 31, 2026. No Credit will be used.', active:'This game is FREE while the promotion lasts. No Credit will be used.', play:'Play FREE', view:'View price to play' },
-  es:{ howTitle:'Cómo jugar', freePreview:'Elige un mazo y disfruta de LOVE SCRATCH por 0 Crédito durante la promoción.', free:'100% GRATIS hasta el 31 de diciembre de 2026. No se usará Crédito.', active:'Este juego es GRATIS mientras dure la promoción. No se usará Crédito.', play:'Jugar GRATIS', view:'Ver el precio para jugar' },
-  fr:{ howTitle:'Comment jouer', freePreview:'Choisissez un paquet et profitez de LOVE SCRATCH pour 0 Crédit pendant l’offre.', free:'100 % GRATUIT jusqu’au 31 décembre 2026. Aucun Crédit ne sera déduit.', active:'Ce jeu est GRATUIT pendant l’offre. Aucun Crédit ne sera déduit.', play:'Jouer GRATUITEMENT', view:'Voir le prix pour jouer' },
-  it:{ howTitle:'Come giocare', freePreview:'Scegli un mazzo e gioca a LOVE SCRATCH per 0 Credito durante la promozione.', free:'100% GRATIS fino al 31 dicembre 2026. Nessun Credito verrà addebitato.', active:'Questo gioco è GRATIS durante la promozione. Nessun Credito verrà addebitato.', play:'Gioca GRATIS', view:'Vedi prezzo per giocare' },
-  de:{ howTitle:'Spielanleitung', freePreview:'Wähle ein Kartendeck und spiele LOVE SCRATCH während der Aktion für 0 Credit.', free:'100 % KOSTENLOS bis 31. Dezember 2026. Kein Credit wird abgezogen.', active:'Dieses Spiel ist während der Aktion GRATIS. Kein Credit wird abgezogen.', play:'GRATIS spielen', view:'Spielpreis anzeigen' },
-};
-
-export default function ScratchGame() {
-  const { currentLanguage } = useLanguage();
-  const promoT = scratchPromoCopy[currentLanguage] || scratchPromoCopy.en;
-  const { user } = useAuth();
-  const fullMemberAccess = hasFullMemberAccess(user);
-  const t = copy[currentLanguage] || copy.en;
-  const [gameUrl,setGameUrl] = useState(null);
-  const [error,setError] = useState('');
-  const [unlocking,setUnlocking] = useState(false);
-  const [showUnlock,setShowUnlock] = useState(false);
-  const [priceCents,setPriceCents] = useState(49);
-  const [balanceCents,setBalanceCents] = useState(null);
-  const [gameCreditCents,setGameCreditCents] = useState(null);
-  const [promotion,setPromotion] = useState(null);
-
-  useEffect(()=>{
-    let active=true;
-    if(!fullMemberAccess)return()=>{active=false};
-    const timeZone=Intl.DateTimeFormat().resolvedOptions().timeZone;
-    if(timeZone)apiRequest('/api/games/timezone',{method:'POST',body:{timeZone}}).catch(()=>{});
-    Promise.all([getTokenWallet(),apiRequest('/api/games/catalog')]).then(([data,catalog])=>{
-      if(!active)return;
-      const scratch=(catalog?.games||[]).find(g=>g.id==='scratch')||{};
-      setPromotion(scratch?.promotion||null);
-      setBalanceCents(Number(data?.wallet?.balance||0));
-      setGameCreditCents(Number(data?.gameCredit?.balanceCents||0));
-      setPriceCents(scratch?.priceCents!=null?Number(scratch.priceCents):Number(data?.featurePrices?.find(x=>x.feature_code==='scratch_game_session')?.token_cost||49));
-      setShowUnlock(!scratch?.promotion?.free);
-    }).catch(()=>{if(active)setShowUnlock(true)});
-    return()=>{active=false};
-  },[fullMemberAccess]);
-
+export default function ScratchGame(){
+  const {currentLanguage}=useLanguage();
+  const t=copy[currentLanguage]||copy.en;
+  const {user}=useAuth();
+  const fullMemberAccess=hasFullMemberAccess(user);
+  const [gameUrl,setGameUrl]=useState(null),[error,setError]=useState(''),[busy,setBusy]=useState(false);
   const launchGame=async()=>{
-    if(!fullMemberAccess||unlocking)return;
-    setUnlocking(true);setError('');
+    if(!fullMemberAccess||busy)return;
+    setBusy(true);setError('');
     try{
       const requestId=globalThis.crypto?.randomUUID?.()||`scratch-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const payload=await apiRequest('/api/games/scratch/launch',{method:'POST',body:{requestId}});
-      const token=payload?.token;
-      if(!token)throw new Error(t.error);
-      if(payload?.promotion)setPromotion(payload.promotion);
-      if(payload?.gameCredit?.balanceCents!=null)setGameCreditCents(Number(payload.gameCredit.balanceCents));
-      const refreshed=await getTokenWallet().catch(()=>null);
-      if(refreshed?.wallet?.balance!=null)setBalanceCents(Number(refreshed.wallet.balance));
-      setGameUrl(`${GAME_URL}?lang=${encodeURIComponent(currentLanguage||"en")}&ticket=${encodeURIComponent(token)}`);
-      setShowUnlock(false);
-    }catch(err){
-      if(isTokensRequiredError(err)){
-        const info=tokenRequiredDetails(err);
-        setBalanceCents(Number(info.creditBalance||0));
-        setGameCreditCents(Number(info.gameCreditBalance||0));
-        setPriceCents(Number(info.required||49));
-        setError(`You need $${(Number(info.required||49)/100).toFixed(2)} Credit. Your balance is $${(Number(info.balance||0)/100).toFixed(2)}.`);
-      }else setError(err?.message||t.error);
-    }finally{setUnlocking(false);}
+      if(!payload?.token)throw new Error(t.error);
+      setGameUrl(`${GAME_URL}?lang=${encodeURIComponent(currentLanguage||'en')}&ticket=${encodeURIComponent(payload.token)}`);
+    }catch(err){setError(err?.message||t.error);}
+    finally{setBusy(false);}
   };
-
   return <div className="min-h-screen" style={{backgroundColor:'#2b0813'}}>
     <div className="max-w-[1500px] mx-auto px-3 md:px-5 py-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <Link to={createPageUrl("CooperativeGames")} className="inline-flex items-center font-semibold text-white/85 hover:text-white"><ArrowLeft className="w-4 h-4 mr-2"/>{t.back}</Link>
-        {gameUrl&&<a href={gameUrl} target="_blank" rel="noopener noreferrer"><Button variant="outline" className="gap-2"><ExternalLink className="w-4 h-4"/>{t.full}</Button></a>}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <Link to={createPageUrl('CooperativeGames')} className="inline-flex items-center font-semibold text-white/85 hover:text-white"><ArrowLeft className="mr-2 h-4 w-4"/>{t.back}</Link>
+        {gameUrl&&<a href={gameUrl} target="_blank" rel="noopener noreferrer"><Button variant="outline" className="gap-2"><ExternalLink className="h-4 w-4"/>{t.full}</Button></a>}
       </div>
       {!fullMemberAccess&&<div className="mb-4"><OpenHouseBrowseNotice/></div>}
-      <img src="/game-cards/card-love-scratch.jpg" alt="game card" className="mx-auto mb-6 block w-full max-w-3xl rounded-[24px] shadow-2xl ring-1 ring-white/15" />
-      <section aria-label="How to Play" className="mx-auto mb-5 max-w-3xl rounded-2xl border border-pink-300/30 bg-white/10 px-6 py-4 text-white">
-        <h2 className="mb-2 text-xl font-black">{promoT.howTitle}</h2>
-        <p className="text-sm leading-7 text-white/90">{t.howTo}</p>
+      <img src="/game-cards/card-love-scratch.jpg" alt="LOVE SCRATCH GAME" className="mx-auto mb-6 block w-full max-w-3xl rounded-[24px] shadow-2xl ring-1 ring-white/15"/>
+      <section aria-label={t.howTitle} className="mx-auto mb-5 max-w-3xl rounded-2xl border border-pink-300/30 bg-white/10 px-6 py-4 text-white">
+        <h2 className="mb-2 text-xl font-black">{t.howTitle}</h2><p className="text-sm leading-7 text-white/90">{t.howTo}</p>
       </section>
-        {!fullMemberAccess?(
-          <div className="p-8 text-center sm:p-12"><h1 className="text-3xl font-black text-white">{t.title}</h1><p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-white/75">{isO2OLFreePromoActive() ? promoT.freePreview : t.preview}</p></div>
-        ):gameUrl?(
-          <div className="overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/15"><iframe title="LOVE SCRATCH GAME" src={gameUrl} className="w-full border-0" style={{height:"min(60vh, 720px)",minHeight:"520px"}} allow="fullscreen"/></div>
-        ):promotion?.free?(
-          <div className="p-10 text-center sm:p-14">
-            <div className="mx-auto w-fit rounded-full bg-emerald-100 px-4 py-2 text-sm font-black text-emerald-800">{promotion?.name||'FREE GAME'}</div>
-            <h1 className="mt-4 text-3xl font-black text-white">{t.title}</h1>
-            <p className="mx-auto mt-3 max-w-xl text-white/75">{promotion?.temporary && isO2OLFreePromoActive() ? promoT.free : promoT.active}</p>
+      {gameUrl
+        ? <div className="overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/15"><iframe title="LOVE SCRATCH GAME" src={gameUrl} className="w-full border-0" style={{height:'min(60vh, 720px)',minHeight:'520px'}} allow="fullscreen"/></div>
+        : <div className="p-8 text-center text-white sm:p-12">
+            <div className="mx-auto w-fit rounded-full bg-emerald-100 px-4 py-2 text-sm font-black text-emerald-800">{t.forever}</div>
+            <h1 className="mt-4 text-3xl font-black">{t.title}</h1>
+            <p className="mx-auto mt-3 max-w-xl text-white/80">{t.free}</p>
+            {!fullMemberAccess&&<p className="mx-auto mt-3 text-white/70">{t.signUp}</p>}
             {error&&<div className="mx-auto mt-4 max-w-xl rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-900">{error}</div>}
-            <Button onClick={launchGame} disabled={unlocking} className="mt-6 bg-emerald-600 font-black hover:bg-emerald-700">{unlocking?t.loading:promoT.play}</Button>
-          </div>
-        ):(
-          <div className="p-10 text-center sm:p-14">
-            <LockKeyhole className="mx-auto h-12 w-12 text-pink-400"/>
-            <h1 className="mt-4 text-3xl font-black text-white">{t.title}</h1>
-            <p className="mx-auto mt-3 max-w-xl text-white/75">{t.preview}</p>
-            <Button onClick={()=>setShowUnlock(true)} className="mt-6 bg-pink-600 font-black hover:bg-pink-700">{promoT.view}</Button>
-          </div>
-        )}
+            {fullMemberAccess&&<Button onClick={launchGame} disabled={busy} className="mt-6 bg-emerald-600 font-black hover:bg-emerald-700">{busy?t.loading:t.play}</Button>}
+          </div>}
     </div>
-    <UnlockPriceDialog open={showUnlock&&fullMemberAccess&&!gameUrl} title={t.title} priceCents={priceCents} description="One paid play/session. You are not charged for viewing this price." balanceCents={balanceCents} gameCreditCents={gameCreditCents} promotion={promotion} busy={unlocking} error={error} onUnlock={launchGame} onClose={()=>{setShowUnlock(false);setError('')}}/>
     <p className="pb-5 pt-4 text-center text-xs text-white/50">Copyright © 2026 EPS Venture Group. All rights reserved.</p>
   </div>;
 }

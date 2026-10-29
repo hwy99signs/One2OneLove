@@ -48,7 +48,7 @@ async function activePass(db,userId,game){
     ORDER BY expires_at DESC LIMIT 1`,[userId,game])).rows[0]||null;
 }
 async function accessSnapshot(db,userId,game){
-  const def=gameDefinition(game);if(!def)throw Object.assign(new Error('This paid game is not available.'),{status:400,code:'game_invalid'});
+  const def=gameDefinition(game);if(!def)throw Object.assign(new Error('This game is not available.'),{status:400,code:'game_invalid'});
   const pass=await activePass(db,userId,game);
   const quote=await gamePriceQuote(db,userId,game);
   const gameCredit=await gameCreditWallet(db,userId);
@@ -56,7 +56,7 @@ async function accessSnapshot(db,userId,game){
 }
 async function launchPassGame(db,env,auth,game,input){
   await verifiedMember(db,auth.user.id);
-  const def=gameDefinition(game);if(!def)throw Object.assign(new Error('This paid game is not available.'),{status:400,code:'game_invalid'});
+  const def=gameDefinition(game);if(!def)throw Object.assign(new Error('This game is not available.'),{status:400,code:'game_invalid'});
   const existing=await activePass(db,auth.user.id,game);
   if(existing)return json({ok:true,pass:existing,reused:true,promotion:await resolveGamePromotion(db,auth.user.id,game),gameCreditCents:0,creditCents:0,gameCredit:await gameCreditWallet(db,auth.user.id)});
   const requestId=String(input?.requestId||crypto.randomUUID()).slice(0,120);
@@ -121,7 +121,7 @@ export async function handleGameAccessRequest(request,env,url){
       if(url.pathname==='/api/games/standard/access'){
         const game=request.method==='GET'?(url.searchParams.get('game')||''):String((await request.clone().json().catch(()=>({})))?.game||'');
         const def=gameDefinition(game);
-        if(!def||def.kind!=='standard')return fail('This paid game is not available.',400,'game_invalid');
+        if(!def||def.kind!=='standard')return fail('This game is not available.',400,'game_invalid');
         await verifiedMember(db,auth.user.id);
         if(request.method==='GET')return json({ok:true,...await accessSnapshot(db,auth.user.id,game)});
         if(request.method==='POST')return launchPassGame(db,env,auth,game,await request.json().catch(()=>({})));
@@ -163,7 +163,7 @@ export async function handleGameFileRequest(request,env,url){
       if(roleRow?.role==='admin')return true;
       return Boolean(await activePass(db,auth.user.id,game));
     });
-    if(!allowed)return new Response('This game needs an active play pass. Open the game page to unlock it.',{status:403});
+    if(!allowed)return new Response('Open this game from its One2OneLove page to start a free play session.',{status:403});
     // Fetch the asset at its canonical extensionless URL so the asset
     // layer serves the file directly; follow any redirect internally
     // rather than handing it to the iframe (a bounced iframe lands on
