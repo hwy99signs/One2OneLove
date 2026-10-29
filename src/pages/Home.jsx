@@ -88,7 +88,7 @@ const TOOLS = [
   ['📷','memoryLane','MemoryLane','from-indigo-600 to-violet-700','locked'],
   ['🎯','relationshipGoals','RelationshipGoals','from-amber-500 to-yellow-600','locked'],
   ['💗','milestones','RelationshipMilestones','from-pink-600 to-fuchsia-700','locked'],
-  ['🎮','relationshipGames','CooperativeGames','from-emerald-600 to-teal-700','locked'],
+  ['🎮','relationshipGames','CooperativeGames','from-emerald-600 to-teal-700','free'],
 ];
 
 export default function Home() {
