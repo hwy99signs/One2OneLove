@@ -23,7 +23,7 @@ const UI = {
     lobby:'Player Lobby', lobbyBody:'See who is available right now and invite someone to a Like Minded game.',
     how:'How it works', choose:'Choose', lock:'Lock', reveal:'Reveal', connect:'Connect',
     how1:'Both players get the same underlying question.', how2:'Each person answers privately and locks the answer.',
-    how3:'Nothing is revealed until both answers are locked.', how4:'See the match, the difference and your running score.',
+    how3:'Nothing is revealed until both answers are locked.', how4:"Pick the same answer as your partner = a match on your running score. Your timed session lasts 2 hours.",
     mature:'Private by design', matureBody:'No answer peeking. No changing an answer after lock. No exact location sharing.',
     multilingual:'Play across languages', multilingualBody:'Each player can use English, Spanish, French, Italian or German while sharing the same question ID.',
     categories:'Choose a starting category', depth:'Choose your question depth', easy:'Easy', real:'Real', deep:'Deep',
@@ -39,7 +39,7 @@ const UI = {
     locationNote:'Only your first name and general location are shown. Never your street address or precise location.',
     inviteToPlay:'Invite to Play', block:'Block', report:'Report', score:'Like-Minded Score', matches:'matches',
     talk:'Talk About It', talkPrompt:'What made each of you choose that answer?', difference:'Different answers', match:'You matched', back:'Back to Relationship Games',
-    category:'Category', questionDepth:'Depth', reset:'Start Over', unavailable:'Multiplayer service is not available in this preview yet.', premium:'Premium Credit Game',premiumBody:'Like Minded uses Credit. One purchase opens a timed play session; you are not charged again while that pass remains active.',buyTokens:'Add Credit To Access',startPremium:'Start Credit Session',
+    category:'Category', questionDepth:'Depth', reset:'Start Over', unavailable:'Multiplayer service is not available in this preview yet.', premium:'Premium Credit Game',premiumBody:"Like Minded uses Credit. One purchase opens a 2-hour timed play session; you are not charged again while that pass remains active.",buyTokens:'Add Credit To Access',startPremium:'Start Credit Session',
     categoriesList:['Relationship Goals','Communication','Values','Family','Lifestyle','Money & Ambition','Boundaries','Future Priorities','Fun Scenarios','Humor','Activities','Food & Travel','Entertainment','Daily Preferences','Wild Card']
   },
   es: {
@@ -50,7 +50,7 @@ const UI = {
     lobby:'Sala de Jugadores', lobbyBody:'Mira quién está disponible e invita a alguien a una partida.',
     how:'Cómo funciona', choose:'Elegir', lock:'Bloquear', reveal:'Revelar', connect:'Conectar',
     how1:'Ambos reciben la misma pregunta base.', how2:'Cada persona responde en privado y bloquea su respuesta.',
-    how3:'Nada se revela hasta que ambos hayan bloqueado.', how4:'Ve coincidencias, diferencias y la puntuación acumulada.',
+    how3:'Nada se revela hasta que ambos hayan bloqueado.', how4:"Elegir la misma respuesta que tu pareja = una coincidencia en tu puntuación acumulada. La sesión dura 2 horas.",
     mature:'Privado por diseño', matureBody:'Sin ver respuestas ajenas. Sin cambiar después de bloquear. Sin ubicación exacta.',
     multilingual:'Juega entre idiomas', multilingualBody:'Cada jugador puede usar inglés, español, francés, italiano o alemán con la misma pregunta.',
     categories:'Elige una categoría inicial', depth:'Elige la profundidad', easy:'Fácil', real:'Real', deep:'Profundo',
@@ -66,7 +66,7 @@ const UI = {
     locationNote:'Solo se muestra tu nombre y ubicación general. Nunca tu dirección ni ubicación exacta.',
     inviteToPlay:'Invitar a Jugar', block:'Bloquear', report:'Reportar', score:'Puntuación Like-Minded', matches:'coincidencias',
     talk:'Hablar de Esto', talkPrompt:'¿Qué hizo que cada uno eligiera esa respuesta?', difference:'Respuestas diferentes', match:'Coincidieron', back:'Volver a Juegos',
-    category:'Categoría', questionDepth:'Profundidad', reset:'Empezar de Nuevo', unavailable:'El servicio multijugador aún no está disponible en esta vista previa.', premium:'Juego Premium con Crédito',premiumBody:'Like Minded usa Crédito. Una compra abre una sesión temporal; no vuelves a pagar mientras el pase siga activo.',buyTokens:'Agregar Crédito para Acceder',startPremium:'Iniciar Sesión con Crédito',
+    category:'Categoría', questionDepth:'Profundidad', reset:'Empezar de Nuevo', unavailable:'El servicio multijugador aún no está disponible en esta vista previa.', premium:'Juego Premium con Crédito',premiumBody:"Like Minded usa Crédito. Una compra abre una sesión de juego de 2 horas; no vuelves a pagar mientras el pase siga activo.",buyTokens:'Agregar Crédito para Acceder',startPremium:'Iniciar Sesión con Crédito',
     categoriesList:['Metas de Relación','Comunicación','Valores','Familia','Estilo de Vida','Dinero y Ambición','Límites','Prioridades Futuras','Escenarios Divertidos','Humor','Actividades','Comida y Viajes','Entretenimiento','Preferencias Diarias','Comodín']
   },
   fr: {
@@ -77,7 +77,7 @@ const UI = {
     lobby:'Salon des Joueurs', lobbyBody:'Voyez qui est disponible et invitez quelqu’un à jouer.',
     how:'Comment ça marche', choose:'Choisir', lock:'Verrouiller', reveal:'Révéler', connect:'Échanger',
     how1:'Les deux joueurs reçoivent la même question de base.', how2:'Chacun répond en privé puis verrouille sa réponse.',
-    how3:'Rien n’est révélé avant les deux verrouillages.', how4:'Découvrez les accords, différences et votre score.',
+    how3:'Rien n’est révélé avant les deux verrouillages.', how4:"Choisir la même réponse que votre partenaire = une correspondance dans votre score cumulé. La session dure 2 heures.",
     mature:'Privé par conception', matureBody:'Pas d’aperçu des réponses. Aucun changement après verrouillage. Aucune localisation précise.',
     multilingual:'Jouez entre langues', multilingualBody:'Chaque joueur peut utiliser anglais, espagnol, français, italien ou allemand avec le même identifiant de question.',
     categories:'Choisissez une catégorie de départ', depth:'Choisissez la profondeur', easy:'Léger', real:'Vrai', deep:'Profond',
@@ -93,7 +93,7 @@ const UI = {
     locationNote:'Seuls votre prénom et votre localisation générale sont visibles. Jamais votre adresse précise.',
     inviteToPlay:'Inviter à Jouer', block:'Bloquer', report:'Signaler', score:'Score Like-Minded', matches:'accords',
     talk:'En Parler', talkPrompt:'Pourquoi chacun de vous a-t-il choisi cette réponse ?', difference:'Réponses différentes', match:'Vous êtes d’accord', back:'Retour aux Jeux',
-    category:'Catégorie', questionDepth:'Profondeur', reset:'Recommencer', unavailable:'Le service multijoueur n’est pas encore disponible dans cet aperçu.', premium:'Jeu Premium à Crédit',premiumBody:'Like Minded utilise des Crédit. Un achat ouvre une session de jeu limitée dans le temps; aucun nouveau débit tant que le pass reste actif.',buyTokens:'Ajouter du Crédit pour Accéder',startPremium:'Démarrer la Session Crédit',
+    category:'Catégorie', questionDepth:'Profondeur', reset:'Recommencer', unavailable:'Le service multijoueur n’est pas encore disponible dans cet aperçu.', premium:'Jeu Premium à Crédit',premiumBody:"Like Minded utilise des Crédits. Un achat ouvre une session de jeu de 2 heures ; aucun nouveau débit tant que le pass reste actif.",buyTokens:'Ajouter du Crédit pour Accéder',startPremium:'Démarrer la Session Crédit',
     categoriesList:['Objectifs Relationnels','Communication','Valeurs','Famille','Style de Vie','Argent & Ambition','Limites','Priorités Futures','Scénarios Amusants','Humour','Activités','Cuisine & Voyage','Divertissement','Préférences Quotidiennes','Joker']
   },
   it: {
@@ -104,7 +104,7 @@ const UI = {
     lobby:'Sala Giocatori', lobbyBody:'Vedi chi è disponibile e invita qualcuno a giocare.',
     how:'Come funziona', choose:'Scegli', lock:'Blocca', reveal:'Rivela', connect:'Confronta',
     how1:'Entrambi ricevono la stessa domanda di base.', how2:'Ognuno risponde in privato e blocca la risposta.',
-    how3:'Nulla viene rivelato finché entrambi non hanno bloccato.', how4:'Scopri corrispondenze, differenze e punteggio.',
+    how3:'Nulla viene rivelato finché entrambi non hanno bloccato.', how4:"Scegliere la stessa risposta del partner = una corrispondenza nel punteggio progressivo. La sessione dura 2 ore.",
     mature:'Privato per design', matureBody:'Nessuna anteprima. Nessuna modifica dopo il blocco. Nessuna posizione precisa.',
     multilingual:'Gioca tra lingue', multilingualBody:'Ogni giocatore può usare inglese, spagnolo, francese, italiano o tedesco con lo stesso ID domanda.',
     categories:'Scegli una categoria iniziale', depth:'Scegli la profondità', easy:'Facile', real:'Reale', deep:'Profondo',
@@ -120,7 +120,7 @@ const UI = {
     locationNote:'Vengono mostrati solo nome e posizione generale. Mai indirizzo o posizione precisa.',
     inviteToPlay:'Invita a Giocare', block:'Blocca', report:'Segnala', score:'Punteggio Like-Minded', matches:'corrispondenze',
     talk:'Parlatene', talkPrompt:'Cosa ha portato ciascuno di voi a scegliere quella risposta?', difference:'Risposte diverse', match:'Corrispondenza', back:'Torna ai Giochi',
-    category:'Categoria', questionDepth:'Profondità', reset:'Ricomincia', unavailable:'Il servizio multigiocatore non è ancora disponibile in questa anteprima.', premium:'Gioco Premium a Credito',premiumBody:'Like Minded usa Credito. Un acquisto apre una sessione temporanea; nessun nuovo addebito finché il pass resta attivo.',buyTokens:'Aggiungi Credito per Accedere',startPremium:'Avvia Sessione Credito',
+    category:'Categoria', questionDepth:'Profondità', reset:'Ricomincia', unavailable:'Il servizio multigiocatore non è ancora disponibile in questa anteprima.', premium:'Gioco Premium a Credito',premiumBody:"Like Minded usa Credito. Un acquisto apre una sessione di gioco di 2 ore; nessun nuovo addebito finché il pass resta attivo.",buyTokens:'Aggiungi Credito per Accedere',startPremium:'Avvia Sessione Credito',
     categoriesList:['Obiettivi di Coppia','Comunicazione','Valori','Famiglia','Stile di Vita','Denaro & Ambizione','Confini','Priorità Future','Scenari Divertenti','Umorismo','Attività','Cibo & Viaggi','Intrattenimento','Preferenze Quotidiane','Jolly']
   },
   de: {
@@ -131,7 +131,7 @@ const UI = {
     lobby:'Spieler-Lobby', lobbyBody:'Sieh, wer verfügbar ist, und lade jemanden zum Spiel ein.',
     how:'So funktioniert es', choose:'Wählen', lock:'Sperren', reveal:'Aufdecken', connect:'Austauschen',
     how1:'Beide erhalten dieselbe zugrunde liegende Frage.', how2:'Jeder antwortet privat und sperrt die Antwort.',
-    how3:'Nichts wird gezeigt, bevor beide gesperrt haben.', how4:'Seht Übereinstimmungen, Unterschiede und euren Punktestand.',
+    how3:'Nichts wird gezeigt, bevor beide gesperrt haben.', how4:"Die gleiche Antwort wie dein Partner wählen = ein Treffer in deinem laufenden Punktestand. Die Sitzung dauert 2 Stunden.",
     mature:'Privat entwickelt', matureBody:'Kein Spicken. Keine Änderung nach dem Sperren. Keine genaue Standortfreigabe.',
     multilingual:'Sprachübergreifend spielen', multilingualBody:'Jeder kann Englisch, Spanisch, Französisch, Italienisch oder Deutsch nutzen – mit derselben Frage-ID.',
     categories:'Startkategorie wählen', depth:'Fragetiefe wählen', easy:'Leicht', real:'Echt', deep:'Tief',
@@ -147,7 +147,7 @@ const UI = {
     locationNote:'Nur Vorname und allgemeiner Standort werden gezeigt. Niemals Straße oder genauer Standort.',
     inviteToPlay:'Zum Spielen Einladen', block:'Blockieren', report:'Melden', score:'Like-Minded Score', matches:'Treffer',
     talk:'Darüber Reden', talkPrompt:'Was hat euch jeweils zu dieser Antwort gebracht?', difference:'Unterschiedliche Antworten', match:'Ihr stimmt überein', back:'Zurück zu Spielen',
-    category:'Kategorie', questionDepth:'Tiefe', reset:'Neu Starten', unavailable:'Der Mehrspieler-Dienst ist in dieser Vorschau noch nicht verfügbar.', premium:'Premium-Credit-Spiel',premiumBody:'Like Minded verwendet Credit. Ein Kauf öffnet eine zeitlich begrenzte Spielsitzung; solange der Pass aktiv ist, wird nicht erneut berechnet.',buyTokens:'Credit Hinzufügen für Zugriff',startPremium:'Credit-Sitzung Starten',
+    category:'Kategorie', questionDepth:'Tiefe', reset:'Neu Starten', unavailable:'Der Mehrspieler-Dienst ist in dieser Vorschau noch nicht verfügbar.', premium:'Premium-Credit-Spiel',premiumBody:"Like Minded verwendet Credit. Ein Kauf öffnet eine 2-stündige Spielsitzung; solange der Pass aktiv ist, wird nicht erneut berechnet.",buyTokens:'Credit Hinzufügen für Zugriff',startPremium:'Credit-Sitzung Starten',
     categoriesList:['Beziehungsziele','Kommunikation','Werte','Familie','Lebensstil','Geld & Ehrgeiz','Grenzen','Zukunftsprioritäten','Spaßszenarien','Humor','Aktivitäten','Essen & Reisen','Unterhaltung','Alltagsvorlieben','Wildcard']
   }
 };

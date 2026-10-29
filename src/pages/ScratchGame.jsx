@@ -11,14 +11,16 @@ import { getTokenWallet, isTokensRequiredError, tokenRequiredDetails } from "@/l
 import OpenHouseBrowseNotice from "@/components/launch/OpenHouseBrowseNotice";
 import UnlockPriceDialog from "@/components/pricing/UnlockPriceDialog";
 
+import { isO2OLFreePromoActive } from '@/lib/o2olFreePromo2026';
+
 const GAME_URL = "https://play.one2onelove.com/";
 
 const copy = {
-  en: { back:"Back to Games", full:"Open Full Screen", title:"LOVE SCRATCH GAME", preview:"Scratch. Share. Grow closer. This game costs $0.49 per play.", loading:"Opening your One2OneLove game…", error:"Unable to open the Scratch Game." },
-  es: { back:"Volver a Juegos", full:"Abrir Pantalla Completa", title:"LOVE SCRATCH GAME", preview:"Rasca. Comparte. Acérquense. Este juego cuesta $0.49 por partida.", loading:"Abriendo tu juego One2OneLove…", error:"No se pudo abrir el Juego de Rasca." },
-  fr: { back:"Retour aux Jeux", full:"Ouvrir en Plein Écran", title:"LOVE SCRATCH GAME", preview:"Grattez. Partagez. Rapprochez-vous. Ce jeu coûte 0,49 $ par partie.", loading:"Ouverture de votre jeu One2OneLove…", error:"Impossible d’ouvrir le Jeu à Gratter." },
-  it: { back:"Torna ai Giochi", full:"Apri a Schermo Intero", title:"LOVE SCRATCH GAME", preview:"Gratta. Condividi. Avvicinatevi. Questo gioco costa $0.49 a partita.", loading:"Apertura del gioco One2OneLove…", error:"Impossibile aprire il Gioco Gratta." },
-  de: { back:"Zurück zu Spielen", full:"Vollbild Öffnen", title:"LOVE SCRATCH GAME", preview:"Rubbeln. Teilen. Näher zusammenwachsen. Dieses Spiel kostet $0.49 pro Spiel.", loading:"Dein One2OneLove-Spiel wird geöffnet…", error:"Das Rubbelspiel kann nicht geöffnet werden." },
+  en: { back:"Back to Games", full:"Open Full Screen", title:"LOVE SCRATCH GAME", preview:"Scratch. Share. Grow closer. This game costs $0.49 per play.", loading:"Opening your One2OneLove game…", error:"Unable to open the Scratch Game.", howTo: "Pick a deck, draw a card, scratch to reveal a question, and talk it through. Solo, one couple, or two couples. No scoring — just conversation." },
+  es: { back:"Volver a Juegos", full:"Abrir Pantalla Completa", title:"LOVE SCRATCH GAME", preview:"Rasca. Comparte. Acérquense. Este juego cuesta $0.49 por partida.", loading:"Abriendo tu juego One2OneLove…", error:"No se pudo abrir el Juego de Rasca.", howTo: "Elige un mazo, toma una carta, rasca para revelar una pregunta y hablen sobre ella. En solitario, una pareja o dos parejas. Sin puntos, solo conversación." },
+  fr: { back:"Retour aux Jeux", full:"Ouvrir en Plein Écran", title:"LOVE SCRATCH GAME", preview:"Grattez. Partagez. Rapprochez-vous. Ce jeu coûte 0,49 $ par partie.", loading:"Ouverture de votre jeu One2OneLove…", error:"Impossible d’ouvrir le Jeu à Gratter.", howTo: "Choisissez un paquet, piochez une carte, grattez pour révéler une question et discutez-en. En solo, à un couple ou à deux couples. Pas de score, juste la conversation." },
+  it: { back:"Torna ai Giochi", full:"Apri a Schermo Intero", title:"LOVE SCRATCH GAME", preview:"Gratta. Condividi. Avvicinatevi. Questo gioco costa $0.49 a partita.", loading:"Apertura del gioco One2OneLove…", error:"Impossibile aprire il Gioco Gratta.", howTo: "Scegli un mazzo, pesca una carta, gratta per scoprire una domanda e parlatene. Da soli, in una coppia o in due coppie. Nessun punteggio: solo conversazione." },
+  de: { back:"Zurück zu Spielen", full:"Vollbild Öffnen", title:"LOVE SCRATCH GAME", preview:"Rubbeln. Teilen. Näher zusammenwachsen. Dieses Spiel kostet $0.49 pro Spiel.", loading:"Dein One2OneLove-Spiel wird geöffnet…", error:"Das Rubbelspiel kann nicht geöffnet werden.", howTo: "Wähle ein Kartendeck, ziehe eine Karte, rubbele eine Frage frei und sprecht darüber. Allein, als Paar oder mit zwei Paaren. Keine Punkte – nur Gespräche." },
 };
 
 export default function ScratchGame() {
@@ -85,6 +87,10 @@ export default function ScratchGame() {
       </div>
       {!fullMemberAccess&&<div className="mb-4"><OpenHouseBrowseNotice/></div>}
       <img src="/game-cards/card-love-scratch.jpg" alt="game card" className="mx-auto mb-6 block w-full max-w-3xl rounded-[24px] shadow-2xl ring-1 ring-white/15" />
+      <section aria-label="How to Play" className="mx-auto mb-5 max-w-3xl rounded-2xl border border-pink-300/30 bg-white/10 px-6 py-4 text-white">
+        <h2 className="mb-2 text-xl font-black">How to Play</h2>
+        <p className="text-sm leading-7 text-white/90">{t.howTo}</p>
+      </section>
         {!fullMemberAccess?(
           <div className="p-8 text-center sm:p-12"><h1 className="text-3xl font-black text-white">{t.title}</h1><p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-white/75">{t.preview}</p></div>
         ):gameUrl?(
@@ -93,7 +99,7 @@ export default function ScratchGame() {
           <div className="p-10 text-center sm:p-14">
             <div className="mx-auto w-fit rounded-full bg-emerald-100 px-4 py-2 text-sm font-black text-emerald-800">{promotion?.name||'FREE GAME'}</div>
             <h1 className="mt-4 text-3xl font-black text-white">{t.title}</h1>
-            <p className="mx-auto mt-3 max-w-xl text-white/75">{promotion?.temporary?'Free through Sunday, October 11 at 11:59 PM Central Time. No Credit will be used.':`${promotion?.name||'Promotion'} — every game is FREE today. No credits used.`}</p>
+            <p className="mx-auto mt-3 max-w-xl text-white/75">{promotion?.temporary && isO2OLFreePromoActive() ? '100% FREE until Dec 31, 2026. No Credit will be used.' : `${promotion?.name||'Promotion'} — this game is FREE while the active promotion lasts. No Credit will be used.`}</p>
             {error&&<div className="mx-auto mt-4 max-w-xl rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-900">{error}</div>}
             <Button onClick={launchGame} disabled={unlocking} className="mt-6 bg-emerald-600 font-black hover:bg-emerald-700">{unlocking?'Opening…':'Play FREE'}</Button>
           </div>
