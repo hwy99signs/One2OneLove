@@ -13,6 +13,11 @@ import { PUBLIC_INFORMATION_ROUTES, VIEW_ONLY_ROUTES } from '@/components/launch
 // (sign in / sign up / Terms / Privacy / About / Help / price list, ...)
 // and links leaving the site stay live. Members never see this component.
 const EXTRA_OPEN_PATHS = new Set(['/featurepricing']);
+// The standalone MyMatchIQ signup is not part of the O2OL membership gate.
+function isStandaloneMyMatchIQDestination(value) {
+  return /^\/mymatchiq(?:\/|$)/i.test(String(value || '').split(/[?#]/)[0]);
+}
+
 
 function anchorPath(anchor) {
   const href = anchor.getAttribute('href') || '';
@@ -50,6 +55,10 @@ export default function GuestHomepageGate({ pathname }) {
       // Terms, Privacy, About, Help, Report a Problem — opened the
       // sign-up panel instead of the page a guest is meant to read
       // before joining (sweep finding, 2026-10-13).
+      // Guest homepage header, hero, and feature cards may navigate directly
+      // to the live standalone MyMatchIQ signup without opening O2OL signup.
+      const destination = event.target.closest('[data-analytics-destination]')?.getAttribute('data-analytics-destination');
+      if (isStandaloneMyMatchIQDestination(destination)) return;
       const marked = event.target.closest('[data-guest-path]');
       if (marked) {
         const declared = String(marked.getAttribute('data-guest-path') || '').toLowerCase().replace(/\/$/, '') || '/';
@@ -61,6 +70,7 @@ export default function GuestHomepageGate({ pathname }) {
       if (anchor) {
         const path = anchorPath(anchor);
         if (path === 'external') return;
+        if (isStandaloneMyMatchIQDestination(path)) return;
         if (path) {
           const normalized = path.toLowerCase().replace(/\/$/, '') || '/';
           if (PUBLIC_INFORMATION_ROUTES.has(normalized) || EXTRA_OPEN_PATHS.has(normalized)) return;
