@@ -72,6 +72,7 @@ import O2OLStudioEpisodes from './O2OLStudioEpisodes';
 import TikTokPost from './TikTokPost';
 import NotFound from './NotFound';
 import FeatureUnavailable from './FeatureUnavailable';
+import AIContentCreator from './AIContentCreator';
 import LaunchAccessGate from '@/components/launch/LaunchAccessGate.jsx';
 import GuestHomepageGate from '@/components/launch/GuestHomepageGate.jsx';
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
@@ -197,7 +198,7 @@ function PagesContent() {
           {/* Launch-deferred surfaces stay preserved in source but are not customer-facing. */}
           <Route path="/CounselingSupport" element={<FeatureUnavailable feature="Counseling Support" />} />
           <Route path="/InfluencersSupport" element={<FeatureUnavailable feature="Influencer Support" />} />
-          <Route path="/AIContentCreator" element={<FeatureUnavailable feature="AI Content Creator" />} />
+          <Route path="/AIContentCreator" element={<AIContentCreator />} />
           <Route path="/RelationshipCoach" element={<Navigate to="/Amora" replace />} />
           <Route path="/Meditation" element={<FeatureUnavailable feature="Meditation" />} />
           <Route path="/Developer" element={<FeatureUnavailable feature="Developer" />} />
