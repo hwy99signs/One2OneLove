@@ -851,6 +851,7 @@ export default function LoveNotes() {
     enabled:Boolean(currentUser?.id),
   });
   const purchasedNoteKeys = new Set((purchasedNoteData?.unlocks||[]).map(x=>String(x.content_key)));
+  const notePromoAccess = Boolean((purchasedNoteData?.unlocks || []).some(x => x.promo === true));
   const [noteToUnlock,setNoteToUnlock] = useState(null);
   const [noteUnlockError,setNoteUnlockError] = useState('');
   const [noteUnlockBusy,setNoteUnlockBusy] = useState(false);
@@ -860,7 +861,7 @@ export default function LoveNotes() {
     return personalizeNote(result.note);
   };
   const openLibraryNote = async (note, send=false) => {
-    if(!purchasedNoteKeys.has(String(note.id))){
+    if(!notePromoAccess&&!purchasedNoteKeys.has(String(note.id))){
       setNoteToUnlock(note);setNoteUnlockError('');return;
     }
     try{
@@ -1661,7 +1662,7 @@ export default function LoveNotes() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           <AnimatePresence>
             {displayedNotes.map((note) => {
-              const owned = purchasedNoteKeys.has(String(note.id));
+              const owned = notePromoAccess || purchasedNoteKeys.has(String(note.id));
               return (
               <motion.div
                 key={note.id}
