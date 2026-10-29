@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Link } from "react-router-dom";
 import UnlockPriceDialog from '@/components/pricing/UnlockPriceDialog';
+import { isO2OLPromoFreeFeature } from '@/lib/o2olFreePromo2026';
 import { useAuth } from "@/contexts/AuthContext";
 import { getTokenWallet, isTokensRequiredError, listTokenUnlocks, tokenRequiredDetails, unlockTokenContent } from "@/lib/tokenService";
 import {
@@ -83,7 +84,8 @@ export default function PodcastPlayerDialog({ podcast, onClose, t, locale }) {
   const selectedEpisode = podcast?.episodes?.find((episode) => episode.id === selectedEpisodeId) || null;
   const selectedIsMature = isMatureEpisode(selectedEpisode);
   const selectedUnlockKey = podcast && selectedEpisode ? `${podcast.id}:${selectedEpisode.id}` : "";
-  const selectedNeedsTokens = selectedEpisode?.tokenLocked === true && !unlockedEpisodeKeys.has('feature') && !unlockedEpisodeKeys.has(selectedUnlockKey);
+  const podcastFreePromo = isO2OLPromoFreeFeature('podcast_episode_unlock');
+  const selectedNeedsTokens = selectedEpisode?.tokenLocked === true && !podcastFreePromo && !unlockedEpisodeKeys.has('feature') && !unlockedEpisodeKeys.has(selectedUnlockKey);
 
   const unlockEpisode = async () => {
     if (!podcast || !selectedEpisode || !user?.id || unlockingEpisode) return;
@@ -199,7 +201,7 @@ export default function PodcastPlayerDialog({ podcast, onClose, t, locale }) {
                 <option key={episode.id} value={episode.id}>
                   {isMatureEpisode(episode) ? "18+ • " : ""}
                   {episode.tokenLocked === true
-                    ? (unlockedEpisodeKeys.has('feature')
+                    ? (podcastFreePromo || unlockedEpisodeKeys.has('feature')
                       ? (episodeFreeLabel[chosenLanguage(locale)] || episodeFreeLabel.en) + ' • '
                       : unlockedEpisodeKeys.has(`${podcast.id}:${episode.id}`) ? '✓ ' : '🔒 ')
                     : 'FREE • '}{episode.title}{episode.date ? ` — ${formatEpisodeDate(episode.date, locale)}` : ""}

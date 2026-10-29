@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowLeft, CheckCircle2, ChevronRight, Copy, Globe2, HeartHandshake,
-  LockKeyhole, MessageCircle, Radio, RotateCcw, ShieldCheck, Sparkles,
+  MessageCircle, Radio, RotateCcw, ShieldCheck, Sparkles,
   Trophy, UserRound, Users
 } from 'lucide-react';
 import { useLanguage } from './Layout';
@@ -682,7 +682,7 @@ export default function LikeMinded() {
 
             {!locked ? (
               <button onClick={lockSolo} disabled={selected==null} className="mt-6 w-full rounded-2xl bg-gradient-to-r from-fuchsia-600 to-violet-600 px-5 py-4 text-base font-black text-white shadow-lg disabled:cursor-not-allowed disabled:opacity-40">
-                <LockKeyhole className="mr-2 inline h-5 w-5" />{selected==null ? t.chooseAnswer : t.lockAnswer}
+                <CheckCircle2 className="mr-2 inline h-5 w-5" />{selected==null ? t.chooseAnswer : t.lockAnswer}
               </button>
             ) : (
               <div className="mt-6 space-y-5">
@@ -722,7 +722,7 @@ export default function LikeMinded() {
           <div className="grid gap-6 lg:grid-cols-2">
             <div className="rounded-[30px] bg-gradient-to-br from-slate-950 via-violet-950 to-fuchsia-950 p-7 text-white shadow-2xl">
               <Users className="h-10 w-10 text-fuchsia-300" /><h1 className="mt-5 text-3xl font-black">{t.invite}</h1><p className="mt-3 leading-7 text-slate-200">{t.inviteBody}</p>
-              <div className="mt-6 rounded-2xl border border-white/15 bg-white/10 p-4 text-sm text-slate-100"><LockKeyhole className="mr-2 inline h-4 w-4" />{t.matureBody}</div>
+              <div className="mt-6 rounded-2xl border border-white/15 bg-white/10 p-4 text-sm text-slate-100"><ShieldCheck className="mr-2 inline h-4 w-4" />{t.matureBody}</div>
             </div>
             <div className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-xl">
               {!isAuthenticated ? (
@@ -784,7 +784,7 @@ export default function LikeMinded() {
               {answers.map((answer,index)=><button key={answer} disabled={myLocked} onClick={()=>setSelected(index)} className={"rounded-2xl border-2 p-4 text-left font-bold " + (selected===index?'border-fuchsia-500 bg-fuchsia-50':'border-slate-200')}>{String.fromCharCode(65+index)}. {answer}</button>)}
             </div>
 
-            {!myLocked ? <button onClick={lockRoomAnswer} disabled={selected==null || !current.guest_user_id} className="mt-6 w-full rounded-2xl bg-gradient-to-r from-fuchsia-600 to-violet-600 px-5 py-4 font-black text-white disabled:opacity-40"><LockKeyhole className="mr-2 inline h-5 w-5"/>{selected==null?t.chooseAnswer:t.lockAnswer}</button>
+            {!myLocked ? <button onClick={lockRoomAnswer} disabled={selected==null || !current.guest_user_id} className="mt-6 w-full rounded-2xl bg-gradient-to-r from-fuchsia-600 to-violet-600 px-5 py-4 font-black text-white disabled:opacity-40"><CheckCircle2 className="mr-2 inline h-5 w-5"/>{selected==null?t.chooseAnswer:t.lockAnswer}</button>
             : !bothLocked ? <div className="mt-6 rounded-2xl bg-indigo-50 p-4 font-bold text-indigo-900"><Radio className="mr-2 inline h-5 w-5 animate-pulse"/>{t.waiting}</div>
             : <div className="mt-6 space-y-4">
                 <div className={"rounded-2xl p-5 " + (match ? 'bg-emerald-50 text-emerald-900' : 'bg-amber-50 text-amber-900')}>
@@ -928,7 +928,7 @@ export default function LikeMinded() {
             <p className="mx-auto mt-3 max-w-2xl text-base text-slate-600">{t.intro}</p>
           </div>
           <div className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-4">
-            {[[Sparkles,t.choose,t.how1],[LockKeyhole,t.lock,t.how2],[CheckCircle2,t.reveal,t.how3],[HeartHandshake,t.connect,t.how4]].map(([Icon,title,body],i)=>(
+            {[[Sparkles,t.choose,t.how1],[ShieldCheck,t.lock,t.how2],[CheckCircle2,t.reveal,t.how3],[HeartHandshake,t.connect,t.how4]].map(([Icon,title,body],i)=>(
               <div key={title} className="rounded-[26px] border border-slate-200 bg-slate-50 p-5 text-center shadow-sm">
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#07112f] text-white shadow-md">
                   <Icon className="h-7 w-7" />

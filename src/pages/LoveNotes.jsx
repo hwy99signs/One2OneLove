@@ -3,7 +3,7 @@ import { useLanguage } from "@/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Heart, Search, Shuffle, Send, X, MessageSquare, Facebook, Instagram, Twitter, Mail, Linkedin, Settings, Calendar, Loader2, Clock, Trash, Phone, ArrowLeft, AlertCircle, Sparkles, Lock, Coins } from "lucide-react";
+import { Heart, Search, Shuffle, Send, X, MessageSquare, Facebook, Instagram, Twitter, Mail, Linkedin, Settings, Calendar, Loader2, Clock, Trash, Phone, ArrowLeft, AlertCircle, Sparkles, Lock, Coins, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,7 +21,15 @@ import { createPageUrl } from "@/utils";
 import { getAiConfig } from "@/lib/aiService";
 import { getTokenWallet, isTokensRequiredError, isPhoneVerificationError, tokenRequiredDetails, listTokenUnlocks, unlockTokenContent } from "@/lib/tokenService";
 import { apiRequest } from "@/lib/apiClient";
+import { isO2OLPromoFreeFeature } from "@/lib/o2olFreePromo2026";
 
+const FREE_NOTE_ACCESS_COPY = {
+  en:{guest:'FREE for verified members — sign in to read.',join:'Sign in to read FREE',body:'This Love Note is FREE during the promotion. Create a verified account to reveal its text. No Credit charge.',open:'Read FREE'},
+  es:{guest:'GRATIS para miembros verificados — accede para leer.',join:'Acceder para leer GRATIS',body:'Esta Nota de Amor es GRATIS durante la promoción. Crea una cuenta verificada para ver el texto, sin pagar Crédito.',open:'Leer GRATIS'},
+  fr:{guest:'GRATUIT pour les membres vérifiés — connectez-vous pour lire.',join:'Se connecter pour lire GRATUITEMENT',body:'Cette Note d’Amour est GRATUITE pendant l’offre. Créez un compte vérifié pour voir le texte sans payer de Crédit.',open:'Lire GRATUITEMENT'},
+  it:{guest:'GRATIS per i membri verificati — accedi per leggere.',join:'Accedi per leggere GRATIS',body:'Questa Nota d’Amore è GRATIS durante la promozione. Crea un account verificato per leggere il testo senza pagare Credito.',open:'Leggi GRATIS'},
+  de:{guest:'KOSTENLOS für bestätigte Mitglieder — zum Lesen anmelden.',join:'Anmelden und KOSTENLOS lesen',body:'Diese Liebesbotschaft ist während der Aktion KOSTENLOS. Erstelle ein bestätigtes Konto, um den Text ohne Credit zu lesen.',open:'KOSTENLOS lesen'}
+};
 const libraryAccessCopy = {
   en: { bought:'Purchased — select to read your note.', permanent:'Permanently unlocked', promo:'FREE during the promo — select to read your note.', temporary:'Temporary free access · relocks Jan 1', locked:'Note text hidden until unlocked.', paid:'$0.49 Credit to unlock', unlock:'Unlock $0.49' },
   es: { bought:'Comprada — selecciónala para leerla.', permanent:'Desbloqueada permanentemente', promo:'GRATIS durante la promoción — selecciónala para leerla.', temporary:'Acceso gratuito temporal · se bloquea el 1 de enero', locked:'Texto oculto hasta desbloquearlo.', paid:'$0.49 de Crédito para desbloquear', unlock:'Desbloquear $0.49' },
@@ -860,6 +868,8 @@ export default function LoveNotes() {
   });
   const purchasedNoteKeys = new Set((purchasedNoteData?.unlocks||[]).map(x=>String(x.content_key)));
   const libraryT = libraryAccessCopy[currentLanguage] || libraryAccessCopy.en;
+  const promoNoteLibraryFree = isO2OLPromoFreeFeature('love_note_template_unlock');
+  const freeNoteT = FREE_NOTE_ACCESS_COPY[currentLanguage] || FREE_NOTE_ACCESS_COPY.en;
   const notePromoAccess = Boolean((purchasedNoteData?.unlocks || []).some(x => x.promo === true));
   const [noteToUnlock,setNoteToUnlock] = useState(null);
   const [noteUnlockError,setNoteUnlockError] = useState('');
@@ -1690,9 +1700,9 @@ export default function LoveNotes() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-gray-500 leading-relaxed mb-4">
-                      {bought ? libraryT.bought : notePromoAccess ? libraryT.promo : libraryT.locked}
+                      {bought ? libraryT.bought : notePromoAccess ? libraryT.promo : promoNoteLibraryFree ? freeNoteT.guest : libraryT.locked}
                     </p>
-                    <div className="flex items-center gap-2 mb-4 text-sm text-gray-500">{bought ? libraryT.permanent : notePromoAccess ? libraryT.temporary : <><Lock className="w-4 h-4" /> {libraryT.paid}</>}</div>
+                    <div className="flex items-center gap-2 mb-4 text-sm text-gray-500">{bought ? libraryT.permanent : notePromoAccess ? libraryT.temporary : promoNoteLibraryFree ? <><UserRound className="h-4 w-4"/>{freeNoteT.guest}</> : <><Lock className="w-4 h-4" /> {libraryT.paid}</>}</div>
                     <Button
                       className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
                       onClick={(e) => {
@@ -1700,8 +1710,8 @@ export default function LoveNotes() {
                         openLibraryNote(note,true);
                       }}
                     >
-                      {owned ? <Send className="w-4 h-4 mr-2" /> : <Lock className="w-4 h-4 mr-2" />}
-                      {owned ? t.send : libraryT.unlock}
+                      {owned ? <Send className="w-4 h-4 mr-2" /> : promoNoteLibraryFree ? <UserRound className="w-4 h-4 mr-2"/> : <Lock className="w-4 h-4 mr-2" />}
+                      {owned ? t.send : promoNoteLibraryFree ? freeNoteT.open : libraryT.unlock}
                     </Button>
                   </CardContent>
                 </Card>
@@ -1715,11 +1725,11 @@ export default function LoveNotes() {
           <div className="fixed inset-0 z-[90] bg-black/60 flex items-center justify-center p-4" role="dialog" aria-modal="true">
             <div className="max-w-md w-full rounded-2xl bg-white shadow-2xl p-6">
               <h2 className="text-2xl font-bold">{noteToUnlock.title}</h2>
-              <p className="mt-3 text-gray-500">The Love Note text is locked. Unlock this note for $0.49 Credit to read, copy, or share it. You will not be charged for viewing the title.</p>
-              <p className="mt-2 text-sm font-semibold">Each note is a one-time purchase for your account.</p>
+              <p className="mt-3 text-gray-500">{promoNoteLibraryFree ? freeNoteT.body : 'The Love Note text is locked. Unlock this note for $0.49 Credit to read, copy, or share it. You will not be charged for viewing the title.'}</p>
+              {!promoNoteLibraryFree && <p className="mt-2 text-sm font-semibold">Each note is a one-time purchase for your account.</p>}
               {noteUnlockError && <p role="alert" className="mt-3 text-red-700">{noteUnlockError}</p>}
               <div className="mt-5 flex gap-3">
-                <Button disabled={noteUnlockBusy} onClick={purchaseLibraryNote}>{noteUnlockBusy?'Unlocking…':'Unlock for $0.49'}</Button>
+                {promoNoteLibraryFree && !currentUser?.id ? <Link to="/SignUp?return=/LoveNotes"><Button>{freeNoteT.join}</Button></Link> : <Button disabled={noteUnlockBusy} onClick={purchaseLibraryNote}>{noteUnlockBusy?'Opening…':promoNoteLibraryFree?freeNoteT.open:'Unlock for $0.49'}</Button>}
                 <Button variant="outline" onClick={()=>{setNoteToUnlock(null);setNoteUnlockError('');}}>Cancel</Button>
               </div>
             </div>
@@ -1755,7 +1765,7 @@ export default function LoveNotes() {
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-purple-100">
                 {openHouseLockReason === 'send'
                   ? <Coins className="h-7 w-7 text-purple-700" />
-                  : <Lock className="h-7 w-7 text-purple-700" />}
+                  : promoNoteLibraryFree ? <UserRound className="h-7 w-7 text-emerald-700"/> : <Lock className="h-7 w-7 text-purple-700" />}
               </div>
               <div className="text-center">
                 <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-purple-700">{openHouseCopy.badge}</p>

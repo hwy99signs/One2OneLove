@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Heart, Coffee, Utensils, Film, Music, MapPin, Star, Sparkles, Home, TreePine, Waves, Mountain, Plus, Filter, ArrowLeft, Bookmark, Share2, Check, X, CalendarDays, Clock, Coins, Loader2, Lock } from "lucide-react";
+import { Heart, Coffee, Utensils, Film, Music, MapPin, Star, Sparkles, Home, TreePine, Waves, Mountain, Plus, Filter, ArrowLeft, Bookmark, Share2, Check, X, CalendarDays, Clock, Coins, Loader2, Lock, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,7 +18,15 @@ import { DATE_IDEAS_UI } from "../components/dateideas/dateIdeasUiCopy";
 import { createCalendarEvent } from "@/lib/calendarService";
 import { listDateIdeas, createDateIdea, updateDateIdea } from "@/lib/dateIdeasService";
 import { getTokenWallet, isTokensRequiredError, listTokenUnlocks, tokenRequiredDetails, unlockTokenContent } from "@/lib/tokenService";
+import { isO2OLPromoFreeFeature } from "@/lib/o2olFreePromo2026";
 
+const FREE_DATE_IDEAS_COPY = {
+  en:{label:'FREE for verified members',title:'Sign in for FREE Date Ideas',body:'These Date Ideas are FREE during the promotion. A verified account is required to view the full descriptions. No Credit will be deducted.',play:'Open for FREE',signup:'Create FREE Account · No Credit Required'},
+  es:{label:'GRATIS para miembros verificados',title:'Accede gratis a las ideas de citas',body:'Estas ideas son GRATIS durante la promoción. Necesitas una cuenta verificada para leer las descripciones. Sin cargos de Crédito.',play:'Abrir GRATIS',signup:'Crear cuenta GRATIS · Sin Crédito'},
+  fr:{label:'GRATUIT pour les membres vérifiés',title:'Accéder gratuitement aux idées de rendez-vous',body:'Ces idées sont GRATUITES pendant l’offre. Un compte vérifié est nécessaire pour lire les descriptions. Aucun Crédit débité.',play:'Ouvrir GRATUITEMENT',signup:'Créer un compte GRATUIT · Sans Crédit'},
+  it:{label:'GRATIS per i membri verificati',title:'Accedi gratis alle idee per appuntamenti',body:'Queste idee sono GRATIS durante la promozione. Serve un account verificato per leggere le descrizioni. Nessun Credito addebitato.',play:'Apri GRATIS',signup:'Crea account GRATIS · Senza Credito'},
+  de:{label:'KOSTENLOS für bestätigte Mitglieder',title:'Date-Ideen KOSTENLOS ansehen',body:'Diese Date-Ideen sind während der Aktion KOSTENLOS. Zum Lesen der Beschreibungen ist ein bestätigtes Konto nötig. Kein Credit-Abzug.',play:'KOSTENLOS öffnen',signup:'Kostenloses Konto erstellen · Kein Credit'},
+};
 const creditUnlockCopy = {
   en: { free: 'FREE during the promotion — no Credit deducted.', paid: 'Unlocked with {amount} Credit.' },
   es: { free: 'GRATIS durante la promoción — no se descontó Crédito.', paid: 'Desbloqueado con {amount} de Crédito.' },
@@ -209,6 +217,8 @@ export default function DateIdeas() {
   const { user: currentUser } = useAuth();
   const hasMemberAccess = hasFullDateIdeasAccess(currentUser);
   const openHouseCopy = OPEN_HOUSE_COPY[currentLanguage] || OPEN_HOUSE_COPY.en;
+  const promoDateIdeasFree = isO2OLPromoFreeFeature('date_idea_unlock');
+  const freeDateCopy = FREE_DATE_IDEAS_COPY[currentLanguage] || FREE_DATE_IDEAS_COPY.en;
   const [showOpenHouseLock, setShowOpenHouseLock] = useState(false);
   useEffect(() => {
     if (!showOpenHouseLock) return;
@@ -754,7 +764,7 @@ export default function DateIdeas() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: Math.min(index * 0.015, 0.25) }}
                 onClick={() => openDateIdea(idea)}
-                aria-label={isOpenHouseLocked ? `${idea.title} — ${openHouseCopy.membersOnly}` : idea.title}
+                aria-label={isOpenHouseLocked ? `${idea.title} — ${promoDateIdeasFree?freeDateCopy.label:openHouseCopy.membersOnly}` : idea.title}
                 className={`relative w-full min-h-[86px] rounded-xl border px-4 py-4 text-left flex items-center gap-4 transition-all duration-200 ${
                   isOpenHouseLocked
                     ? 'bg-slate-50 border-slate-300 hover:border-purple-300 hover:shadow-md'
@@ -773,12 +783,12 @@ export default function DateIdeas() {
                       <span aria-hidden="true" className="h-3 w-10 rounded bg-slate-300 blur-[3px] opacity-90" />
                     </div>
                     <div className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-purple-700">
-                      <Lock className="h-3.5 w-3.5" />
-                      {openHouseCopy.membersOnly}
+                      {promoDateIdeasFree ? <UserRound className="h-3.5 w-3.5"/> : <Lock className="h-3.5 w-3.5" />}
+                      {promoDateIdeasFree ? freeDateCopy.label : openHouseCopy.membersOnly}
                     </div>
                     <div className="absolute inset-y-0 right-3 flex items-center">
                       <div className="rounded-full bg-white/90 p-2 shadow-sm border border-slate-200">
-                        <Lock className="h-4 w-4 text-slate-600" />
+                        {promoDateIdeasFree ? <UserRound className="h-4 w-4 text-emerald-700"/> : <Lock className="h-4 w-4 text-slate-600" />}
                       </div>
                     </div>
                   </div>
@@ -812,15 +822,17 @@ export default function DateIdeas() {
                   <X className="h-4 w-4" />
                 </button>
                 <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-purple-100">
-                  <Lock className="h-7 w-7 text-purple-700" />
+                  {promoDateIdeasFree ? <UserRound className="h-7 w-7 text-emerald-700"/> : <Lock className="h-7 w-7 text-purple-700" />}
                 </div>
                 <div className="text-center">
-                  <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-purple-700">{openHouseCopy.badge}</p>
-                  <h3 className="text-2xl font-bold text-gray-900">{openHouseCopy.lockedTitle}</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-gray-600">{currentUser?.id ? (openHouseCopy.lockedBodyMember || openHouseCopy.lockedBody) : openHouseCopy.lockedBody}</p><p className="mt-2 text-sm font-black text-purple-800">{(Number(dateIdeaTokenCost||0)/100).toLocaleString('en-US',{style:'currency',currency:'USD'})} · Yours forever</p>
+                  <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-purple-700">{promoDateIdeasFree ? freeDateCopy.label : openHouseCopy.badge}</p>
+                  <h3 className="text-2xl font-bold text-gray-900">{promoDateIdeasFree ? freeDateCopy.title : openHouseCopy.lockedTitle}</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-gray-600">{promoDateIdeasFree ? freeDateCopy.body : currentUser?.id ? (openHouseCopy.lockedBodyMember || openHouseCopy.lockedBody) : openHouseCopy.lockedBody}</p>{!promoDateIdeasFree && <p className="mt-2 text-sm font-black text-purple-800">{(Number(dateIdeaTokenCost||0)/100).toLocaleString('en-US',{style:'currency',currency:'USD'})} · Yours forever</p>}
                 </div>
                 <div className="mt-6 flex flex-col gap-2">
-                  {currentUser?.id ? (
+                  {promoDateIdeasFree && currentUser?.id ? (
+                    <Button disabled={unlockingIdea} onClick={unlockDateIdea} className="w-full bg-emerald-600 text-white hover:bg-emerald-700">{unlockingIdea ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Check className="mr-2 h-4 w-4"/>}{freeDateCopy.play}</Button>
+                  ) : currentUser?.id ? (
                     <>
                       {tokenWalletError ? (
                         <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-center text-sm font-semibold text-amber-900">
@@ -848,7 +860,7 @@ export default function DateIdeas() {
                     <>
                       <Link to="/SignUp?source=date-ideas&feature=date-ideas&return=/DateIdeas" onClick={() => setShowOpenHouseLock(false)}>
                         <Button className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
-                          <Coins className="mr-2 h-4 w-4" />Create FREE Account · Then Unlock with Credit
+                          {promoDateIdeasFree ? <UserRound className="mr-2 h-4 w-4"/> : <Coins className="mr-2 h-4 w-4" />}{promoDateIdeasFree ? freeDateCopy.signup : "Create FREE Account · Then Unlock with Credit"}
                         </Button>
                       </Link>
                       <Link to="/SignIn?source=date-ideas&redirect=/DateIdeas" onClick={() => setShowOpenHouseLock(false)}>
@@ -958,7 +970,7 @@ export default function DateIdeas() {
                           </Button>
                           <Link to="/SignUp?source=open-house-date-ideas&type=individual">
                             <Button size="sm" className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
-                              <Lock className="w-4 h-4 mr-2" />
+                              <UserRound className="w-4 h-4 mr-2" />
                               {openHouseCopy.memberAction}
                             </Button>
                           </Link>
