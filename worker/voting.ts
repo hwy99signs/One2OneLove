@@ -253,7 +253,7 @@ const AMORA_HOST_EMAIL = 'amora@one2onelove.com';
 const CHOICE_QUESTIONS = {
   'ctv-first-date-bill': {
     slug: 'ctv-first-date-bill', roomSlug: 'dating-new-relationships',
-    question: 'First date. Her order is $75 — yours is $25. The check lands in front of you. What do you do?',
+    question: 'One person agreed to pay for the date, and the other person\'s meal came to $95. What would you do?',
     choices: { a: 'Pay for both', b: 'Split it', c: 'Pay only mine', d: 'Depends on the date' },
     amoraChoice: 'a', amoraReason: 'a first date is an invitation, not an invoice — generosity sets the tone.',
   },

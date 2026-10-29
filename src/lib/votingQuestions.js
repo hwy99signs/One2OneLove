@@ -98,11 +98,11 @@ export const CLICK_VOTE_QUESTIONS = [
     slug: 'ctv-first-date-bill',
     roomSlug: 'dating-new-relationships',
     question: {
-      en: 'First date. Her order is $75 — yours is $25. The check lands in front of you. What do you do?',
-      es: 'Primera cita. Lo que ella pidió cuesta $75 — lo tuyo, $25. La cuenta llega frente a ti. ¿Qué haces?',
-      fr: 'Premier rendez-vous. Sa commande : 75 $. La vôtre : 25 $. L’addition arrive devant vous. Que faites-vous ?',
-      it: 'Primo appuntamento. Il suo ordine costa $75 — il tuo, $25. Il conto arriva davanti a te. Cosa fai?',
-      de: 'Erstes Date. Ihre Bestellung kostet 75 $ — deine 25 $. Die Rechnung landet vor dir. Was tust du?',
+      en: 'One person agreed to pay for the date, and the other person\'s meal came to $95. What would you do?',
+      es: 'Una persona aceptó pagar la cita y la comida de la otra persona costó $95. ¿Qué harías?',
+      fr: 'Une personne a accepté de payer le rendez-vous, et le repas de l’autre personne a coûté 95 $. Que feriez-vous ?',
+      it: 'Una persona ha accettato di pagare per l’appuntamento e il pasto dell’altra persona è costato 95 $. Cosa faresti?',
+      de: 'Eine Person hat zugesagt, das Date zu bezahlen, und das Essen der anderen Person kostete 95 $. Was würdest du tun?',
     },
     choices: [
       { key: 'a', labels: { en: 'Pay for both', es: 'Pagar por los dos', fr: 'Payer pour les deux', it: 'Pagare per entrambi', de: 'Für beide zahlen' } },
