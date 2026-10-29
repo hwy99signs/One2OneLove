@@ -2,6 +2,7 @@
 // Server-only catalog. DO NOT import this from client components: the contents
 // must never be included in the public JavaScript bundle.
 import { Client } from 'pg';
+import { isO2OLPromoFreeFeature } from '../src/lib/o2olFreePromo2026';
 import { loveNotesData } from '../src/components/lovenotes/LoveNotesData';
 import { additionalLoveNotesData } from '../src/components/lovenotes/additional';
 import { subjectSupplementalNotes } from '../src/components/lovenotes/additional/LoveNotesSubjectSupplemental';
@@ -119,7 +120,7 @@ export async function handleLoveNoteLibraryRequest(request,env,url) {
     if(!member||!member.active||member.banned)return json({ok:false,error:{code:'forbidden'}},403);
     const contentKey=String(id);
     const owned=(await db.query(`SELECT EXISTS(SELECT 1 FROM public.o2ol_token_content_unlocks WHERE user_id=$1::uuid AND feature_code='love_note_template_unlock' AND content_key=$2) AS owned`,[user.id,contentKey])).rows[0]?.owned===true;
-    if(!owned)return json({ok:false,error:{code:'content_unlock_required',message:'Unlock this Love Note for $0.49 Credit.',featureCode:'love_note_template_unlock'}},402);
+    if(!owned&&!isO2OLPromoFreeFeature('love_note_template_unlock'))return json({ok:false,error:{code:'content_unlock_required',message:'Unlock this Love Note for $0.49 Credit.',featureCode:'love_note_template_unlock'}},402);
     const note=notes.find(n=>n.id===id);
     if(!note)return json({ok:false,error:{code:'note_not_found'}},404);
     return json({ok:true,note});
