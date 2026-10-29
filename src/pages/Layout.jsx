@@ -472,6 +472,15 @@ function LanguageContent({ children, currentPageName }) {
               )}
             </div>
 
+            {!isMyMatchIQPage && (
+              <Link
+                to="/AIContentCreator"
+                className="inline-flex max-w-[112px] items-center justify-center rounded-full border border-white/30 bg-white/15 px-2 py-2 text-center text-xs font-bold leading-tight text-white transition hover:bg-white/25 2xl:max-w-none 2xl:px-3 2xl:text-sm"
+              >
+                ✨ {t.nav.aiCreator}
+              </Link>
+            )}
+
             <Link
               to="/Credit"
               className={isMyMatchIQPage ? mmiqHeaderButton('from-amber-400 to-orange-500') : 'rounded-full bg-yellow-300 px-3 py-2 text-sm font-black text-blue-900 shadow-sm transition hover:bg-yellow-200'}
@@ -616,6 +625,17 @@ function LanguageContent({ children, currentPageName }) {
                     </div>
                   )}
                 </div>
+
+                {!isMyMatchIQPage && (
+                  <Link
+                    to="/AIContentCreator"
+                    className="flex items-center gap-2 rounded-lg bg-white/15 px-3 py-2.5 font-bold text-white transition hover:bg-white/25"
+                    onClick={() => { setMobileMenuOpen(false); setMobileActionOpen(false); }}
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    {t.nav.aiCreator}
+                  </Link>
+                )}
 
                 <Link
                   to={createPageUrl("Community")}
