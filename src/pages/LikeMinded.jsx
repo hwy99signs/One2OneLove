@@ -23,7 +23,7 @@ const UI = {
     lobby:'Player Lobby', lobbyBody:'See who is available right now and invite someone to a Like Minded game.',
     how:'How it works', choose:'Choose', lock:'Lock', reveal:'Reveal', connect:'Connect',
     how1:'Both players get the same underlying question.', how2:'Each person answers privately and locks the answer.',
-    how3:'Nothing is revealed until both answers are locked.', how4:'See the match, the difference and your running score.',
+    how3:'Nothing is revealed until both answers are locked.', how4:'See the match, the difference and your running score.', matchHow:'Pick the same answer as your partner = a match on your running score. Each timed session lasts 120 minutes (2 hours).',
     mature:'Private by design', matureBody:'No answer peeking. No changing an answer after lock. No exact location sharing.',
     multilingual:'Play across languages', multilingualBody:'Each player can use English, Spanish, French, Italian or German while sharing the same question ID.',
     categories:'Choose a starting category', depth:'Choose your question depth', easy:'Easy', real:'Real', deep:'Deep',
@@ -50,7 +50,7 @@ const UI = {
     lobby:'Sala de Jugadores', lobbyBody:'Mira quién está disponible e invita a alguien a una partida.',
     how:'Cómo funciona', choose:'Elegir', lock:'Bloquear', reveal:'Revelar', connect:'Conectar',
     how1:'Ambos reciben la misma pregunta base.', how2:'Cada persona responde en privado y bloquea su respuesta.',
-    how3:'Nada se revela hasta que ambos hayan bloqueado.', how4:'Ve coincidencias, diferencias y la puntuación acumulada.',
+    how3:'Nada se revela hasta que ambos hayan bloqueado.', how4:'Ve coincidencias, diferencias y la puntuación acumulada.', matchHow:'Elegir la misma respuesta que tu pareja cuenta como una coincidencia en tu puntuación acumulada. Cada sesión dura 120 minutos (2 horas).',
     mature:'Privado por diseño', matureBody:'Sin ver respuestas ajenas. Sin cambiar después de bloquear. Sin ubicación exacta.',
     multilingual:'Juega entre idiomas', multilingualBody:'Cada jugador puede usar inglés, español, francés, italiano o alemán con la misma pregunta.',
     categories:'Elige una categoría inicial', depth:'Elige la profundidad', easy:'Fácil', real:'Real', deep:'Profundo',
@@ -77,7 +77,7 @@ const UI = {
     lobby:'Salon des Joueurs', lobbyBody:'Voyez qui est disponible et invitez quelqu’un à jouer.',
     how:'Comment ça marche', choose:'Choisir', lock:'Verrouiller', reveal:'Révéler', connect:'Échanger',
     how1:'Les deux joueurs reçoivent la même question de base.', how2:'Chacun répond en privé puis verrouille sa réponse.',
-    how3:'Rien n’est révélé avant les deux verrouillages.', how4:'Découvrez les accords, différences et votre score.',
+    how3:'Rien n’est révélé avant les deux verrouillages.', how4:'Découvrez les accords, différences et votre score.', matchHow:'Choisir la même réponse que votre partenaire ajoute un accord à votre score. Chaque session dure 120 minutes (2 heures).',
     mature:'Privé par conception', matureBody:'Pas d’aperçu des réponses. Aucun changement après verrouillage. Aucune localisation précise.',
     multilingual:'Jouez entre langues', multilingualBody:'Chaque joueur peut utiliser anglais, espagnol, français, italien ou allemand avec le même identifiant de question.',
     categories:'Choisissez une catégorie de départ', depth:'Choisissez la profondeur', easy:'Léger', real:'Vrai', deep:'Profond',
@@ -104,7 +104,7 @@ const UI = {
     lobby:'Sala Giocatori', lobbyBody:'Vedi chi è disponibile e invita qualcuno a giocare.',
     how:'Come funziona', choose:'Scegli', lock:'Blocca', reveal:'Rivela', connect:'Confronta',
     how1:'Entrambi ricevono la stessa domanda di base.', how2:'Ognuno risponde in privato e blocca la risposta.',
-    how3:'Nulla viene rivelato finché entrambi non hanno bloccato.', how4:'Scopri corrispondenze, differenze e punteggio.',
+    how3:'Nulla viene rivelato finché entrambi non hanno bloccato.', how4:'Scopri corrispondenze, differenze e punteggio.', matchHow:'Scegliere la stessa risposta del partner conta come corrispondenza nel punteggio. Ogni sessione dura 120 minuti (2 ore).',
     mature:'Privato per design', matureBody:'Nessuna anteprima. Nessuna modifica dopo il blocco. Nessuna posizione precisa.',
     multilingual:'Gioca tra lingue', multilingualBody:'Ogni giocatore può usare inglese, spagnolo, francese, italiano o tedesco con lo stesso ID domanda.',
     categories:'Scegli una categoria iniziale', depth:'Scegli la profondità', easy:'Facile', real:'Reale', deep:'Profondo',
@@ -131,7 +131,7 @@ const UI = {
     lobby:'Spieler-Lobby', lobbyBody:'Sieh, wer verfügbar ist, und lade jemanden zum Spiel ein.',
     how:'So funktioniert es', choose:'Wählen', lock:'Sperren', reveal:'Aufdecken', connect:'Austauschen',
     how1:'Beide erhalten dieselbe zugrunde liegende Frage.', how2:'Jeder antwortet privat und sperrt die Antwort.',
-    how3:'Nichts wird gezeigt, bevor beide gesperrt haben.', how4:'Seht Übereinstimmungen, Unterschiede und euren Punktestand.',
+    how3:'Nichts wird gezeigt, bevor beide gesperrt haben.', how4:'Seht Übereinstimmungen, Unterschiede und euren Punktestand.', matchHow:'Wenn du die gleiche Antwort wie dein Partner wählst, zählt das als Treffer im laufenden Punktestand. Jede Spielsitzung dauert 120 Minuten (2 Stunden).',
     mature:'Privat entwickelt', matureBody:'Kein Spicken. Keine Änderung nach dem Sperren. Keine genaue Standortfreigabe.',
     multilingual:'Sprachübergreifend spielen', multilingualBody:'Jeder kann Englisch, Spanisch, Französisch, Italienisch oder Deutsch nutzen – mit derselben Frage-ID.',
     categories:'Startkategorie wählen', depth:'Fragetiefe wählen', easy:'Leicht', real:'Echt', deep:'Tief',
@@ -925,7 +925,7 @@ export default function LikeMinded() {
           <div className="mx-auto mt-4 w-full max-w-5xl rounded-2xl border border-amber-300/30 bg-amber-300/10 p-4 text-left text-amber-50">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div><div className="inline-flex items-center gap-2 font-black"><Coins className="h-5 w-5"/>{t.premium}</div><p className="mt-1 text-xs leading-5 text-amber-50/80">{t.premiumBody}</p></div>
-              {isAuthenticated ? <Link to="/Credit?return=/LikeMinded" className="rounded-xl bg-amber-300 px-4 py-2 text-sm font-black text-amber-950">{gamePass?'Pass Active':gamePromotion?.free?'🎉 FREE through Sunday · No Credit used':walletError?`🔒 ${(Number(tokenCost||49)/100).toFixed(2)} per game · Balance unavailable`:`🔒 ${(Number(tokenCost||49)/100).toFixed(2)} per game · Balance ${(Number(tokenBalance||0)/100).toFixed(2)}`}</Link> : <Link to="/SignUp?source=like-minded&type=individual" className="rounded-xl bg-amber-300 px-4 py-2 text-sm font-black text-amber-950">Create FREE Account</Link>}
+              {isAuthenticated ? <Link to="/Credit?return=/LikeMinded" className="rounded-xl bg-amber-300 px-4 py-2 text-sm font-black text-amber-950">{gamePass?'Pass Active':gamePromotion?.free?'🎉 FREE during promotion · No Credit used':walletError?`🔒 ${(Number(tokenCost||49)/100).toFixed(2)} per game · Balance unavailable`:`🔒 ${(Number(tokenCost||49)/100).toFixed(2)} per game · Balance ${(Number(tokenBalance||0)/100).toFixed(2)}`}</Link> : <Link to="/SignUp?source=like-minded&type=individual" className="rounded-xl bg-amber-300 px-4 py-2 text-sm font-black text-amber-950">Create FREE Account</Link>}
             </div>
           </div>
 
@@ -976,6 +976,7 @@ export default function LikeMinded() {
               </div>
             ))}
           </div>
+          <p className="mx-auto mt-6 max-w-4xl rounded-2xl border border-violet-200 bg-violet-50 px-5 py-4 text-center text-base font-semibold leading-7 text-slate-800">{t.matchHow}</p>
         </div>
       </section>
 
