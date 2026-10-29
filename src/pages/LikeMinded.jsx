@@ -3,13 +3,13 @@ import { Link } from 'react-router-dom';
 import {
   ArrowLeft, CheckCircle2, ChevronRight, Copy, Globe2, HeartHandshake,
   LockKeyhole, MessageCircle, Radio, RotateCcw, ShieldCheck, Sparkles,
-  Trophy, UserRound, Users, Coins
+  Trophy, UserRound, Users
 } from 'lucide-react';
 import { useLanguage } from './Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { createPageUrl } from '@/utils';
-import { getTokenWallet, isTokensRequiredError, tokenRequiredDetails } from '@/lib/tokenService';
-import UnlockPriceDialog from '@/components/pricing/UnlockPriceDialog';
+
+
 import GameLeaderboard from '@/components/activities/GameLeaderboard';
 
 const LANGS = ['en','es','fr','it','de'];
@@ -60,7 +60,7 @@ const UI = {
     keepPlaying:'Seguir Jugando', finish:'Finalizar', yourAnswer:'Tu respuesta', waiting:'Esperando al otro jugador…',
     room:'Sala de Juego', roomCode:'Código', copyInvite:'Copiar Enlace', copied:'Copiado', player2:'Esperando al Jugador 2',
     createRoom:'Crear Invitación', joinRoom:'Unirse a una Sala', join:'Unirse', codePlaceholder:'Ingresa el código',
-    signin:'Inicia sesión para multijugador', signinBody:'Crea una cuenta O2OL gratuita y verificada, luego usa Crédito para iniciar una sesión de Like Minded.',
+    signin:'Inicia sesión para multijugador', signinBody:'Crea una cuenta O2OL gratuita y verificada para jugar gratis para siempre.',
     available:'Disponibles ahora', lobbyEmpty:'No hay otros jugadores disponibles ahora.', leaveLobby:'Salir de la Sala',
     location:'Ubicación general', city:'Ciudad', state:'Estado / Región (opcional)', country:'País', enterLobby:'Entrar a la Sala',
     locationNote:'Solo se muestra tu nombre y ubicación general. Nunca tu dirección ni ubicación exacta.',
@@ -389,7 +389,7 @@ export default function LikeMinded() {
       const pass=await refreshTokenState();
       if(!active)return;
       // Opening an invite never spends tokens automatically.
-      if(!pass){setTokenPrompt(true);setScreen('invite');return;}
+      if(!pass){setApiError(t.unavailable);setScreen('invite');return;}
       try{
         const data=await api('/api/like-minded/rooms/join',{method:'POST',body:JSON.stringify({code:normalized,language:lang})});
         if(!active)return;
@@ -554,7 +554,7 @@ export default function LikeMinded() {
 
   const toggleAvailability = async () => {
     if (!isAuthenticated || inLobby) return;
-    if(!(gamePass&&new Date(gamePass.expires_at).getTime()>Date.now())){setTokenPrompt(true);setApiError(t.buyTokens);return;}
+    if(!(await ensurePremiumAccess()))return;
     setApiError('');
     try {
       const next=!available;
