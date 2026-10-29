@@ -131,7 +131,11 @@ export default function LaunchAccessGate({ pathname, children }) {
   const { user,isAuthenticated,isLoading }=useAuth();
   const route=String(pathname||'/').toLowerCase().replace(/\/$/,'')||'/';
   const isKnown=KNOWN_APP_ROUTES.has(route);
-  const isPublic=PUBLIC_INFORMATION_ROUTES.has(route) || !isKnown;
+  // MyMatchIQ has its own production app, signup and verification.
+  // Never require One2OneLove membership or phone verification just to
+  // follow an external MyMatchIQ link from a public entry point.
+  const isStandaloneMyMatchIQ = route === '/mymatchiq' || route.startsWith('/mymatchiq/');
+  const isPublic=PUBLIC_INFORMATION_ROUTES.has(route) || !isKnown || isStandaloneMyMatchIQ;
   const isViewOnly=VIEW_ONLY_ROUTES.has(route);
 
   if(isLoading && !isPublic){
