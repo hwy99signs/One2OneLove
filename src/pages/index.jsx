@@ -67,6 +67,7 @@ import CoachingConsentGate from '@/components/coaching/CoachingConsentGate.jsx';
 import MyMatchIQMeet from './MyMatchIQMeet';
 import MyMatchIQWorkspace from './MyMatchIQWorkspace';
 import MyMatchIQPassport from './MyMatchIQPassport';
+import ExternalMyMatchIQRedirect from './ExternalMyMatchIQRedirect';
 import O2OLStudio from './O2OLStudio';
 import O2OLStudioEpisodes from './O2OLStudioEpisodes';
 import TikTokPost from './TikTokPost';
@@ -172,7 +173,7 @@ function PagesContent() {
           <Route path="/Tokens" element={<Navigate to="/Credit" replace />} />
           <Route path="/Amora" element={<CoachingConsentGate source="amora" exitTo="/Home"><Amora /></CoachingConsentGate>} />
           <Route path="/Subscription" element={<Navigate to="/Credit" replace />} />
-          <Route path="/MyMatchIQ/Subscription" element={<Navigate to="/Credit?source=mymatchiq-feature" replace />} />
+          <Route path="/MyMatchIQ/Subscription" element={<ExternalMyMatchIQRedirect />} />
           <Route path="/VerifyPhone" element={<VerifyPhone />} />
           <Route path="/Professionals" element={<Professionals />} />
           <Route path="/ProfessionalSignup" element={<ProfessionalSignup />} />
@@ -181,19 +182,20 @@ function PagesContent() {
           <Route path="/O2OLStudio" element={<O2OLStudio />} />
           <Route path="/O2OLStudio/Episodes" element={<O2OLStudioEpisodes />} />
           <Route path="/TikTokPost" element={<TikTokPost />} />
-          <Route path="/MyMatchIQ" element={<MyMatchIQ />} />
-          <Route path="/MyMatchIQ/Meet" element={<MyMatchIQMeet />} />
-          <Route path="/MyMatchIQ/Assessment" element={<MyMatchIQAssessment />} />
-          <Route path="/MyMatchIQ/Passport" element={<MyMatchIQPassport />} />
-          <Route path="/MyMatchIQ/Bianca" element={<CoachingConsentGate source="bianca" exitTo="/MyMatchIQ"><MyMatchIQBianca /></CoachingConsentGate>} />
-          <Route path="/MyMatchIQ/Credits" element={<Navigate to="/Credit?source=mymatchiq" replace />} />
+          <Route path="/MyMatchIQ" element={<ExternalMyMatchIQRedirect />} />
+          <Route path="/MyMatchIQ/Meet" element={<ExternalMyMatchIQRedirect />} />
+          <Route path="/MyMatchIQ/Assessment" element={<ExternalMyMatchIQRedirect />} />
+          <Route path="/MyMatchIQ/Passport" element={<ExternalMyMatchIQRedirect />} />
+          <Route path="/MyMatchIQ/Bianca" element={<ExternalMyMatchIQRedirect />} />
+          <Route path="/MyMatchIQ/Credits" element={<ExternalMyMatchIQRedirect />} />
           <Route path="/Credit" element={<Credit />} />
           <Route path="/FeaturePricing" element={<FeaturePricing />} />
-          <Route path="/MyMatchIQ/Actions" element={<MyMatchIQWorkspace page="actions" />} />
-          <Route path="/MyMatchIQ/Dashboard" element={<MyMatchIQWorkspace page="dashboard" />} />
-          <Route path="/MyMatchIQ/Invite" element={<MyMatchIQWorkspace page="invite" />} />
-          <Route path="/MyMatchIQ/SignIn" element={<Navigate to="/SignIn?source=mymatchiq-feature" replace />} />
-          <Route path="/MyMatchIQ/SignUp" element={<Navigate to="/SignUp?source=mymatchiq-feature" replace />} />
+          <Route path="/MyMatchIQ/Actions" element={<ExternalMyMatchIQRedirect />} />
+          <Route path="/MyMatchIQ/Dashboard" element={<ExternalMyMatchIQRedirect />} />
+          <Route path="/MyMatchIQ/Invite" element={<ExternalMyMatchIQRedirect />} />
+          <Route path="/MyMatchIQ/SignIn" element={<ExternalMyMatchIQRedirect />} />
+          <Route path="/MyMatchIQ/SignUp" element={<ExternalMyMatchIQRedirect />} />
+          <Route path="/MyMatchIQ/*" element={<ExternalMyMatchIQRedirect />} />
 
           {/* Launch-deferred surfaces stay preserved in source but are not customer-facing. */}
           <Route path="/CounselingSupport" element={<FeatureUnavailable feature="Counseling Support" />} />
