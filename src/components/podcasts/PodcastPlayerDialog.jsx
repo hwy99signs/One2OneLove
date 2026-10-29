@@ -80,7 +80,7 @@ export default function PodcastPlayerDialog({ podcast, onClose, t, locale }) {
   const selectedEpisode = podcast?.episodes?.find((episode) => episode.id === selectedEpisodeId) || null;
   const selectedIsMature = isMatureEpisode(selectedEpisode);
   const selectedUnlockKey = podcast && selectedEpisode ? `${podcast.id}:${selectedEpisode.id}` : "";
-  const selectedNeedsTokens = selectedEpisode?.tokenLocked === true && !unlockedEpisodeKeys.has(selectedUnlockKey);
+  const selectedNeedsTokens = selectedEpisode?.tokenLocked === true && !unlockedEpisodeKeys.has('feature') && !unlockedEpisodeKeys.has(selectedUnlockKey);
 
   const unlockEpisode = async () => {
     if (!podcast || !selectedEpisode || !user?.id || unlockingEpisode) return;
