@@ -194,6 +194,7 @@ function PagesContent() {
           <Route path="/MyMatchIQ/Credits" element={<ExternalMyMatchIQRedirect />} />
           <Route path="/Credit" element={<Credit />} />
           <Route path="/FeaturePricing" element={<FeaturePricing />} />
+          <Route path="/pricing" element={<FeaturePricing />} />
           <Route path="/MyMatchIQ/Actions" element={<ExternalMyMatchIQRedirect />} />
           <Route path="/MyMatchIQ/Dashboard" element={<ExternalMyMatchIQRedirect />} />
           <Route path="/MyMatchIQ/Invite" element={<ExternalMyMatchIQRedirect />} />

@@ -842,7 +842,6 @@ function LanguageContent({ children, currentPageName }) {
                   <a href="https://www.facebook.com/one2onelove" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><FacebookIcon /></a>
                   <a href="https://www.instagram.com/one2oneloves" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><InstagramIcon /></a>
                   <a href="https://x.com/one2oneloves" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><XIcon /></a>
-                  <a href="https://www.threads.net/@one2oneloves" target="_blank" rel="noopener noreferrer" aria-label="Threads"><ThreadsIcon /></a>
                   <a href="https://www.pinterest.com/One2onelovers" target="_blank" rel="noopener noreferrer" aria-label="Pinterest"><PinterestIcon /></a>
                 </div>
               </div>
