@@ -184,6 +184,7 @@ function PagesContent() {
           <Route path="/TherapistSignup" element={<TherapistSignup />} />
           <Route path="/InfluencerSignup" element={<InfluencerSignup />} />
           <Route path="/O2OLStudio" element={<O2OLStudio />} />
+          <Route path="/OnAir" element={<O2OLStudio />} />
           <Route path="/O2OLStudio/Episodes" element={<O2OLStudioEpisodes />} />
           <Route path="/TikTokPost" element={<TikTokPost />} />
           <Route path="/MyMatchIQ" element={<ExternalMyMatchIQRedirect />} />
