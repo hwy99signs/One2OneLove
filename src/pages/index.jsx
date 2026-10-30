@@ -119,6 +119,7 @@ function PagesContent() {
           <Route path="/" element={<Home />} />
           <Route path="/Home" element={<Home />} />
           <Route path="/AboutUs" element={<AboutUs />} />
+          <Route path="/About" element={<AboutUs />} />
           <Route path="/SignIn" element={<SignIn />} />
           <Route path="/login" element={<SignIn />} />
           <Route path="/SignUp" element={<SignUp />} />
@@ -136,12 +137,15 @@ function PagesContent() {
           <Route path="/Profile" element={<Profile />} />
           <Route path="/Invite" element={<Invite />} />
           <Route path="/PodcastsSupport" element={<PodcastsSupport />} />
+          <Route path="/Podcasts" element={<PodcastsSupport />} />
+          <Route path="/Podcast" element={<PodcastsSupport />} />
           <Route path="/ArticlesSupport" element={<ArticlesSupport />} />
           <Route path="/RelationshipQuizzes" element={<RelationshipQuizzes />} />
           <Route path="/AnniversaryTracker" element={<AnniversaryTracker />} />
           <Route path="/ForgotPassword" element={<ForgotPassword />} />
           <Route path="/Dashboard" element={<Dashboard />} />
           <Route path="/Community" element={<Chat />} />
+          <Route path="/Communities" element={<Chat />} />
           <Route path="/RelationshipMilestones" element={<PaidFeatureGate featureCode="milestones_unlock"><RelationshipMilestones /></PaidFeatureGate>} />
           <Route path="/RelationshipGoals" element={<PaidFeatureGate featureCode="goals_unlock"><RelationshipGoals /></PaidFeatureGate>} />
           <Route path="/CommunicationPractice" element={<CommunicationPractice />} />

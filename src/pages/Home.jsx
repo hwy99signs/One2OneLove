@@ -17,11 +17,11 @@ const OPEN_HOUSE_COPY = {
 };
 
 const AMORA_COPY = {
-  en:{eyebrow:'MEET AMORA',title:'Your One2OneLove Relationship Coach',body:'Talk naturally with Amora about communication, conflict, boundaries, connection, expectations, or whatever is on your mind.',cta:'Talk with Amora',token:'Credit per reply'},
-  es:{eyebrow:'CONOCE A AMORA',title:'Tu Coach de Relaciones One2OneLove',body:'Habla naturalmente con Amora sobre comunicación, conflictos, límites, conexión, expectativas o lo que tengas en mente.',cta:'Hablar con Amora',token:'Crédito por respuesta'},
-  fr:{eyebrow:'DÉCOUVREZ AMORA',title:'Votre Coach Relationnelle One2OneLove',body:'Parlez naturellement avec Amora de communication, conflit, limites, connexion, attentes ou de ce qui vous préoccupe.',cta:'Parler avec Amora',token:'Crédito par réponse'},
-  it:{eyebrow:'CONOSCI AMORA',title:'La Tua Coach Relazionale One2OneLove',body:'Parla naturalmente con Amora di comunicazione, conflitti, confini, connessione, aspettative o di ciò che hai in mente.',cta:'Parla con Amora',token:'Credito per risposta'},
-  de:{eyebrow:'LERNE AMORA KENNEN',title:'Deine One2OneLove Beziehungscoachin',body:'Sprich natürlich mit Amora über Kommunikation, Konflikte, Grenzen, Verbindung, Erwartungen oder was dir gerade durch den Kopf geht.',cta:'Mit Amora sprechen',token:'Credit pro Antwort'}
+  en:{eyebrow:'MEET AMORA',title:'Your One2OneLove Relationship Coach',body:'Talk naturally with Amora about communication, conflict, boundaries, connection, expectations, or whatever is on your mind.',cta:'Talk with Amora',token:'Short $0.10 · Medium $0.15 · Long $0.20'},
+  es:{eyebrow:'CONOCE A AMORA',title:'Tu Coach de Relaciones One2OneLove',body:'Habla naturalmente con Amora sobre comunicación, conflictos, límites, conexión, expectativas o lo que tengas en mente.',cta:'Hablar con Amora',token:'Short $0.10 · Medium $0.15 · Long $0.20'},
+  fr:{eyebrow:'DÉCOUVREZ AMORA',title:'Votre Coach Relationnelle One2OneLove',body:'Parlez naturellement avec Amora de communication, conflit, limites, connexion, attentes ou de ce qui vous préoccupe.',cta:'Parler avec Amora',token:'Short $0.10 · Medium $0.15 · Long $0.20'},
+  it:{eyebrow:'CONOSCI AMORA',title:'La Tua Coach Relazionale One2OneLove',body:'Parla naturalmente con Amora di comunicazione, conflitti, confini, connessione, aspettative o di ciò che hai in mente.',cta:'Parla con Amora',token:'Short $0.10 · Medium $0.15 · Long $0.20'},
+  de:{eyebrow:'LERNE AMORA KENNEN',title:'Deine One2OneLove Beziehungscoachin',body:'Sprich natürlich mit Amora über Kommunikation, Konflikte, Grenzen, Verbindung, Erwartungen oder was dir gerade durch den Kopf geht.',cta:'Mit Amora sprechen',token:'Short $0.10 · Medium $0.15 · Long $0.20'}
 };
 
 const STUDIO_COPY = {
