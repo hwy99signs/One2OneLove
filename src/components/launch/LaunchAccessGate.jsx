@@ -2,6 +2,7 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import QuickAccountGate from '@/components/launch/QuickAccountGate.jsx';
+import { isUnifiedPrelaunchGuestAccessEnabled } from '@/lib/prelaunchGuestAccess';
 
 // Site locked behind sign-up (owner decision, 2026-10-11): guests may open
 // only the entry pages (sign in / sign up / invite / recovery / admin entry)
@@ -137,6 +138,13 @@ export default function LaunchAccessGate({ pathname, children }) {
   const isStandaloneMyMatchIQ = route === '/mymatchiq' || route.startsWith('/mymatchiq/');
   const isPublic=PUBLIC_INFORMATION_ROUTES.has(route) || !isKnown || isStandaloneMyMatchIQ;
   const isViewOnly=VIEW_ONLY_ROUTES.has(route);
+  // Temporary PRELAUNCH browsing only. Never expose admin/account/payment routes
+  // or relax server-side ownership, verification, entitlement or Credit rules.
+  const protectedAccountRoute = route.startsWith('/admin') || new Set([
+    '/analytics', '/tokensystemdashboard', '/dashboard', '/profile',
+    '/verifyphone', '/credit', '/sendcredits', '/payment-success', '/paymentsuccess',
+  ]).has(route);
+  const previewGuestBrowse = isUnifiedPrelaunchGuestAccessEnabled() && !protectedAccountRoute;
 
   if(isLoading && !isPublic){
     const language=preferredLanguage();
@@ -149,7 +157,7 @@ export default function LaunchAccessGate({ pathname, children }) {
   }
 
   if(!isAuthenticated || !user){
-    return (isPublic || isViewOnly) ? children : <QuickAccountGate intendedPath={pathname||'/'} />;
+    return (isPublic || isViewOnly || previewGuestBrowse) ? children : <QuickAccountGate intendedPath={pathname||'/'} />;
   }
 
   // Registered Free is the site access identity. Feature-specific APIs/components
