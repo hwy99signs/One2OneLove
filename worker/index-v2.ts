@@ -51,6 +51,7 @@ import { handleGameAccessRequest, handleGameFileRequest } from './game-access';
 import { handleGameAdminRequest } from './game-admin';
 import { handleFoundingPerksRequest } from './founding-perks';
 import { handleWhatShouldTheyDoRequest } from './what-should-they-do';
+import { epscieTelemetryConfigured, buildO2OLTelemetry } from './epscie-telemetry';
 import { handleLikeMindedRequest } from './like-minded';
 import { handleStudioMediaRequest } from './studio-media';
 import { handleO2OLTokenRequest } from './o2ol-tokens';
@@ -269,6 +270,17 @@ async function handleFetchV2(request, env, ctx) {
         (/^\/api\/(phone-verification|tiktok|ai|mymatchiq\/bianca|sms|twilio|billing)(\/|$)/.test(url.pathname) ||
          url.pathname === '/api/love-notes/send-sms')) {
       return new Response(JSON.stringify({ok:false,error:{code:'prelaunch_external_disabled',message:'External delivery is disabled in prelaunch.'}}),{status:503,headers:{'content-type':'application/json','cache-control':'no-store'}});
+    }
+    // Read-only readiness of the staged EPSCIE sender. No traffic ever leaves prelaunch.
+    if (url.pathname === '/api/prelaunch/epscie-status') {
+      if (env.O2OL_DEPLOYMENT_ENV !== 'prelaunch') return new Response('Not found',{status:404});
+      if (request.method !== 'GET') return new Response('Method not allowed',{status:405});
+      const sample=buildO2OLTelemetry(env);
+      return new Response(JSON.stringify({
+        ok:true,mode:'prelaunch-readiness',configured:epscieTelemetryConfigured(env),
+        sendingEnabled:false,environment:sample.health.environment,
+        sampleMetrics:sample.metrics.map(m=>m.metric_key),
+      }),{headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}});
     }
     if (url.pathname === '/api/epscie/admin-health') return handlePrivateAdminHealth(request,env);
 
