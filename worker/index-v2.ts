@@ -54,6 +54,7 @@ import { handleWhatShouldTheyDoRequest } from './what-should-they-do';
 import { epscieTelemetryConfigured, buildO2OLTelemetry } from './epscie-telemetry';
 import { handleLikeMindedRequest } from './like-minded';
 import { handleStudioMediaRequest } from './studio-media';
+import { handleRelationshipArticleRequest } from './article-library';
 import { handleO2OLTokenRequest } from './o2ol-tokens';
 import { handleTwilioMessagingWebhook } from './twilio-webhooks';
 import { handleTikTokRequest } from './tiktok';
@@ -294,6 +295,10 @@ async function handleFetchV2(request, env, ctx) {
 
     if (url.pathname === '/api/health') {
       return withDatabaseHealth(request, env, (req, bindings) => baseWorker.fetch(req, bindings));
+    }
+
+    if (url.pathname === '/api/articles/detail') {
+      return handleRelationshipArticleRequest(request,env,url);
     }
 
     if (url.pathname.startsWith('/studio-media/') || url.pathname.startsWith('/api/studio/')) {
