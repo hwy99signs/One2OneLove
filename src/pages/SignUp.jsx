@@ -57,6 +57,12 @@ export default function SignUp() {
   const t = COPY[currentLanguage] || COPY.en;
   const signupType = String(searchParams.get("type") || "").toLowerCase();
   const foundingIntent = searchParams.get("founding") === "1";
+  const requestedReturn = searchParams.get("return") || searchParams.get("redirect");
+  const safeReturn = requestedReturn?.startsWith("/") && !requestedReturn.startsWith("//") &&
+    !Array.from(requestedReturn).some(ch => [10, 13, 92].includes(ch.charCodeAt(0)))
+      ? requestedReturn : null;
+  const returnQuery = safeReturn ? "&return=" + encodeURIComponent(safeReturn) : "";
+  const signUpSelection = "/SignUp?" + (foundingIntent ? "founding=1" : "type=choose") + returnQuery;
 
   if (signupType === "individual") {
     return (
@@ -65,14 +71,15 @@ export default function SignUp() {
           selectedPlan="Free"
           freeAccount
           foundingIntent={foundingIntent}
-          onBack={() => navigate(foundingIntent ? "/SignUp?founding=1" : "/SignUp")}
+          returnTo={safeReturn}
+          onBack={() => navigate(signUpSelection)}
         />
       </div>
     );
   }
 
-  const chooseIndividual = () => navigate(foundingIntent ? "/SignUp?type=individual&founding=1" : "/SignUp?type=individual");
-  const chooseProfessional = () => navigate("/ProfessionalSignup?account=free");
+  const chooseIndividual = () => navigate("/SignUp?type=individual" + (foundingIntent ? "&founding=1" : "") + returnQuery);
+  const chooseProfessional = () => navigate("/ProfessionalSignup?account=free" + returnQuery);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 px-4 py-12">
