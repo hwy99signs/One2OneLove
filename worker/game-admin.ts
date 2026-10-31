@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { Client } from 'pg';
 import { ensureGameEconomySchema,adminGrantGameCredit,gameEconomyAdminSummary,publicGameRegistry } from './game-economy';
+import { foundingGiveawayAdminSummary } from './founding-perks';
 import { getVerifiedAdminMfaIdentity } from './admin-mfa';
 
 const HEADERS={'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'};
@@ -53,7 +54,7 @@ export async function handleGameAdminRequest(request,env,url){
       if(!admin)return fail('Administrator access required.',403,'admin_required');
       await ensureGameEconomySchema(db);
       if(url.pathname==='/api/admin/game-economy'&&request.method==='GET'){
-        return json({ok:true,...await gameEconomyAdminSummary(db),registry:publicGameRegistry()});
+        return json({ok:true,...await gameEconomyAdminSummary(db),registry:publicGameRegistry(),foundingGiveaway:await foundingGiveawayAdminSummary(db)});
       }
       if(url.pathname==='/api/admin/game-credits/grant'&&request.method==='POST'){
         const input=await request.json().catch(()=>({}));
