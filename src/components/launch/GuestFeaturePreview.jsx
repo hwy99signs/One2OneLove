@@ -124,7 +124,14 @@ export default function GuestFeaturePreview({pathname}){
       <h1 className="mt-2 text-3xl font-black sm:text-5xl">{activeTitle}</h1>
       <p className="mt-4 max-w-3xl text-base text-white/90">{type==='feature'||singleGame?t.browse:theme.subtitle}</p>
     </div></div>
-    <p className="mt-5 rounded-xl bg-white/10 px-4 py-3 text-sm font-semibold text-white/90"><LockKeyhole className="mr-2 inline h-4 w-4"/>{t.access}</p>
+    <div className="mt-5 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+      <button type="button" data-feature-header-signup onClick={()=>openAccountPage('SignUp')} className="flex min-h-14 w-full items-center justify-center gap-3 rounded-xl bg-white/15 px-4 py-3 text-center text-sm font-bold text-white ring-1 ring-white/20 transition hover:bg-white/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:justify-start">
+        <LockKeyhole className="h-5 w-5 shrink-0"/><span>{t.access}</span><UserPlus className="h-5 w-5 shrink-0"/>
+      </button>
+      <button type="button" data-feature-header-signin onClick={()=>openAccountPage('SignIn')} className="min-h-14 rounded-xl border-2 border-white/70 bg-white px-5 py-3 text-sm font-extrabold text-indigo-800 shadow-sm transition hover:bg-white/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+        {t.signin}
+      </button>
+    </div>
    </header>
    {rows.length>1&&<div className="mt-7 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row">
      <label className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-slate-200 px-3"><Search className="h-4 w-4 text-slate-500"/><input placeholder={t.search} aria-label={t.search} className="w-full py-3 outline-none" value={search} onChange={e=>setSearch(e.target.value)}/></label>
