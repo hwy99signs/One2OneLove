@@ -24,11 +24,11 @@ import { apiRequest } from "@/lib/apiClient";
 import { isO2OLPromoFreeFeature } from "@/lib/o2olFreePromo2026";
 
 const FREE_NOTE_ACCESS_COPY = {
-  en:{guest:'FREE for verified members — sign in to read.',join:'Sign in to read FREE',body:'This Love Note is FREE during the promotion. Create a verified account to reveal its text. No Credit charge.',open:'Read FREE'},
-  es:{guest:'GRATIS para miembros verificados — accede para leer.',join:'Acceder para leer GRATIS',body:'Esta Nota de Amor es GRATIS durante la promoción. Crea una cuenta verificada para ver el texto, sin pagar Crédito.',open:'Leer GRATIS'},
-  fr:{guest:'GRATUIT pour les membres vérifiés — connectez-vous pour lire.',join:'Se connecter pour lire GRATUITEMENT',body:'Cette Note d’Amour est GRATUITE pendant l’offre. Créez un compte vérifié pour voir le texte sans payer de Crédit.',open:'Lire GRATUITEMENT'},
-  it:{guest:'GRATIS per i membri verificati — accedi per leggere.',join:'Accedi per leggere GRATIS',body:'Questa Nota d’Amore è GRATIS durante la promozione. Crea un account verificato per leggere il testo senza pagare Credito.',open:'Leggi GRATIS'},
-  de:{guest:'KOSTENLOS für bestätigte Mitglieder — zum Lesen anmelden.',join:'Anmelden und KOSTENLOS lesen',body:'Diese Liebesbotschaft ist während der Aktion KOSTENLOS. Erstelle ein bestätigtes Konto, um den Text ohne Credit zu lesen.',open:'KOSTENLOS lesen'}
+  en:{guest:'FREE for verified members — sign in to read.',join:'Sign in to read FREE',body:'This Love Note is FREE during the promotion. Create a verified account to reveal its text. No Credit charge.',open:'Read'},
+  es:{guest:'GRATIS para miembros verificados — accede para leer.',join:'Acceder para leer GRATIS',body:'Esta Nota de Amor es GRATIS durante la promoción. Crea una cuenta verificada para ver el texto, sin pagar Crédito.',open:'Leer'},
+  fr:{guest:'GRATUIT pour les membres vérifiés — connectez-vous pour lire.',join:'Se connecter pour lire GRATUITEMENT',body:'Cette Note d’Amour est GRATUITE pendant l’offre. Créez un compte vérifié pour voir le texte sans payer de Crédit.',open:'Lire'},
+  it:{guest:'GRATIS per i membri verificati — accedi per leggere.',join:'Accedi per leggere GRATIS',body:'Questa Nota d’Amore è GRATIS durante la promozione. Crea un account verificato per leggere il testo senza pagare Credito.',open:'Leggi'},
+  de:{guest:'KOSTENLOS für bestätigte Mitglieder — zum Lesen anmelden.',join:'Anmelden und KOSTENLOS lesen',body:'Diese Liebesbotschaft ist während der Aktion KOSTENLOS. Erstelle ein bestätigtes Konto, um den Text ohne Credit zu lesen.',open:'Lesen'}
 };
 const libraryAccessCopy = {
   en: { bought:'Purchased — select to read your note.', permanent:'Permanently unlocked', promo:'FREE during the promo — select to read your note.', temporary:'Temporary free access · relocks Jan 1', locked:'Note text hidden until unlocked.', paid:'$0.49 Credit to unlock', unlock:'Unlock $0.49' },

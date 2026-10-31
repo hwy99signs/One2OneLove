@@ -33,11 +33,11 @@ const AMORA_COPY = {
 };
 
 const STUDIO_COPY = {
-  en:{eyebrow:'O2OL STUDIO SHOW',season:'Season 1 • Episode 1',title:'Who Should Apologize First?',body:'Watch Episode 1 FREE — the O2OL Studio conversation that opened the season — and explore a real relationship question from more than one point of view.',watch:'Watch Episode 1 — FREE'},
-  es:{eyebrow:'O2OL STUDIO SHOW',season:'Temporada 1 • Episodio 1',title:'¿Quién debería disculparse primero?',body:'Mira el Episodio 1 GRATIS — la conversación de O2OL Studio que abrió la temporada — y explora una pregunta real de relación desde más de un punto de vista.',watch:'Ver Episodio 1 — GRATIS'},
-  fr:{eyebrow:'O2OL STUDIO SHOW',season:'Saison 1 • Épisode 1',title:'Qui devrait s’excuser en premier ?',body:'Regardez l’Épisode 1 GRATUITEMENT — la conversation O2OL Studio qui a ouvert la saison — et explorez une vraie question relationnelle sous plusieurs angles.',watch:'Voir l’Épisode 1 — GRATUIT'},
-  it:{eyebrow:'O2OL STUDIO SHOW',season:'Stagione 1 • Episodio 1',title:'Chi dovrebbe scusarsi per primo?',body:'Guarda l’Episodio 1 GRATIS — la conversazione di O2OL Studio che ha aperto la stagione — ed esplora una vera domanda relazionale da più punti di vista.',watch:'Guarda Episodio 1 — GRATIS'},
-  de:{eyebrow:'O2OL STUDIO SHOW',season:'Staffel 1 • Folge 1',title:'Wer sollte sich zuerst entschuldigen?',body:'Sieh dir Folge 1 KOSTENLOS an — das O2OL-Studio-Gespräch, das die Staffel eröffnete — und betrachte eine echte Beziehungsfrage aus mehreren Perspektiven.',watch:'Folge 1 — KOSTENLOS Ansehen'}
+  en:{eyebrow:'O2OL STUDIO SHOW',season:'Season 1 • Episode 1',title:'Who Should Apologize First?',body:'Watch Episode 1 FREE — the O2OL Studio conversation that opened the season — and explore a real relationship question from more than one point of view.',watch:'Watch Episode 1'},
+  es:{eyebrow:'O2OL STUDIO SHOW',season:'Temporada 1 • Episodio 1',title:'¿Quién debería disculparse primero?',body:'Mira el Episodio 1 GRATIS — la conversación de O2OL Studio que abrió la temporada — y explora una pregunta real de relación desde más de un punto de vista.',watch:'Ver Episodio 1'},
+  fr:{eyebrow:'O2OL STUDIO SHOW',season:'Saison 1 • Épisode 1',title:'Qui devrait s’excuser en premier ?',body:'Regardez l’Épisode 1 GRATUITEMENT — la conversation O2OL Studio qui a ouvert la saison — et explorez une vraie question relationnelle sous plusieurs angles.',watch:'Voir l’Épisode 1'},
+  it:{eyebrow:'O2OL STUDIO SHOW',season:'Stagione 1 • Episodio 1',title:'Chi dovrebbe scusarsi per primo?',body:'Guarda l’Episodio 1 GRATIS — la conversazione di O2OL Studio che ha aperto la stagione — ed esplora una vera domanda relazionale da più punti di vista.',watch:'Guarda Episodio 1'},
+  de:{eyebrow:'O2OL STUDIO SHOW',season:'Staffel 1 • Folge 1',title:'Wer sollte sich zuerst entschuldigen?',body:'Sieh dir Folge 1 KOSTENLOS an — das O2OL-Studio-Gespräch, das die Staffel eröffnete — und betrachte eine echte Beziehungsfrage aus mehreren Perspektiven.',watch:'Folge 1 Ansehen'}
 };
 
 // Homepage Studio feature (owner directive, 2026-10-10): the homepage
@@ -56,11 +56,11 @@ const STUDIO_E2_COPY = {
 // Episode 2 is free for verified members while the non-game promotion runs.
 // Its original paid messaging automatically returns after the promotion ends.
 const STUDIO_E2_PROMO_COPY = {
-  en:{body:'Episode 2 is FREE for verified members through Dec 31, 2026. Enjoy the latest O2OL Studio conversation without a Credit charge.',watch:'Watch Episode 2 — FREE',lockNote:'FREE for verified members through Dec 31'},
-  es:{body:'El Episodio 2 es GRATIS para miembros verificados hasta el 31 de diciembre de 2026, sin cobrar Crédito.',watch:'Ver Episodio 2 — GRATIS',lockNote:'GRATIS para miembros verificados hasta el 31 de diciembre'},
-  fr:{body:'L’Épisode 2 est GRATUIT pour les membres vérifiés jusqu’au 31 décembre 2026, sans débit de Crédit.',watch:'Voir l’Épisode 2 — GRATUIT',lockNote:'GRATUIT pour les membres vérifiés jusqu’au 31 décembre'},
-  it:{body:'L’Episodio 2 è GRATIS per i membri verificati fino al 31 dicembre 2026, senza addebiti di Credito.',watch:'Guarda Episodio 2 — GRATIS',lockNote:'GRATIS per i membri verificati fino al 31 dicembre'},
-  de:{body:'Folge 2 ist für bestätigte Mitglieder bis zum 31. Dezember 2026 KOSTENLOS, ohne Credit-Abzug.',watch:'Folge 2 — KOSTENLOS',lockNote:'KOSTENLOS für bestätigte Mitglieder bis 31. Dezember'},
+  en:{body:'Episode 2 is FREE for verified members through Dec 31, 2026. Enjoy the latest O2OL Studio conversation without a Credit charge.',watch:'Watch Episode 2'},
+  es:{body:'El Episodio 2 es GRATIS para miembros verificados hasta el 31 de diciembre de 2026, sin cobrar Crédito.',watch:'Ver Episodio 2'},
+  fr:{body:'L’Épisode 2 est GRATUIT pour les membres vérifiés jusqu’au 31 décembre 2026, sans débit de Crédit.',watch:'Voir l’Épisode 2'},
+  it:{body:'L’Episodio 2 è GRATIS per i membri verificati fino al 31 dicembre 2026, senza addebiti di Credito.',watch:'Guarda Episodio 2'},
+  de:{body:'Folge 2 ist für bestätigte Mitglieder bis zum 31. Dezember 2026 KOSTENLOS, ohne Credit-Abzug.',watch:'Folge 2 Ansehen'},
 };
 const HOME_PROMO_TOOL_CODES = {
   MemoryLane:'memories_unlock',
@@ -246,7 +246,6 @@ export default function Home() {
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {TOOLS.map(([icon,labelKey,page,gradient,status],index) => (
               <button key={page} data-feature-status={toolIsFree(page,status) ? 'free' : status} data-analytics-id={`home-tool-${String(page).toLowerCase()}`} data-analytics-destination={`/${page}`} onClick={() => { setSelectedTool(index); go(page); }} className={`relative min-h-[86px] rounded-2xl bg-gradient-to-r ${gradient} px-5 text-xl font-extrabold text-white shadow-lg transition-transform hover:scale-[1.02] ${labelKey === 'MyMatchIQ' ? 'border-2 border-fuchsia-300 ring-2 ring-indigo-200' : ''} ${index===selectedTool?'ring-4 ring-rose-400 ring-offset-2':''}`}>
-                {toolIsFree(page,status) && <span className="absolute right-2 top-2 rounded-full bg-yellow-300 px-2 py-0.5 text-[10px] font-black tracking-wide text-yellow-950 shadow">FREE</span>}
                 {status === 'locked' && !toolIsFree(page,status) && <span aria-label="Locked" className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-amber-300 text-sm text-amber-950 shadow">🔒</span>}
                 <span>{icon} {labelKey === 'MyMatchIQ' ? 'MyMatchIQ' : (t.toolLabels[labelKey] || COPY.en.toolLabels[labelKey])}</span>
               </button>

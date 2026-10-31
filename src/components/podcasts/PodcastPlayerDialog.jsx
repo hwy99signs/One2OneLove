@@ -14,9 +14,6 @@ import {
   resolvePodcastMetadata,
 } from "@/lib/applePodcastService";
 
-const episodeFreeLabel = { en:'FREE during promo', es:'GRATIS durante la promoción', fr:'GRATUIT pendant l’offre', it:'GRATIS durante la promozione', de:'Während der Aktion KOSTENLOS' };
-const chosenLanguage = (locale) => String(locale || 'en').slice(0,2).toLowerCase();
-
 const matureTerms = [
   /\bsex\b/i, /sexual/i, /porn/i, /kink/i, /erection/i, /orgasm/i,
   /menopaus/i, /desire/i, /désir/i, /deseo/i, /sessual/i,
@@ -202,9 +199,9 @@ export default function PodcastPlayerDialog({ podcast, onClose, t, locale }) {
                   {isMatureEpisode(episode) ? "18+ • " : ""}
                   {episode.tokenLocked === true
                     ? (podcastFreePromo || unlockedEpisodeKeys.has('feature')
-                      ? (episodeFreeLabel[chosenLanguage(locale)] || episodeFreeLabel.en) + ' • '
+                      ? ''
                       : unlockedEpisodeKeys.has(`${podcast.id}:${episode.id}`) ? '✓ ' : '🔒 ')
-                    : 'FREE • '}{episode.title}{episode.date ? ` — ${formatEpisodeDate(episode.date, locale)}` : ""}
+                    : ''}{episode.title}{episode.date ? ` — ${formatEpisodeDate(episode.date, locale)}` : ""}
                 </option>
               ))}
             </select>
