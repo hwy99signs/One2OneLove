@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, BookOpen, Film, Gamepad2, Heart, Headphones, LockKeyhole, Search, Sparkles, UserPlus, X } from 'lucide-react';
 import { useLanguage } from '@/Layout';
 import { launchPodcastLibrary } from '@/data/podcastLibrary';
@@ -59,6 +59,7 @@ function sectionFor(route){
 export default function GuestFeaturePreview({pathname}){
  const {currentLanguage}=useLanguage();
  const {search:locationSearch}=useLocation();
+ const navigate=useNavigate();
  const route=String(pathname||'/').toLowerCase().replace(/\/$/,'')||'/';
  const type=sectionFor(route),t=COPY[currentLanguage]||COPY.en;
  const theme=TITLES[type];
@@ -101,6 +102,13 @@ export default function GuestFeaturePreview({pathname}){
  const shown=useMemo(()=>rows.filter(item=>(category==='all'||category===item.category)&&(!search.trim()||[item.title,item.category,item.group].join(' ').toLowerCase().includes(search.trim().toLowerCase()))),[rows,category,search]);
  const activeTitle=type==='feature'?pageName:singleGame?.[0]||theme.title;
  const signupReturn=pathname+locationSearch;
+ const openAccountPage=(page)=>{
+   // Direct navigation deliberately closes the card dialog before changing
+   // routes, and preserves the feature to return to after authentication.
+   setSelected(null);
+   const destination=page==='SignIn'?'redirect':'return';
+   navigate('/'+page+'?'+destination+'='+encodeURIComponent(signupReturn));
+ };
  useEffect(()=>{
    if(!selected)return;
    const close=e=>{if(e.key==='Escape')setSelected(null)};
@@ -139,7 +147,7 @@ export default function GuestFeaturePreview({pathname}){
       <div className="mx-auto grid h-14 w-14 place-items-center rounded-xl bg-pink-100 text-pink-700"><LockKeyhole className="h-7 w-7"/></div>
       <h2 className="mt-4 text-xl font-black">{selected.title}</h2>
       <p className="mt-3 text-slate-600">{t.guest}</p>
-      <div className="mt-6 grid gap-3"><Link to={'/SignUp?return='+encodeURIComponent(signupReturn)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-700 to-fuchsia-600 px-5 py-3 font-black text-white"><UserPlus className="h-5 w-5"/>{t.join}</Link><Link to={'/SignIn?return='+encodeURIComponent(signupReturn)} className="rounded-xl border border-purple-300 px-5 py-3 font-black text-purple-700">{t.signin}</Link></div>
+      <div className="mt-6 grid gap-3"><button type="button" data-feature-signup-action="signup" onClick={()=>openAccountPage('SignUp')} className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-700 to-fuchsia-600 px-5 py-3 font-black text-white"><UserPlus className="h-5 w-5"/>{t.join}</button><button type="button" data-feature-signup-action="signin" onClick={()=>openAccountPage('SignIn')} className="rounded-xl border border-purple-300 px-5 py-3 font-black text-purple-700">{t.signin}</button></div>
     </div>
    </div>}
  </main>;
