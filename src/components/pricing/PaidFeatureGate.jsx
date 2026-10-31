@@ -5,6 +5,7 @@ import UnlockPriceDialog from '@/components/pricing/UnlockPriceDialog';
 import { FEATURE_PRICE_BY_CODE } from '@/lib/featurePricing';
 import { isO2OLPromoFreeFeature } from '@/lib/o2olFreePromo2026';
 import { useLanguage } from '@/Layout';
+import { isUnifiedPrelaunchGuestAccessEnabled } from '@/lib/prelaunchGuestAccess';
 const FREE_ACCESS_COPY = {
   en:{title:'FREE during the promotion',body:'This feature is free for verified members through December 31, 2026. No Credit is needed.',signin:'Sign in to access for free',retry:'Check free access again'},
   es:{title:'GRATIS durante la promoción',body:'Esta función es gratis para miembros verificados hasta el 31 de diciembre de 2026. No se necesita Crédito.',signin:'Inicia sesión para acceder gratis',retry:'Comprobar acceso gratis'},
@@ -56,6 +57,9 @@ export default function PaidFeatureGate({ featureCode, children }) {
       }else setError(e?.message||'Unable to unlock this feature.');
     }finally{setBusy(false);}
   };
+  // Anonymous preview browsing opens the feature page without a signup wall.
+  // Paid text, saved records and write actions remain guarded by their APIs.
+  if(!isAuthenticated && isUnifiedPrelaunchGuestAccessEnabled()) return children;
   if(!ready) return <div className="min-h-[45vh] grid place-items-center text-slate-500 font-bold">Checking access…</div>;
   if(unlocked) return children;
   if(phoneGate) return <div className="min-h-[60vh] grid place-items-center bg-gradient-to-br from-pink-50 via-white to-sky-50 p-6 text-center"><div className="max-w-md"><div className="text-5xl">📱</div><h1 className="mt-4 text-3xl font-black text-slate-900">Verify your phone number</h1><p className="mt-2 text-slate-600">Unlocking runs on your Credit wallet, and your wallet opens once your phone is verified. It takes about a minute — and verifying also lands your $5.00 in FREE O2OL Bonus Game Credits.</p><button type="button" onClick={()=>{window.location.assign('/VerifyPhone?redirect='+encodeURIComponent(window.location.pathname));}} className="mt-5 rounded-full bg-fuchsia-600 px-6 py-3 font-black text-white">Verify My Phone</button></div></div>;
