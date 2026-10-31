@@ -188,6 +188,12 @@ export default function CooperativeGames() {
           </div>
         )}
 
+        <div className="mb-8 rounded-2xl border border-emerald-300 bg-white p-5 text-center shadow-sm">
+          <div className="font-black text-emerald-900">🗳️ Global Voting — Prelaunch Preview</div>
+          <p className="mt-1 text-sm text-slate-600">Test the staged country-by-country voting game separately from the current What Should They Do? experience.</p>
+          <Link to="/WhatShouldTheyDoGlobalPreview" className="mt-3 inline-block rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-black text-white hover:bg-emerald-700">Open Global Voting Preview</Link>
+        </div>
+
         {games.length > 0 && (
           <div className="grid grid-cols-3 gap-4 mb-12">
             <Card className="bg-gradient-to-br from-green-500 to-emerald-600 text-white border-0">
