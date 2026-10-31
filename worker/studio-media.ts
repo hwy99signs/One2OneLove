@@ -111,7 +111,10 @@ async function accessState(request,env,episode){
   const publicAvailable=!paywalled&&Date.now()>=availableAt.getTime();
   const {unlocked,isAdmin}=await unlockState(request,env,episode).catch(()=>({unlocked:false,isAdmin:false}));
   const promoAccess=paywalled&&member&&isO2OLPromoFreeFeature(episode.unlockFeatureCode);
-  const canWatch=paywalled?(unlocked||isAdmin||promoAccess):(member||publicAvailable);
+  // Public catalog rule (owner 2026-10-31): guests may see episode titles
+  // but may never stream the underlying media, even after its former replay date.
+  // Episode 1 stays free for verified members; paid Studio terms are unchanged.
+  const canWatch=paywalled?(unlocked||isAdmin||promoAccess):member;
   return {
     member,
     publicAvailable,
@@ -181,7 +184,7 @@ export async function handleStudioMediaRequest(request,env,url){
     return error(
       episode.unlockPriceCents
         ? 'This episode is a $1 Credit unlock. Sign in and unlock it in O2OL Studio to watch — Episode 1 is always free.'
-        : 'Create a free verified One2OneLove account to watch this episode now. The public replay opens seven days after release.',
+        : 'Create a free verified One2OneLove account to watch this episode. Browsing the Studio catalog is public.',
       403,
       {'x-o2ol-public-available-at':access.publicAvailableAt},
     );
