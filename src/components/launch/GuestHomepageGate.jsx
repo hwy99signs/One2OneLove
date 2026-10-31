@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import QuickAccountGate from '@/components/launch/QuickAccountGate.jsx';
+import { isUnifiedPrelaunchGuestAccessEnabled } from '@/lib/prelaunchGuestAccess';
 import { PUBLIC_INFORMATION_ROUTES, VIEW_ONLY_ROUTES } from '@/components/launch/LaunchAccessGate.jsx';
 
 // View-only homepage (owner, 2026-10-11): guests may open and SCROLL the
@@ -35,7 +36,8 @@ export default function GuestHomepageGate({ pathname }) {
   const { isAuthenticated, isLoading } = useAuth();
   const [open, setOpen] = useState(false);
   const route = String(pathname || '/').toLowerCase().replace(/\/$/, '') || '/';
-  const active = !isLoading && !isAuthenticated && VIEW_ONLY_ROUTES.has(route);
+  // The preview is temporarily open for revisions; production retains its current gate.
+  const active = !isLoading && !isAuthenticated && VIEW_ONLY_ROUTES.has(route) && !isUnifiedPrelaunchGuestAccessEnabled();
 
   useEffect(() => { setOpen(false); }, [route]);
   useEffect(() => { if (!active) setOpen(false); }, [active]);
