@@ -146,7 +146,7 @@ export default function LaunchAccessGate({ pathname, children }) {
   ]).has(route);
   const previewGuestBrowse = isUnifiedPrelaunchGuestAccessEnabled() && !protectedAccountRoute;
 
-  if(isLoading && !isPublic){
+  if(isLoading && !isPublic && !previewGuestBrowse){
     const language=preferredLanguage();
     return <div className="flex min-h-[55vh] items-center justify-center bg-white">
       <div className="text-center">
