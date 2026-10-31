@@ -527,10 +527,10 @@ function LanguageContent({ children, currentPageName }) {
 
             <div className="relative">
               <Select value={currentLanguage} onValueChange={changeLanguage}>
-                <SelectTrigger className={isMyMatchIQPage ? 'h-auto w-32 rounded-full border border-white/25 bg-gradient-to-r from-amber-400 to-orange-500 px-3 py-2 text-sm font-black text-white shadow-[0_5px_15px_rgba(15,4,42,0.35)] 2xl:w-36 2xl:px-3.5' : 'w-32 rounded-xl bg-white/15 border border-white/25 px-3 py-2.5 text-yellow-300 h-auto font-bold text-base 2xl:w-36 2xl:px-4 2xl:py-3 2xl:text-lg'}>
+                <SelectTrigger data-guest-allow aria-label={t.nav.language} className={isMyMatchIQPage ? 'h-auto w-32 rounded-full border border-white/25 bg-gradient-to-r from-amber-400 to-orange-500 px-3 py-2 text-sm font-black text-white shadow-[0_5px_15px_rgba(15,4,42,0.35)] 2xl:w-36 2xl:px-3.5' : 'w-32 rounded-xl bg-white/15 border border-white/25 px-3 py-2.5 text-yellow-300 h-auto font-bold text-base 2xl:w-36 2xl:px-4 2xl:py-3 2xl:text-lg'}>
                   <SelectValue placeholder={t.nav.language} />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent data-guest-allow>
                   <SelectItem value="en">US English</SelectItem>
                   <SelectItem value="es">{currentLanguage === 'en' ? 'ES Spanish' : 'ES Español'}</SelectItem>
                   <SelectItem value="fr">{currentLanguage === 'en' ? 'FR French' : 'FR Français'}</SelectItem>
@@ -544,10 +544,10 @@ function LanguageContent({ children, currentPageName }) {
           {/* Mobile header controls */}
           <div className="relative flex items-center gap-1.5 sm:gap-2 lg:hidden">
             <Select value={currentLanguage} onValueChange={changeLanguage}>
-              <SelectTrigger aria-label={t.nav.language} className="w-[76px] sm:w-[112px] rounded-xl bg-white/15 border border-white/30 px-2.5 sm:px-3 py-2 text-yellow-300 h-auto font-black text-sm sm:text-base">
+              <SelectTrigger data-guest-allow aria-label={t.nav.language} className="w-[76px] sm:w-[112px] rounded-xl bg-white/15 border border-white/30 px-2.5 sm:px-3 py-2 text-yellow-300 h-auto font-black text-sm sm:text-base">
                 <SelectValue placeholder={t.nav.language} />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent data-guest-allow>
                 <SelectItem value="en">EN English</SelectItem>
                 <SelectItem value="es">ES Español</SelectItem>
                 <SelectItem value="fr">FR Français</SelectItem>
