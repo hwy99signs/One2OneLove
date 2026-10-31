@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { DoorOpen, ShieldCheck } from 'lucide-react';
 import { useLanguage } from '@/Layout';
 import { useAuth } from '@/contexts/AuthContext';
+import { isUnifiedPrelaunchGuestAccessEnabled } from '@/lib/prelaunchGuestAccess';
 
 const COPY = {
   en:{ eyebrow:'ONE2ONELOVE OPEN HOUSE', title:'Explore this feature free', body:'You can look around without an account. Sign in or create an account when you want to save personal information, post, or use protected member actions.', signIn:'Sign In', signUp:'Create Account', memberAction:'Membership Options', protected:'Personal actions stay private and protected.' },
@@ -16,6 +17,9 @@ export default function OpenHouseBrowseNotice({ compact=false }) {
   const { currentLanguage } = useLanguage();
   const { user } = useAuth();
   const t = COPY[currentLanguage] || COPY.en;
+  // No proactive signup request while the owner reviews the unified prelaunch.
+  // Protected save/post actions still enforce authentication at the action/API.
+  if (!user?.id && isUnifiedPrelaunchGuestAccessEnabled()) return null;
   return (
     <section className={`rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 via-white to-cyan-50 ${compact?'p-3':'p-4 sm:p-5'} shadow-sm`}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
