@@ -26,13 +26,13 @@
     "PUBLIC_STATS_BASELINE_AT": "2026-10-12T12:27:00.000Z",
     "CLOUDFLARE_ZONE_ID": "449881ec0e315b87e822418a09714875",
     "O2OL_DEPLOYMENT_ENV": "prelaunch",
+    "PRELAUNCH_ENVIRONMENT": "true",
+    "O2OL_EPSCIE_ENABLED": "false",
     "O2OL_DEPLOYMENT_ID": "o2ol-prelaunch-unified-20261030",
     "O2OL_EPSCIE_SITE_ENABLED": "false",
     "O2OL_EPSCIE_SITE_KEY_ID": "o2ol-site-health-20261013-v1"
   },
-  "services": [
-    {"binding":"EPSCIE_SERVICE","service":"epscie-core"}
-  ],
+  "services": [],
   "hyperdrive": [{"binding": "HYPERDRIVE","id": "0a1440e83906496eac5ff276baca17ee"}],
   "triggers": {"crons": []},
   "r2_buckets": [
