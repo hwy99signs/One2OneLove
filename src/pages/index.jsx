@@ -33,6 +33,7 @@ import PoolPingPong from './PoolPingPong';
 import IThoughtSo from './IThoughtSo';
 import Scrabluko from './Scrabluko';
 import WhatShouldTheyDo from './WhatShouldTheyDo';
+import GlobalWhatShouldTheyDoPreview from '@/features/whatShouldTheyDo/WhatShouldTheyDoGame';
 import ScratchGame from './ScratchGame';
 import LikeMinded from './LikeMinded';
 import SharedJournals from './SharedJournals';
@@ -156,6 +157,7 @@ function PagesContent() {
           <Route path="/PoolPingPong" element={<PaidGameSessionGate image="/game-cards/card-pool-ping-pong.jpg" backdrop="#0d3b2a" game="pool_ping_pong" title="Pool Ping Pong"><PoolPingPong /></PaidGameSessionGate>} />
           <Route path="/IThoughtSo" element={<PaidGameSessionGate image="/game-cards/card-i-thought-so.jpg" backdrop="#3a2a05" game="i_thought_so" title="I Thought So!"><IThoughtSo /></PaidGameSessionGate>} />
           <Route path="/Scrabluko" element={<PaidGameSessionGate image="/game-cards/card-scrabluko.jpg" backdrop="#0a1f44" game="scrabluko" title="Scrabluko"><Scrabluko /></PaidGameSessionGate>} />
+          <Route path="/WhatShouldTheyDoGlobalPreview" element={<GlobalWhatShouldTheyDoPreview onExit={() => window.location.assign("/CooperativeGames")} />} />
           <Route path="/WhatShouldTheyDo" element={<PaidGameSessionGate image="/game-cards/card-what-should.jpg" backdrop="#2e1020" game="what_should_they_do" title="What Should They Do?"><WhatShouldTheyDo /></PaidGameSessionGate>} />
           <Route path="/Games" element={<PaidGameSessionGate image="/game-cards/card-what-should.jpg" backdrop="#2e1020" game="what_should_they_do" title="What Should They Do?"><WhatShouldTheyDo /></PaidGameSessionGate>} />
           <Route path="/ScratchGame" element={<ScratchGame />} />
