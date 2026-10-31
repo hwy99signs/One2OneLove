@@ -4,8 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/Layout';
 import { createPageUrl } from '@/utils';
-import { relationshipArticleLibrary } from '@/data/relationshipArticleLibrary';
-import { relationshipArticleBodies } from '@/data/relationshipArticleBodies';
+import { publicArticleMetadata } from '@/data/publicArticleMetadata';
 
 const copy = {
   en: { title:'Relationship Library', subtitle:'Practical, plain-language articles for healthier relationships.', back:'Back to Support', all:'All', communication:'Communication', trust:'Trust & Boundaries', conflict:'Conflict & Repair', marriage:'Marriage', dating:'Dating', read:'Read Article', minutes:'min read', article:'Article', takeaways:'Key Takeaways', close:'Back to Library', editorial:'One2OneLove Relationship Library', disclaimer:'Educational guidance only. It is not a substitute for individualized medical, mental-health, legal, or safety advice.' },
@@ -26,9 +25,12 @@ const categoryIcons = {
 export default function ArticlesSupport() {
   const { currentLanguage } = useLanguage();
   const t = copy[currentLanguage] || copy.en;
-  const articles = relationshipArticleLibrary[currentLanguage] || relationshipArticleLibrary.en;
+  const articles = publicArticleMetadata[currentLanguage] || publicArticleMetadata.en;
   const [category, setCategory] = useState('all');
   const [selectedArticle, setSelectedArticle] = useState(null);
+  const [articleDetails, setArticleDetails] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState('');
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -48,6 +50,18 @@ export default function ArticlesSupport() {
     else setSelectedArticle(null);
   };
 
+  useEffect(() => {
+    if (!selectedArticle?.id) { setArticleDetails(null); return; }
+    let active = true;
+    setArticleDetails(null);setDetailError('');setDetailLoading(true);
+    fetch('/api/articles/detail?lang='+encodeURIComponent(currentLanguage)+'&id='+encodeURIComponent(selectedArticle.id), {credentials:'include'})
+      .then(async response => {if(!response.ok)throw new Error('Unable to open article. Please sign in with a verified account.');return response.json();})
+      .then(result => {if(active)setArticleDetails(result?.article||null);})
+      .catch(error => {if(active)setDetailError(error?.message||'Unable to open article.');})
+      .finally(() => {if(active)setDetailLoading(false);});
+    return () => {active=false;};
+  }, [selectedArticle?.id,currentLanguage]);
+
   const filtered = useMemo(() => category === 'all' ? articles : articles.filter(article => article.category === category), [articles, category]);
   const categories = [
     ['all', t.all],
@@ -60,9 +74,7 @@ export default function ArticlesSupport() {
 
   if (selectedArticle) {
     const Icon = categoryIcons[selectedArticle.category] || BookOpen;
-    const articleBody = relationshipArticleBodies[currentLanguage]?.[selectedArticle.id]
-      || relationshipArticleBodies.en?.[selectedArticle.id]
-      || [];
+    const articleBody = articleDetails?.body || [];
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50 px-4 py-8">
         <article className="mx-auto max-w-4xl rounded-3xl border border-purple-100 bg-white p-6 shadow-sm sm:p-10">
@@ -78,6 +90,8 @@ export default function ArticlesSupport() {
           <section className="mt-8 border-t border-slate-100 pt-8">
             <h2 className="text-2xl font-black text-slate-900">{t.article}</h2>
             <div className="mt-5 space-y-5">
+              {detailLoading && <p className="text-sm text-slate-600">Loading the full article…</p>}
+              {detailError && <p role="alert" className="text-sm font-bold text-rose-700">{detailError}</p>}
               {articleBody.map((paragraph, index) => (
                 <p key={index} className="text-[17px] leading-8 text-slate-700">{paragraph}</p>
               ))}
@@ -87,7 +101,7 @@ export default function ArticlesSupport() {
           <div className="mt-10 rounded-3xl border border-purple-100 bg-purple-50/60 p-5 sm:p-7">
             <h2 className="text-xl font-black text-slate-900">{t.takeaways}</h2>
             <div className="mt-5 space-y-5">
-              {selectedArticle.takeaways.map((item, index) => (
+              {(articleDetails?.takeaways || []).map((item, index) => (
                 <div key={index} className="flex gap-4">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-purple-600 text-sm font-black text-white">{index + 1}</div>
                   <p className="pt-0.5 leading-7 text-slate-700">{item}</p>
