@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { useLanguage } from './Layout';
+import { useAuth } from '@/contexts/AuthContext';
 import { isO2OLPromoFreeFeature } from '@/lib/o2olFreePromo2026';
 
 const FOUNDING_STRIP_COPY = {
@@ -118,6 +119,7 @@ const TOOLS = [
 export default function Home() {
   const navigate = useNavigate();
   const { currentLanguage } = useLanguage();
+  const { isAuthenticated } = useAuth();
   const t = COPY[currentLanguage] || COPY.en;
   const matchIQLabel = MYMATCHIQ_LABELS[currentLanguage] || MYMATCHIQ_LABELS.en;
   const studio = STUDIO_COPY[currentLanguage] || STUDIO_COPY.en;
@@ -173,6 +175,7 @@ export default function Home() {
           <p className="mx-auto mt-5 max-w-5xl text-lg leading-relaxed drop-shadow md:text-xl">{t.support}</p>
           <p className="mt-7 text-xl font-black text-yellow-300 drop-shadow md:text-2xl">{t.langs}</p>
 
+          {!isAuthenticated && <button type="button" onClick={() => navigate('/Catalog')} className="mx-auto mt-7 block rounded-full border-2 border-white/70 bg-yellow-300 px-7 py-3 text-lg font-black text-indigo-950 shadow-xl hover:bg-yellow-200">Browse all feature titles & categories</button>}
           <div className="mx-auto mt-7 grid w-[70%] max-w-[33.6rem] grid-cols-1 gap-4 md:grid-cols-2">
             <button data-analytics-id="home-hero-love-language" data-analytics-destination="/LoveLanguageQuiz" onClick={() => go('LoveLanguageQuiz')} className="rounded-2xl bg-pink-500 px-[1.4rem] py-[0.525rem] text-[1.375rem]/[1.925rem] font-extrabold shadow-xl hover:bg-pink-600">♡ {t.toolLabels.loveLanguage}</button>
             <button data-analytics-id="home-hero-love-notes" data-analytics-destination="/LoveNotes" onClick={() => go('LoveNotes')} className="rounded-2xl bg-white px-[1.4rem] py-[0.525rem] text-[1.375rem]/[1.925rem] font-extrabold text-pink-600 shadow-xl hover:bg-slate-50">♡ {t.toolLabels.loveNotes}</button>
@@ -300,7 +303,7 @@ export default function Home() {
           ) : (
           <div className="mt-6 w-full overflow-hidden rounded-3xl border border-fuchsia-300/35 bg-slate-950 text-white shadow-2xl">
             <div className="aspect-[16/9] w-full overflow-hidden bg-black">
-              <video
+              {!isAuthenticated ? <button type="button" onClick={() => navigate('/Catalog?feature=studio')} className="flex h-full w-full flex-col items-center justify-center gap-4 bg-gradient-to-br from-indigo-950 via-violet-900 to-fuchsia-950 p-6 text-center font-black text-white"><span className="text-5xl">🎬</span><span className="text-xl sm:text-3xl">{studio.title}</span><span className="rounded-full bg-fuchsia-600 px-5 py-3 text-sm">Browse Studio Episodes</span></button> : <video
                 data-home-studio-video="season-1-episode-1"
                 aria-label="O2OL Studio Season 1 Episode 1 — Who Should Apologize First?"
                 className="h-full w-full bg-black object-contain"
@@ -310,7 +313,7 @@ export default function Home() {
                 src={`${STUDIO_VIDEO}#t=0.1`}
               >
                 Your browser does not support HTML5 video.
-              </video>
+              </video>}
             </div>
             <div className="bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-950 px-5 py-4 sm:px-7 sm:py-5 lg:px-9 lg:py-6">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
