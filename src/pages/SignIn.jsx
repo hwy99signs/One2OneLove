@@ -33,7 +33,7 @@ export default function SignIn() {
       // but never redirect off-site or back into the account entry screens.
       const params = new URLSearchParams(window.location.search);
       const value = params.get('redirect') || params.get('return');
-      if (!value || !value.startsWith('/') || value.startsWith('//') || /[\\\r\\\n]/.test(value)) return null;
+      if (!value || !value.startsWith('/') || value.startsWith('//') || Array.from(value).some(ch => [10,13,92].includes(ch.charCodeAt(0)))) return null;
       const path = value.split(/[?#]/)[0].toLowerCase();
       if (['/signin', '/signup', '/login'].includes(path)) return null;
       return value;
