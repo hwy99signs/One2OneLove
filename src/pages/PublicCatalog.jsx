@@ -84,7 +84,7 @@ const featureToType = (v) => {
 };
 export default function PublicCatalog(){
  const {currentLanguage}=useLanguage();
- const {isAuthenticated,isLoading}=useAuth();
+ const {isAuthenticated}=useAuth();
  const t=COPY[currentLanguage]||COPY.en;
  const [params,setParams]=useSearchParams();
  const navigate=useNavigate();
@@ -125,7 +125,7 @@ export default function PublicCatalog(){
  },[type,notes,dates,studio,currentLanguage]);
  const categories=useMemo(()=>['all',...new Set(items.map(i=>i.category))], [items]);
  const shown=useMemo(()=>items.filter(i=>(category==='all'||i.category===category)&&(!search.trim()||[i.title,i.category,i.group].join(' ').toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()))),[items,category,search]);
- const openItem=(item)=>{if(isLoading)return;if(isAuthenticated){navigate(item.target);return}setSelected(item);};
+ const openItem=(item)=>{if(isAuthenticated){navigate(item.target);return}setSelected(item);};
  const switchType=(value)=>setParams({feature:value});
  useEffect(()=>{if(!selected)return;const close=e=>{if(e.key==='Escape')setSelected(null)};window.addEventListener('keydown',close);return()=>window.removeEventListener('keydown',close)},[selected]);
  return <div className="min-h-[75vh] bg-gradient-to-br from-rose-50 via-white to-sky-50 px-4 py-10 text-slate-900">
