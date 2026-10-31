@@ -2,6 +2,7 @@
 import baseWorker from './index';
 import { withDatabaseHealth } from './health-response.js';
 import { sendProductionSiteHealth,handlePrivateAdminHealth } from './epscie-health';
+import { sendO2OLTelemetry } from './epscie-telemetry';
 import { handleAdminRequest, handleAdminReportRequest } from './admin';
 import { handleTokenAdminRequest } from './token-admin';
 import { handleAnalyticsRequest } from './analytics';
@@ -584,6 +585,10 @@ export default {
 
   async scheduled(controller, env, ctx) {
     if (env.O2OL_PRELAUNCH_NO_OUTBOUND === 'true') return;
+    // The separately staged aggregate telemetry pipeline is wired but remains disabled in prelaunch.
+    if (String(env.O2OL_EPSCIE_ENABLED || '').toLowerCase() === 'true') {
+      ctx.waitUntil(sendO2OLTelemetry(env).catch(() => console.error('O2OL aggregate telemetry delivery failed')));
+    }
     if(new Date(controller.scheduledTime || Date.now()).getUTCMinutes()%5===0){
       ctx.waitUntil(sendProductionSiteHealth(env).catch(()=>console.error('O2OL production health report delivery failed')));
     }
