@@ -2,6 +2,7 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import QuickAccountGate from '@/components/launch/QuickAccountGate.jsx';
+import GuestFeaturePreview from '@/components/launch/GuestFeaturePreview.jsx';
 import { isUnifiedPrelaunchGuestAccessEnabled } from '@/lib/prelaunchGuestAccess';
 
 // Site locked behind sign-up (owner decision, 2026-10-11): guests may open
@@ -25,9 +26,9 @@ export const PUBLIC_INFORMATION_ROUTES = new Set([
 // tap and opens the sign-up panel instead. Members are unaffected.
 export const VIEW_ONLY_ROUTES = new Set(['/', '/home']);
 
-// Each guest feature route opens the public title-only catalog instead of
-// mounting the protected feature component. Members keep their routes.
-// Include aliases and game paths missing from the older known-route list.
+// Each guest feature route stays at its ORIGINAL page URL. While signed out,
+// only a safe, title-only view of that specific feature is mounted.
+// Members keep their original feature components and navigation.
 const CATALOG_FEATURE_ROUTES = new Set([
   '/lovenotes','/dateideas','/podcastssupport','/podcasts','/podcast',
   '/o2olstudio','/onair','/o2olstudio/episodes',
@@ -41,7 +42,7 @@ const CATALOG_FEATURE_ROUTES = new Set([
   '/memorylane','/sharedjournals','/relationshipmilestones','/relationshipgoals',
   '/anniversarytracker','/coupleactivities','/couplesdashboard','/couplesprofile',
   '/couplescalendar','/achievements','/leaderboard','/aicontentcreator',
-  '/tiktokpost','/mymatchiq',
+  '/tiktokpost',
 ]);
 
 const KNOWN_APP_ROUTES = new Set([
@@ -163,12 +164,12 @@ export default function LaunchAccessGate({ pathname, children }) {
     '/analytics', '/tokensystemdashboard', '/dashboard', '/profile',
     '/verifyphone', '/credit', '/sendcredits', '/payment-success', '/paymentsuccess',
   ]).has(route);
-  const catalogFeature = CATALOG_FEATURE_ROUTES.has(route) || route.startsWith('/mymatchiq/');
+  const previewFeature = isUnifiedPrelaunchGuestAccessEnabled() && CATALOG_FEATURE_ROUTES.has(route);
   // Retire the earlier all-features-open prelaunch exception: guests now
   // see metadata in /Catalog, never the actual component for these paths.
-  const previewGuestBrowse = isUnifiedPrelaunchGuestAccessEnabled() && !protectedAccountRoute && !catalogFeature;
+  const previewGuestBrowse = isUnifiedPrelaunchGuestAccessEnabled() && !protectedAccountRoute && !previewFeature;
 
-  if(isLoading && (catalogFeature || (!isPublic && !previewGuestBrowse))){
+  if(isLoading && (previewFeature || (!isPublic && !previewGuestBrowse))){
     const language=preferredLanguage();
     return <div className="flex min-h-[55vh] items-center justify-center bg-white">
       <div className="text-center">
@@ -179,8 +180,8 @@ export default function LaunchAccessGate({ pathname, children }) {
   }
 
   if(!isAuthenticated || !user){
-    if(catalogFeature){
-      return <Navigate to={'/Catalog?feature='+encodeURIComponent(route.slice(1))} replace />;
+    if(previewFeature){
+      return <GuestFeaturePreview pathname={pathname||'/'} />;
     }
     return (isPublic || isViewOnly || previewGuestBrowse) ? children : <QuickAccountGate intendedPath={pathname||'/'} />;
   }
