@@ -48,6 +48,26 @@ export default function GameEconomyPanel(){
       {[['Issued',totals.issued],['Used',totals.used],['Expired',totals.expired],['Remaining',totals.remaining]].map(([label,value])=>
         <div key={label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="text-xs font-black uppercase tracking-wider text-slate-500">{label}</div><div className="mt-2 text-3xl font-black text-slate-950">{money(value)}</div></div>)}
     </div>
+    {data?.foundingGiveaway&&<div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h3 className="text-lg font-black">Founding Member Giveaway</h3>
+      <p className="mt-1 text-xs font-semibold text-slate-500">Cohort claims for the first-100 / second-100 giveaway. Monthly founding Game Credit grants made so far: {(data.foundingGiveaway.monthlyGrants?.count||0)} ({money(data.foundingGiveaway.monthlyGrants?.cents||0)}).</p>
+      <div className="mt-4 space-y-4">{(data.foundingGiveaway.tiers||[]).map(tier=>
+        <div key={tier.tier} className="rounded-xl bg-slate-50 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="font-black">{tier.tier==='first100'?'First 100':'Second 100'} <span className="ml-2 rounded-full bg-violet-200 px-2 py-0.5 text-[11px] font-black uppercase tracking-wide text-violet-800">Claimed {tier.claimed}/{tier.cohortSize}</span></div>
+            <div className="text-xs font-semibold text-slate-500">{(tier.qualifying||0)} qualifying accounts in this cohort range</div>
+          </div>
+          {tier.claimants?.length>0
+            ? <div className="mt-3 space-y-1.5">{tier.claimants.map(c=>
+                <div key={c.cohortNumber} className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <span className="font-bold text-slate-700">#{c.cohortNumber} {c.username?'@'+c.username:'—'} · {c.email||''}</span>
+                  <span className="font-semibold text-slate-500">{c.status==='claimed'?('Claimed '+(c.claimedAt?new Date(c.claimedAt).toLocaleDateString('en-US'):'')+' · Love Note sends '+c.freeSendsUsed+'/'+c.freeSendsTotal):'Not claimed'}</span>
+                </div>)}
+              </div>
+            : <div className="mt-2 text-xs font-semibold text-slate-400">No cohort members yet.</div>}
+        </div>)}
+      </div>
+    </div>}
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <h3 className="text-lg font-black">Promotions</h3>
       <div className="mt-4 space-y-3">{(data?.promotions||[]).map(p=>
