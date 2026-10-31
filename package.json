@@ -6,10 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "postbuild": "node scripts/patch-i-thought-so-footer.mjs",
+    "postbuild": "node scripts/patch-i-thought-so-footer.mjs && node --test tests/founding-giveaway.test.js",
     "lint": "eslint .",
     "preview": "vite preview",
-    "deploy:production": "printf '%s' \"$STRIPE_SECRET_KEY\" | npx wrangler secret put STRIPE_SECRET_KEY --config cloudflare/wrangler.production.jsonc && npx wrangler deploy --config cloudflare/wrangler.production.jsonc"
+    "deploy:production": "printf '%s' \"$STRIPE_SECRET_KEY\" | npx wrangler secret put STRIPE_SECRET_KEY --config cloudflare/wrangler.production.jsonc && npx wrangler deploy --config cloudflare/wrangler.production.jsonc",
+    "test:founding": "node --test tests/founding-giveaway.test.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.2",
