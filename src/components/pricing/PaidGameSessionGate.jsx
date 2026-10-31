@@ -3,6 +3,7 @@ import { apiRequest } from '@/lib/apiClient';
 import { isPhoneVerificationError } from '@/lib/tokenService';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/Layout';
+import { isUnifiedPrelaunchGuestAccessEnabled } from '@/lib/prelaunchGuestAccess';
 
 const COPY = {
   en: {loading:'Checking game access…', verify:'Verify your phone number', verifyText:'A verified account is required to play. Every game is permanently FREE — no Credit is charged.', verifyButton:'Verify My Phone', badge:'FREE FOREVER', text:'All current and future One2OneLove games are free forever. No Credit needed.', start:'Play FREE', opening:'Opening…', error:'Unable to start this game.', signIn:'Create your free account to play' },
@@ -43,6 +44,9 @@ export default function PaidGameSessionGate({game,title,image,backdrop,children}
     }finally{setBusy(false);}
   };
   const surface={backgroundColor:backdrop||'#07112f'};
+  // Guest preview may display game UI; a real server game session still
+  // requires account verification and is never forged for an anonymous user.
+  if(!isAuthenticated && isUnifiedPrelaunchGuestAccessEnabled()) return children;
   if(!ready)return <div className="min-h-[50vh] grid place-items-center font-bold text-slate-500">{t.loading}</div>;
   if(active)return isValidElement(children)?cloneElement(children,{gameSessionRef:sessionRef}):children;
   if(phoneGate)return <div className="grid min-h-[60vh] place-items-center p-6 text-center text-white" style={surface}><div className="w-full max-w-md"><div className="text-5xl">📱</div><h1 className="mt-4 text-3xl font-black">{t.verify}</h1><p className="mt-3 text-white/75">{t.verifyText}</p><button onClick={()=>window.location.assign('/VerifyPhone?redirect='+encodeURIComponent(window.location.pathname))} className="mt-5 rounded-full bg-fuchsia-600 px-7 py-3 font-black text-white">{t.verifyButton}</button></div></div>;
