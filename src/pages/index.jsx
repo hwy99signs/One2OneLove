@@ -174,6 +174,8 @@ function PagesContent() {
           <Route path="/LeaveReview" element={<LeaveReview />} />
           <Route path="/Suggestions" element={<Suggestions />} />
           <Route path="/Chat" element={<Chat />} />
+          <Route path="/ChatRooms" element={<Chat />} />
+          <Route path="/ChatRoom" element={<Chat />} />
           <Route path="/PaymentSuccess" element={<PaymentSuccess />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/Tokens" element={<Navigate to="/Credit" replace />} />
