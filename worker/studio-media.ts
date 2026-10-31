@@ -58,7 +58,7 @@ async function sessionUser(request,env){
   const session=payload?.session??payload?.data?.session??null;
   return user?.id&&user?.emailVerified===true&&session?user:null;
 }
-async function verifiedFreeMember(request,env){
+export async function verifiedFreeMember(request,env){
   const user=await sessionUser(request,env);
   if(!user?.id)return false;
   if(!env.HYPERDRIVE?.connectionString)return false;
