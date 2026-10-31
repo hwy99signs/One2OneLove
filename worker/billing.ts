@@ -97,6 +97,7 @@ function decorateSubscription(user) {
   };
 }
 async function stripeRequest(env, method, path, params = null) {
+  if (env.O2OL_PRELAUNCH_NO_OUTBOUND === 'true') throw Object.assign(new Error('Payments are disabled in prelaunch.'),{status:503,code:'prelaunch_external_disabled'});
   if (!stripeConfigured(env)) {
     throw Object.assign(new Error('Payment processing is not configured yet.'), { status: 503, code: 'billing_not_configured' });
   }
