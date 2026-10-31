@@ -15,7 +15,7 @@ const TYPES = [
   ['games','Games',Gamepad2],['articles','Articles',BookOpen],
   ['features','More Features',Sparkles],
 ];
-const NOTE_CATEGORIES = {
+export const NOTE_CATEGORIES = {
   all:'All Notes',sweet:'Sweet Messages',memories:'Memories',future:'Future Plans',
   daily:'Daily Notes',morning:'Morning Notes',night:'Night Notes',
   special:'Special Occasions',romantic:'Romantic',playful:'Playful',deep:'Deep',
@@ -26,7 +26,7 @@ const NOTE_CATEGORIES = {
   service:'Service',workplace:'Workplace',lgbtqRomantic:'LGBTQ Romantic',
   lgbtqSupport:'LGBTQ Support',lgbtqMilestone:'LGBTQ Milestone',
 };
-const GAME_TITLES = [
+export const GAME_TITLES = [
   ['Like Minded?','Brain & Puzzle','/LikeMinded'],
   ['SCRABLUKO','Brain & Puzzle','/Scrabluko'],
   ['What Should They Do?','Brain & Puzzle','/WhatShouldTheyDo'],
@@ -36,7 +36,7 @@ const GAME_TITLES = [
   ['I Thought So!','Brain & Puzzle','/IThoughtSo'],
   ['Global Voting — Preview','Brain & Puzzle','/WhatShouldTheyDoGlobalPreview'],
 ];
-const FEATURE_CATEGORIES = [
+export const FEATURE_CATEGORIES = [
   ['Communication & Relationship Support',[
     ['Couple Support','/CoupleSupport'],['LGBTQ+ Support','/LGBTQSupport'],
     ['Communication Practice','/CommunicationPractice'],
