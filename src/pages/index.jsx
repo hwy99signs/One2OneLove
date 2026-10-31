@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import Layout from './Layout.jsx';
 import Home from './Home';
+import PublicCatalog from './PublicCatalog';
 import AboutUs from './AboutUs';
 import SignIn from './SignIn';
 import SignUp from './SignUp';
@@ -81,7 +82,7 @@ import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'r
 import { trackPageView } from '@/lib/interactionAnalytics';
 
 const PAGES = {
-  Home, AboutUs, SignIn, SignUp, AdminAccess, Admin, Analytics, TokenSystemDashboard, Amora, MemoryLane, LoveNotes, SendCredits, CoupleSupport,
+  Home, PublicCatalog, AboutUs, SignIn, SignUp, AdminAccess, Admin, Analytics, TokenSystemDashboard, Amora, MemoryLane, LoveNotes, SendCredits, CoupleSupport,
   LoveLanguageQuiz, DateIdeas, Profile, Invite, PodcastsSupport, ArticlesSupport, RelationshipQuizzes,
   AnniversaryTracker, ForgotPassword, Dashboard, RelationshipMilestones, RelationshipGoals,
   CommunicationPractice, CouplesProfile, CoupleActivities, CooperativeGames, Pests, PoolPingPong, IThoughtSo, Scrabluko, WhatShouldTheyDo, ScratchGame, LikeMinded, SharedJournals, CouplesDashboard,
@@ -119,6 +120,7 @@ function PagesContent() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/Home" element={<Home />} />
+          <Route path="/Catalog" element={<PublicCatalog />} />
           <Route path="/AboutUs" element={<AboutUs />} />
           <Route path="/About" element={<AboutUs />} />
           <Route path="/SignIn" element={<SignIn />} />
