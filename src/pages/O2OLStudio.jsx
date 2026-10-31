@@ -196,7 +196,7 @@ export default function O2OLStudio(){
             ) : promoEpisodeFree && episode?.unlockPriceCents ? (
               <div className="flex aspect-video items-center justify-center bg-[radial-gradient(circle_at_center,rgba(124,58,237,0.35),transparent_45%),#030712] p-8 text-center">
                 <div className="max-w-xl">
-                  <UserPlus className="mx-auto h-14 w-14 text-emerald-300"/>
+                  {previewGuest ? <PlayCircle className="mx-auto h-14 w-14 text-emerald-300"/> : <UserPlus className="mx-auto h-14 w-14 text-emerald-300"/>}
                   <p className="mt-5 text-xl font-black text-white">{previewGuest ? t.studio : freeStudioCopy.title}</p>
                   <p className="mt-2 text-sm text-white/75">{previewGuest ? (studioGuestPreviewCopy[currentLanguage] || studioGuestPreviewCopy.en) : freeStudioCopy.body}</p>
                   {previewGuest ? null : isAuthenticated
@@ -233,7 +233,7 @@ export default function O2OLStudio(){
               <div className="flex aspect-video items-center justify-center bg-[radial-gradient(circle_at_center,rgba(124,58,237,0.35),transparent_45%),#030712] p-8 text-center">
                 <div className="max-w-xl">
                   <Clock className="mx-auto h-14 w-14 text-amber-300"/>
-                  <p className="mt-5 text-xl font-black text-white">{t.freeNow}</p>
+                  <p className="mt-5 text-xl font-black text-white">{previewGuest ? t.unavailable : t.freeNow}</p>
                   <p className="mt-2 text-sm text-white/60">{t.replay}: {new Date(episode.publicAvailableAt).toLocaleDateString()}</p>
                   {!previewGuest ? <div className="mt-6 flex flex-wrap justify-center gap-3">
                     <Link to="/SignUp?source=o2ol-studio&type=individual" className="inline-flex items-center gap-2 rounded-full bg-fuchsia-600 px-5 py-3 font-black text-white"><UserPlus className="h-4 w-4"/>{t.freeNow}</Link>
