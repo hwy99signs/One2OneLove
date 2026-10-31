@@ -262,7 +262,13 @@ export default function Home() {
           </div>
           {studioTab === 'new' ? (
           <div className="mt-6 w-full overflow-hidden rounded-3xl border border-fuchsia-300/35 bg-slate-950 text-white shadow-2xl">
-            <div className="relative flex aspect-[16/9] w-full flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-slate-950 via-indigo-950 to-fuchsia-950 px-6 text-center">
+            {/* Height is aspect-driven but floored by min-h + py: on narrow
+                screens the 16/9 box alone is shorter than the stacked
+                badge/season/title/note content and overflow-hidden clipped
+                the NEW EPISODE badge at the top (owner report 2026-10-31).
+                The floor lets the hero grow so the badge always sits fully
+                inside the card; wide screens keep the 16/9 poster shape. */}
+            <div className="relative flex aspect-[16/9] min-h-[300px] w-full flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-slate-950 via-indigo-950 to-fuchsia-950 px-6 py-8 text-center">
               <span className="rounded-full bg-gradient-to-r from-fuchsia-500 to-blue-600 px-3.5 py-1.5 text-[0.68rem] font-black uppercase tracking-[0.18em] text-white shadow-lg sm:text-xs">{studioE2.badge}</span>
               <div className="mt-4 text-[0.7rem] font-black uppercase tracking-[0.22em] text-cyan-200 sm:text-sm">{studioE2.season}</div>
               <div className="mt-3 max-w-4xl text-3xl font-black leading-tight sm:text-5xl lg:text-6xl">{studioE2.title}</div>
