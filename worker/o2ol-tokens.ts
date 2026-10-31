@@ -52,6 +52,7 @@ async function requireVerifiedMember(db,auth){
   return row;
 }
 async function stripeRequest(env,method,path,body=null,idempotencyKey=null){
+  if (env.O2OL_PRELAUNCH_NO_OUTBOUND === 'true') throw Object.assign(new Error('Payments are disabled in prelaunch.'),{status:503,code:'prelaunch_external_disabled'});
   if(!env.STRIPE_SECRET_KEY)throw Object.assign(new Error('Credit checkout is not configured yet.'),{status:503,code:'payments_not_configured'});
   const headers={authorization:`Bearer ${env.STRIPE_SECRET_KEY}`,accept:'application/json'};
   let requestBody;
