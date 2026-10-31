@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getTokenWallet, isTokensRequiredError, tokenRequiredDetails, unlockTokenContent } from '@/lib/tokenService';
 import UnlockPriceDialog from '@/components/pricing/UnlockPriceDialog';
 import { isO2OLFreePromoActive, isO2OLPromoFreeFeature } from '@/lib/o2olFreePromo2026';
+import { isUnifiedPrelaunchGuestAccessEnabled } from '@/lib/prelaunchGuestAccess';
 
 const freeStudioAccessCopy = {
   en:{title:'FREE for verified members',body:'Episode 2 is free during the promotion. Sign in to watch with no Credit charge.',retry:'Check free access',join:'Create free account'},
@@ -13,6 +14,13 @@ const freeStudioAccessCopy = {
   fr:{title:'GRATUIT pour les membres vérifiés',body:'L’Épisode 2 est gratuit pendant l’offre. Connectez-vous pour regarder sans payer de Crédit.',retry:'Vérifier l’accès gratuit',join:'Créer un compte gratuit'},
   it:{title:'GRATIS per i membri verificati',body:'L’Episodio 2 è gratis durante la promozione. Accedi senza pagare Credito.',retry:'Controlla accesso gratuito',join:'Crea account gratis'},
   de:{title:'KOSTENLOS für bestätigte Mitglieder',body:'Folge 2 ist während der Aktion kostenlos. Melde dich an, um ohne Credit zu schauen.',retry:'Gratis-Zugang prüfen',join:'Kostenloses Konto erstellen'},
+};
+const studioGuestPreviewCopy = {
+  en:'Explore Studio without signing up during prelaunch revisions. Protected episode playback is not unlocked for anonymous visitors.',
+  es:'Explora Studio sin registrarte durante la revisión de prelanzamiento. La reproducción protegida no se desbloquea para visitantes anónimos.',
+  fr:'Explorez Studio sans inscription pendant les révisions de prélancement. La lecture protégée reste indisponible aux visiteurs anonymes.',
+  it:'Esplora Studio senza registrarti durante le revisioni di pre-lancio. La riproduzione protetta resta non disponibile ai visitatori anonimi.',
+  de:'Erkunde Studio während der Prelaunch-Überarbeitung ohne Registrierung. Geschützte Videos bleiben für anonyme Gäste gesperrt.',
 };
 const studioPromoNote = {
   en: 'Episode 1 is free. Episode 2 is also FREE for verified members through Dec 31, 2026. From Jan 1, standard Credit prices return; previously paid permanent unlocks remain. Bianca and other paid AI actions still use Credit.',
@@ -94,6 +102,7 @@ export default function O2OLStudio(){
   const requestedEpisodeId=searchParams.get('episode');
   const t=COPY[currentLanguage]||COPY.en;
   const promoEpisodeFree=isO2OLPromoFreeFeature('studio_episode_unlock');
+  const previewGuest = !isAuthenticated && isUnifiedPrelaunchGuestAccessEnabled();
   const freeStudioCopy=freeStudioAccessCopy[currentLanguage]||freeStudioAccessCopy.en;
   const [videoUnavailable,setVideoUnavailable]=useState(false);
   const [episode,setEpisode]=useState(null);
@@ -188,9 +197,9 @@ export default function O2OLStudio(){
               <div className="flex aspect-video items-center justify-center bg-[radial-gradient(circle_at_center,rgba(124,58,237,0.35),transparent_45%),#030712] p-8 text-center">
                 <div className="max-w-xl">
                   <UserPlus className="mx-auto h-14 w-14 text-emerald-300"/>
-                  <p className="mt-5 text-xl font-black text-white">{freeStudioCopy.title}</p>
-                  <p className="mt-2 text-sm text-white/75">{freeStudioCopy.body}</p>
-                  {isAuthenticated
+                  <p className="mt-5 text-xl font-black text-white">{previewGuest ? t.studio : freeStudioCopy.title}</p>
+                  <p className="mt-2 text-sm text-white/75">{previewGuest ? (studioGuestPreviewCopy[currentLanguage] || studioGuestPreviewCopy.en) : freeStudioCopy.body}</p>
+                  {previewGuest ? null : isAuthenticated
                     ? <button type="button" onClick={()=>setRefreshKey(k=>k+1)} className="mt-5 rounded-full bg-emerald-600 px-5 py-3 font-black text-white">{freeStudioCopy.retry}</button>
                     : <Link to="/SignUp?source=o2ol-studio&type=individual" className="mt-5 inline-flex rounded-full bg-emerald-600 px-5 py-3 font-black text-white">{freeStudioCopy.join}</Link>}
                 </div>
@@ -210,6 +219,8 @@ export default function O2OLStudio(){
                         <p className="mt-4 text-sm font-bold text-amber-200">{unlockError} <Link to="/Credit" className="underline">{t.addCredit}</Link></p>
                       )}
                     </div>
+                  ) : previewGuest ? (
+                    <p className="mt-6 text-sm text-white/75">{studioGuestPreviewCopy[currentLanguage] || studioGuestPreviewCopy.en}</p>
                   ) : (
                     <div className="mt-6 flex flex-wrap justify-center gap-3">
                       <Link to="/SignUp?source=o2ol-studio&type=individual" className="inline-flex items-center gap-2 rounded-full bg-fuchsia-600 px-5 py-3 font-black text-white"><UserPlus className="h-4 w-4"/>{t.joinToUnlock}</Link>
@@ -224,10 +235,10 @@ export default function O2OLStudio(){
                   <Clock className="mx-auto h-14 w-14 text-amber-300"/>
                   <p className="mt-5 text-xl font-black text-white">{t.freeNow}</p>
                   <p className="mt-2 text-sm text-white/60">{t.replay}: {new Date(episode.publicAvailableAt).toLocaleDateString()}</p>
-                  <div className="mt-6 flex flex-wrap justify-center gap-3">
+                  {!previewGuest ? <div className="mt-6 flex flex-wrap justify-center gap-3">
                     <Link to="/SignUp?source=o2ol-studio&type=individual" className="inline-flex items-center gap-2 rounded-full bg-fuchsia-600 px-5 py-3 font-black text-white"><UserPlus className="h-4 w-4"/>{t.freeNow}</Link>
                     <Link to="/SignIn?source=o2ol-studio" className="rounded-full border border-white/25 bg-white/10 px-5 py-3 font-black text-white">{t.signIn}</Link>
-                  </div>
+                  </div> : <p className="mt-6 text-sm text-white/75">{studioGuestPreviewCopy[currentLanguage] || studioGuestPreviewCopy.en}</p>}
                 </div>
               </div>
             ) : (
