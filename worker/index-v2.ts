@@ -48,6 +48,8 @@ import { handleSupportChatRequest } from './support-chat';
 import { handlePhoneVerificationRequest } from './phone-verification';
 import { handleGameAccessRequest, handleGameFileRequest } from './game-access';
 import { handleGameAdminRequest } from './game-admin';
+import { handleFoundingPerksRequest } from './founding-perks';
+import { handleWhatShouldTheyDoRequest } from './what-should-they-do';
 import { handleLikeMindedRequest } from './like-minded';
 import { handleStudioMediaRequest } from './studio-media';
 import { handleO2OLTokenRequest } from './o2ol-tokens';
@@ -261,7 +263,21 @@ async function handleFetchV2(request, env, ctx) {
       url.hostname = 'one2onelove.com';
       return Response.redirect(url.toString(), 308);
     }
+    // Preview-only external delivery guard: never place live payments, SMS, AI or posts.
+    if (env.O2OL_PRELAUNCH_NO_OUTBOUND === 'true' && request.method !== 'GET' &&
+        (/^\/api\/(phone-verification|tiktok|ai|mymatchiq\/bianca|sms|twilio|billing)(\/|$)/.test(url.pathname) ||
+         url.pathname === '/api/love-notes/send-sms')) {
+      return new Response(JSON.stringify({ok:false,error:{code:'prelaunch_external_disabled',message:'External delivery is disabled in prelaunch.'}}),{status:503,headers:{'content-type':'application/json','cache-control':'no-store'}});
+    }
     if (url.pathname === '/api/epscie/admin-health') return handlePrivateAdminHealth(request,env);
+
+    // These handlers are confined to the prelaunch Neon clone by the branch binding.
+    if (url.pathname.startsWith('/api/founding-perks/')) {
+      return handleFoundingPerksRequest(request,env,url);
+    }
+    if (url.pathname.startsWith('/api/what-should-they-do/')) {
+      return handleWhatShouldTheyDoRequest(request,env,url);
+    }
 
     if (url.pathname === '/api/health') {
       return withDatabaseHealth(request, env, (req, bindings) => baseWorker.fetch(req, bindings));
@@ -567,6 +583,7 @@ export default {
   },
 
   async scheduled(controller, env, ctx) {
+    if (env.O2OL_PRELAUNCH_NO_OUTBOUND === 'true') return;
     if(new Date(controller.scheduledTime || Date.now()).getUTCMinutes()%5===0){
       ctx.waitUntil(sendProductionSiteHealth(env).catch(()=>console.error('O2OL production health report delivery failed')));
     }
