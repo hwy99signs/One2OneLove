@@ -29,8 +29,14 @@ export default function SignIn() {
 
   const safeRedirect = (() => {
     try {
-      const value = new URLSearchParams(window.location.search).get('redirect');
-      return value && value.startsWith('/') && !value.startsWith('//') ? value : null;
+      // Both query names exist in earlier card/signup flows. Accept either,
+      // but never redirect off-site or back into the account entry screens.
+      const params = new URLSearchParams(window.location.search);
+      const value = params.get('redirect') || params.get('return');
+      if (!value || !value.startsWith('/') || value.startsWith('//') || /[\\\r\\\n]/.test(value)) return null;
+      const path = value.split(/[?#]/)[0].toLowerCase();
+      if (['/signin', '/signup', '/login'].includes(path)) return null;
+      return value;
     } catch { return null; }
   })();
   const shellClass = 'bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 p-4';
