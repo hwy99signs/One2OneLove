@@ -163,7 +163,7 @@ export default function LaunchAccessGate({ pathname, children }) {
     '/analytics', '/tokensystemdashboard', '/dashboard', '/profile',
     '/verifyphone', '/credit', '/sendcredits', '/payment-success', '/paymentsuccess',
   ]).has(route);
-  const catalogFeature = CATALOG_FEATURE_ROUTES.has(route);
+  const catalogFeature = CATALOG_FEATURE_ROUTES.has(route) || route.startsWith('/mymatchiq/');
   // Retire the earlier all-features-open prelaunch exception: guests now
   // see metadata in /Catalog, never the actual component for these paths.
   const previewGuestBrowse = isUnifiedPrelaunchGuestAccessEnabled() && !protectedAccountRoute && !catalogFeature;
