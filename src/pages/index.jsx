@@ -77,7 +77,6 @@ import NotFound from './NotFound';
 import FeatureUnavailable from './FeatureUnavailable';
 import AIContentCreator from './AIContentCreator';
 import LaunchAccessGate from '@/components/launch/LaunchAccessGate.jsx';
-import GuestHomepageGate from '@/components/launch/GuestHomepageGate.jsx';
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import { trackPageView } from '@/lib/interactionAnalytics';
 
@@ -115,7 +114,6 @@ function PagesContent() {
 
   return (
     <Layout currentPageName={currentPage}>
-      <GuestHomepageGate pathname={location.pathname} />
       <LaunchAccessGate pathname={location.pathname}>
         <Routes>
           <Route path="/" element={<Home />} />
