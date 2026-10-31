@@ -79,6 +79,7 @@ function signatureNameFor(note) {
 }
 
 export async function sendTwilioLoveNoteSms(env, note) {
+  if (env.O2OL_PRELAUNCH_NO_OUTBOUND === 'true') throw Object.assign(new Error('SMS delivery is disabled in prelaunch.'),{status:503,code:'prelaunch_external_disabled'});
   const to = cleanPhone(note.recipient_phone);
   if (!to) {
     const error = new Error('SMS recipient is not a valid E.164 phone number.');
@@ -252,6 +253,7 @@ async function markFailed(db,note,error){
 }
 
 export async function dispatchDueScheduledLoveNotes(env) {
+  if (env.O2OL_PRELAUNCH_NO_OUTBOUND === 'true') return {ready:false,claimed:0,sent:0,failed:0,retried:0};
   if(!scheduledSmsReady(env))return {ready:false,claimed:0,sent:0,failed:0,retried:0};
 
   return withDb(env,async db=>{
