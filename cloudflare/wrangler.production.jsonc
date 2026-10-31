@@ -35,5 +35,8 @@
   ],
   "hyperdrive": [{"binding": "HYPERDRIVE","id": "0a1440e83906496eac5ff276baca17ee"}],
   "triggers": {"crons": []},
-  "r2_buckets": [{"binding": "MEDIA","bucket_name": "one2onelove-prelaunch-unified-20261030"}]
+  "r2_buckets": [
+    {"binding": "MEDIA","bucket_name": "one2onelove-prelaunch-unified-20261030"},
+    {"binding": "STUDIO_MEDIA","bucket_name": "one2onelove-media"}
+  ]
 }
