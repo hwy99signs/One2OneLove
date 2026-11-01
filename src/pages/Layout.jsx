@@ -74,6 +74,7 @@ const SHARE_COPY = {
   de:{ share:'Diese Seite teilen', copied:'Link kopiert', text:'Schau dir diese One2OneLove-Seite an.' },
 };
 
+const OWN_INVITE_ROUTES = new Set(['/pests','/scrabluko','/scratchgame','/poolpingpong','/ithoughtso','/whatshouldtheydo']);
 const SHARE_EXCLUDED_ROUTES = new Set([
   '/admin','/adminaccess','/profile','/dashboard','/subscription','/payment-success',
   '/verifyphone','/signin','/login','/signup','/forgotpassword',
@@ -223,7 +224,9 @@ function LanguageContent({ children, currentPageName }) {
   };
 
   const normalizedShareRoute = String(location.pathname || '/').toLowerCase().replace(/\/$/,'') || '/';
-  const showPageShare = !SHARE_EXCLUDED_ROUTES.has(normalizedShareRoute);
+  // Pages with their own Invite button already share; the floating share
+  // button overlapped it (launch fix 2026-11-01).
+  const showPageShare = !SHARE_EXCLUDED_ROUTES.has(normalizedShareRoute) && !OWN_INVITE_ROUTES.has(normalizedShareRoute);
   const isMyMatchIQPage = normalizedShareRoute === '/mymatchiq' || normalizedShareRoute.startsWith('/mymatchiq/');
   // Homepage only ('/' and its '/Home' alias): the header widens to carry
   // the Click-to-Vote row under the locked header row (owner, 2026-10-10).
