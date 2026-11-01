@@ -23,6 +23,10 @@ export async function handleDateIdeaLibraryRequest(request,env,url){
   const id=String(url.searchParams.get('id')||'').slice(0,100);
   const idea=ideas.find(x=>String(x.id)===id);
   if(!idea)return json({ok:false,error:{code:'not_found'}},404);
+  // PRELAUNCH OPEN HOUSE ONLY; free templates are public until the promotion ends.
+  // Custom, saved and user-authored Date Ideas stay behind existing member APIs.
+  if(url.hostname==='prelaunch-o2ol-unified-20261030-one2onelove-launch.hwy99signs.workers.dev' &&
+      isO2OLPromoFreeFeature('date_idea_unlock'))return json({ok:true,idea,openHouseFree:true});
   const user=await identity(request,env);
   if(!user)return json({ok:false,error:{code:'unauthorized',message:'Sign in to unlock this Date Idea.'}},401);
   const db=new Client({connectionString:env.HYPERDRIVE.connectionString});
