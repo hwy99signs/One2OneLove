@@ -155,6 +155,21 @@ export async function handleGameFileRequest(request,env,url){
   // extensionless in every failing load).
   const game=Object.keys(GAME_FILES).find(g=>url.pathname===GAME_FILES[g]||url.pathname===GAME_FILES[g].replace(/\.html$/,''));
   if(!game)return new Response('Game not found.',{status:404});
+  // The permanently free standalone game HTML has no personal data.
+  // Permit anonymous asset delivery on the SINGLE unified prelaunch preview
+  // only; do not open scores, session passes, wallets or member APIs.
+  if(url.hostname==='prelaunch-o2ol-unified-20261030-one2onelove-launch.hwy99signs.workers.dev'){
+    if(!['GET','HEAD'].includes(request.method))return new Response('Method not allowed.',{status:405});
+    const assetUrl=new URL(GAME_FILES[game].replace(/\\.html$/,''),url);
+    let asset=await env.ASSETS.fetch(new Request(assetUrl.toString(),{method:'GET',headers:{accept:'text/html'}}));
+    for(let hop=0;hop<3&&asset.status>=300&&asset.status<400&&asset.headers.get('location');hop++){
+      asset=await env.ASSETS.fetch(new Request(new URL(asset.headers.get('location'),url).toString(),{method:'GET',headers:{accept:'text/html'}}));
+    }
+    const headers=new Headers(asset.headers);
+    headers.set('cache-control','public, max-age=300');
+    headers.set('x-o2ol-access','anonymous-free-game');
+    return new Response(request.method==='HEAD'?null:asset.body,{status:asset.status,headers});
+  }
   const auth=await authSession(request,env);
   if(!auth)return new Response('Sign in with a verified One2OneLove account to play.',{status:403});
   try{
