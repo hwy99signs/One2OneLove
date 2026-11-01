@@ -32,6 +32,7 @@ export const FEATURE_BY_ROUTE = {
   '/dateideas': 'Date Ideas',
   '/profile': 'Member Profile',
   '/invite': 'Invite & Share',
+  '/i/:code': 'Invite & Share',
   '/podcastssupport': 'Podcasts',
   '/articlessupport': 'Articles',
   '/relationshipquizzes': 'Relationship Quizzes',
