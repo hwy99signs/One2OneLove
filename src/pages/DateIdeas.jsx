@@ -19,6 +19,7 @@ import { createCalendarEvent } from "@/lib/calendarService";
 import { listDateIdeas, createDateIdea, updateDateIdea } from "@/lib/dateIdeasService";
 import { getTokenWallet, isTokensRequiredError, listTokenUnlocks, tokenRequiredDetails, unlockTokenContent } from "@/lib/tokenService";
 import { isO2OLPromoFreeFeature } from "@/lib/o2olFreePromo2026";
+import { isUnifiedPrelaunchGuestAccessEnabled } from '@/lib/prelaunchGuestAccess';
 
 const FREE_DATE_IDEAS_COPY = {
   en:{label:'FREE for verified members',title:'Sign in for FREE Date Ideas',body:'These Date Ideas are FREE during the promotion. A verified account is required to view the full descriptions. No Credit will be deducted.',play:'Open for FREE',signup:'Create FREE Account · No Credit Required'},
