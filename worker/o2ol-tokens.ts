@@ -4,7 +4,7 @@ import { recordCostEvent } from './o2ol-cost-ledger';
 import { CREDIT_CONFIG } from './credit-config';
 import { ensureCreditSchema } from './love-note-credit';
 import { gameCreditWallet } from './game-economy';
-import { isO2OLPromoFreeFeature } from '../src/lib/o2olFreePromo2026';
+import { isO2OLPromoFreeFeature, isO2OLPermanentlyFreeMediaFeature } from '../src/lib/o2olFreePromo2026';
 import { isO2OLPermanentFreeGameFeature } from '../src/lib/o2olGamePolicy';
 
 const HEADERS = {
@@ -104,9 +104,9 @@ async function ensureOwnerPricing(db){
     ['love_note_ai','Love Note AI generation',25,'action'],
     ['love_note_template_unlock','Love Note template reveal',49,'item'],
     ['date_idea_unlock','Date Idea unlock',49,'item'],
-    ['podcast_episode_unlock','Podcast episode unlock',199,'episode'],
+    ['podcast_episode_unlock','Podcast episodes — free forever',0,'episode'],
     ['premium_content_unlock','Premium content unlock',299,'item'],
-    ['studio_episode_unlock','Studio episode unlock',100,'episode'],
+    ['studio_episode_unlock','Studio videos — free forever',0,'episode'],
     ['like_minded_session','Like Minded session — always free',0,'session'],
     ['scratch_game_session','Scratch Game session — always free',0,'session'],
     ['premium_game_session','All current and future game sessions — always free',0,'session'],
@@ -168,7 +168,7 @@ export async function reserveTokenCharge(db,userId,featureCode,{idempotencyKey,m
   if(!key)throw Object.assign(new Error('A token idempotency key is required.'),{status:400,code:'idempotency_required'});
   // The permanent games ruling takes precedence over old paid idempotency records
   // and requires no wallet, promo window or database write.
-  if(isO2OLPermanentFreeGameFeature(featureCode)){
+  if(isO2OLPermanentlyFreeMediaFeature(featureCode) || isO2OLPermanentFreeGameFeature(featureCode)){
     return {id:null,user_id:userId,feature_code:featureCode,tokens:0,status:'consumed',idempotency_key:key,balance_after:null,free:true,permanent:true};
   }
   await db.query('BEGIN');
@@ -897,6 +897,8 @@ async function listContentUnlocks(db,userId,featureCode){
       ORDER BY unlocked_at DESC`,
     [userId,feature],
   )).rows;
+  // Permanent-free media stays unlocked without any member-specific purchase.
+  if(isO2OLPermanentlyFreeMediaFeature(feature))return [...purchased,{feature_code:feature,content_key:'feature',tokens_charged:0,free:true,permanent:true,metadata:{free_forever:true}}];
   // A virtual, ephemeral unlock keeps the member UI open without a permanent grant.
   if(isO2OLPromoFreeFeature(feature))return [...purchased,{feature_code:feature,content_key:'feature',tokens_charged:0,promo:true,temporary:true,metadata:{promo:true}}];
   return purchased;
@@ -909,6 +911,8 @@ async function unlockTokenContent(db,auth,input){
   if(!featureCode||!contentKey)throw Object.assign(new Error('Feature and content key are required.'),{status:400,code:'unlock_target_required'});
   const allowed=new Set(['love_note_template_unlock','date_idea_unlock','podcast_episode_unlock','premium_content_unlock','studio_episode_unlock','memories_unlock','journals_unlock','milestones_unlock','goals_unlock','calendar_unlock','love_language_report','compatibility_report','relationship_pattern_report','premium_report']);
   if(!allowed.has(featureCode))throw Object.assign(new Error('This content unlock type is not available.'),{status:400,code:'unlock_feature_invalid'});
+  // Never create a charge, Credit reservation or purchased unlock for free media.
+  if(isO2OLPermanentlyFreeMediaFeature(featureCode))return {unlock:{feature_code:featureCode,content_key:contentKey,tokens_charged:0,free:true,permanent:true},reused:false,free:true,permanent:true,tokens:{charged:0}};
   // Ensure owner-approved $0.49 template price exists before a new member's
   // first unlock, even if the wallet/price listing has not been opened yet.
   if(featureCode==='love_note_template_unlock')await ensureOwnerPricing(db);
