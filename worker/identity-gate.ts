@@ -25,6 +25,10 @@ function isPublicIdentityRoute(request, url) {
   if (path.startsWith('/api/auth/')) return true;
   if (path.startsWith('/api/phone-verification')) return true;
   if (path.startsWith('/api/launch-signup')) return true;
+  // Terms + Disclaimer acceptance must work before phone verification, or a
+  // member would loop between the two prompts. The consents handler still
+  // requires a signed-in, email-verified account.
+  if (path === '/api/consents/terms') return true;
   if (path === '/api/professional-signup') return true;
   if (path.startsWith('/api/suggestions')) return true;
   if (path === '/api/billing/webhook') return true;
