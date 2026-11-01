@@ -21,7 +21,7 @@ import {
 function MenuFeatureIndicator({ featureCode }) {
   // Owner order (2026-10-31): no FREE badges on user-facing tabs/menus.
   // Accessible features show no tag; the paid lock returns after the promo.
-  const free = featureCode === 'premium_game_session' || isO2OLPromoFreeFeature(featureCode);
+  const free = ['premium_game_session', 'studio_episode_unlock', 'podcast_episode_unlock'].includes(featureCode) || isO2OLPromoFreeFeature(featureCode);
   return free
     ? null
     : <span className="ml-auto" aria-label="Locked">🔒</span>;
