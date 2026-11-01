@@ -55,7 +55,7 @@ jobs:
                 "$API/zones/$ZONE_ID/rulesets/$RS_ID/rules" --data "$RULE" | jq -c '{success,errors}'
             fi
           elif [ "$CODE" = "404" ]; then
-            jq -nc --argjson rule "$RULE" '{name:"default", kind:"zone", phase:"http_request_dynamic_redirect", rules:[$rule]}' > /tmp/new.json
+            jq -nc --argjson rule "$RULE" '{rules:[$rule]}' > /tmp/new.json
             curl -sS -X PUT -H "$AUTH" -H 'Content-Type: application/json' \
               "$API/zones/$ZONE_ID/rulesets/phases/http_request_dynamic_redirect/entrypoint" \
               --data @/tmp/new.json -o /tmp/put.json || true
