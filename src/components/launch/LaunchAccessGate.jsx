@@ -191,7 +191,7 @@ export default function LaunchAccessGate({ pathname, children }) {
   const phoneRequired = user?.phone_verification_required === true;
   const phoneVerified = user?.phoneNumberVerified === true || user?.phone_number_verified === true;
   const isAdmin = String(user?.role || '').toLowerCase() === 'admin';
-  if (phoneRequired && !phoneVerified && !isAdmin && isKnown && !isPublic && route !== '/verifyphone') {
+  if (phoneRequired && !phoneVerified && !isAdmin && isKnown && !isPublic && route !== '/verifyphone' && (!openAccess || privateRoute || paidRoute)) {
     return <Navigate to={`/VerifyPhone?redirect=${encodeURIComponent(pathname || '/')}`} replace />;
   }
 
