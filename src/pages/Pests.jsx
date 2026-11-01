@@ -1,8 +1,10 @@
-import React,{useEffect,useRef} from "react";
+import React,{useEffect,useRef,useState} from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import { useLanguage } from "@/Layout";
+import InviteButton from "@/components/invites/InviteButton";
+import EndOfRoundInvite from "@/components/invites/EndOfRoundInvite";
 import { apiRequest, beaconJson } from "@/lib/apiClient";
 import GameLeaderboard from "@/components/activities/GameLeaderboard";
 import { applyGameInstructionLocale } from '@/lib/gameInstructionLocale';
@@ -21,6 +23,7 @@ export default function Pests({gameSessionRef}) {
   const { currentLanguage } = useLanguage();
   const t = copy[currentLanguage] || copy.en;
   const iframeRef=useRef(null);
+  const [roundFinished,setRoundFinished]=useState(false);
   const runRef=useRef(null);
   const queryClient=useQueryClient();
 
@@ -31,6 +34,7 @@ export default function Pests({gameSessionRef}) {
     const newRun=()=>{runRef.current=gameSessionRef+':'+(globalThis.crypto?.randomUUID?.()||String(Date.now()));};
     const readScore=()=>Number(doc?.getElementById('catches')?.textContent||0);
     const submit=(beacon=false)=>{
+      // Existing end-of-round score capture; no game HTML modification.
       const score=readScore(),sessionRef=runRef.current;
       if(!sessionRef||score<=0)return;
       runRef.current=null;
@@ -45,7 +49,7 @@ export default function Pests({gameSessionRef}) {
         applyGameInstructionLocale(doc,'pests',currentLanguage);
         const play=doc.getElementById('playBtn'),menu=doc.getElementById('resetBtn');
         const onPlay=()=>newRun();
-        const onMenu=()=>submit(false);
+        const onMenu=()=>{setRoundFinished(true);submit(false);};
         play?.addEventListener('click',onPlay,true);
         menu?.addEventListener('click',onMenu,true);
         cleanup.push(()=>play?.removeEventListener('click',onPlay,true),()=>menu?.removeEventListener('click',onMenu,true));
@@ -66,12 +70,14 @@ export default function Pests({gameSessionRef}) {
             <ArrowLeft className="w-4 h-4 mr-2" />
             {t.back}
           </Link>
+          <InviteButton game="pests"/>
         </div>
         <img src="/game-cards/card-pests.jpg" alt="game card" className="mx-auto mb-6 block w-full max-w-3xl rounded-[24px] shadow-2xl ring-1 ring-white/15" />
         <GameLeaderboard game="pests" className="mb-4"/>
         <div className="overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/15">
           <iframe ref={iframeRef} title="PEST'S" src={`/games-src/pests.html?lang=${encodeURIComponent(currentLanguage || 'en')}`} className="w-full border-0" style={{ height: "min(62vh, 760px)", minHeight: "520px" }} allow="fullscreen" />
         </div>
+        <EndOfRoundInvite game="pests" finished={roundFinished}/>
         <p className="mt-4 text-center text-xs text-white/50">Copyright © 2026 EPS Venture Group. All rights reserved.</p>
       </div>
     </div>
