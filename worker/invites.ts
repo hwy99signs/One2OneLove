@@ -11,7 +11,7 @@ const json=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:
 const fail=(code,status=400)=>json({ok:false,error:{code}},status);
 const CODE=/^[A-HJ-NP-Z2-9]{6,8}$/;
 const GAMES=new Set(['pests','pool_ping_pong','scrabluko','i_thought_so','what_should_they_do','scratch','like_minded']);
-const SURFACES=new Set(['invite_center','game_button','game_end','like_minded_room','games_site','invite_landing']);
+const SURFACES=new Set(['invite_center','game_button','game_end','like_minded_room','games_site','invite_landing','content_creator']);
 const CHANNELS=new Set(['sms','email','whatsapp','facebook','x','linkedin','copy','native_share']);
 const EVENTS=new Set(['share_opened','share_channel','landing_view','play_click','signup_click']);
 const clean=(v,max=120)=>String(v||'').trim().slice(0,max);

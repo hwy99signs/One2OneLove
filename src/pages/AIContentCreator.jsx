@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Sparkles, Heart, MessageCircle, Gift, Calendar, Loader2, Copy, Check, Download, ArrowLeft } from "lucide-react";
+import { Sparkles, Heart, MessageCircle, Gift, Calendar, Loader2, Copy, Check, Download, ArrowLeft, Mail, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,9 +12,13 @@ import { useLanguage } from "@/Layout";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { generateRelationshipContent } from "@/lib/aiService";
+import { shareVia, getMyInvite, buildInviteLink, logInviteEvent } from "@/lib/inviteService";
+
+import { CONTENT_FOOTER, withContentFooter, fitForX } from "@/lib/contentShare";
 
 const translations = {
   en: {
+    shareBy: "Share by", shareText: "Text", shareEmail: "Email", shareSocial: "Social media", shareMore: "More apps", shareOpened: "Share option opened", shareError: "Sharing is unavailable right now", pasteHint: "Note copied. Paste it into your post.",
     title: "AI Content Creator",
     subtitle: "Let AI help you create personalized content for your relationship",
     back: "Back",
@@ -50,6 +54,7 @@ const translations = {
     createTitle: "Generate Content", empty: "Fill in the form and click generate to create AI-powered content.", selectRequired: "Please select content type and tone.", downloaded: "Downloaded!", generateFailed: "Failed to generate content. Please try again."
   },
   es: {
+    shareBy: "Compartir por", shareText: "Mensaje", shareEmail: "Correo", shareSocial: "Redes sociales", shareMore: "Más apps", shareOpened: "Opción de compartir abierta", shareError: "No se puede compartir ahora", pasteHint: "Nota copiada. Pégala en tu publicación.",
     title: "Creador de Contenido IA",
     subtitle: "Deja que la IA te ayude a crear contenido personalizado para tu relación",
     back: "Volver",
@@ -85,6 +90,7 @@ const translations = {
     createTitle: "Generar contenido", empty: "Completa el formulario y pulsa generar para crear contenido con IA.", selectRequired: "Selecciona un tipo de contenido y un tono.", downloaded: "¡Descargado!", generateFailed: "No se pudo generar contenido. Inténtalo de nuevo."
   },
   fr: {
+    shareBy: "Partager par", shareText: "SMS", shareEmail: "E-mail", shareSocial: "Réseaux sociaux", shareMore: "Autres apps", shareOpened: "Partage ouvert", shareError: "Partage indisponible pour le moment", pasteHint: "Note copiée. Collez-la dans votre publication.",
     title: "Créateur de Contenu IA",
     subtitle: "Laissez l'IA vous aider à créer du contenu personnalisé pour votre relation",
     back: "Retour",
@@ -120,6 +126,7 @@ const translations = {
     createTitle: "Créer du contenu", empty: "Remplissez le formulaire, puis lancez la génération pour créer du contenu avec l’IA.", selectRequired: "Choisissez un type de contenu et un ton.", downloaded: "Téléchargé !", generateFailed: "La création du contenu a échoué. Réessayez."
   },
   it: {
+    shareBy: "Condividi tramite", shareText: "SMS", shareEmail: "Email", shareSocial: "Social media", shareMore: "Altre app", shareOpened: "Condivisione aperta", shareError: "Condivisione non disponibile al momento", pasteHint: "Nota copiata. Incollala nel tuo post.",
     title: "Creatore di Contenuti IA",
     subtitle: "Lascia che l'IA ti aiuti a creare contenuti personalizzati per la tua relazione",
     back: "Indietro",
@@ -155,6 +162,7 @@ const translations = {
     createTitle: "Genera contenuti", empty: "Compila il modulo e premi genera per creare contenuti con l’IA.", selectRequired: "Seleziona il tipo di contenuto e il tono.", downloaded: "Scaricato!", generateFailed: "Impossibile generare il contenuto. Riprova."
   },
   de: {
+    shareBy: "Teilen per", shareText: "SMS", shareEmail: "E-Mail", shareSocial: "Soziale Medien", shareMore: "Weitere Apps", shareOpened: "Teilen geöffnet", shareError: "Teilen ist gerade nicht verfügbar", pasteHint: "Notiz kopiert. Füge sie in deinen Beitrag ein.",
     title: "KI-Content-Ersteller",
     subtitle: "Lassen Sie KI Ihnen helfen, personalisierten Inhalt für Ihre Beziehung zu erstellen",
     back: "Zurück",
@@ -220,6 +228,17 @@ export default function AIContentCreator() {
   const [generatedContent, setGeneratedContent] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
+  const { isAuthenticated } = useAuth();
+  const [inviteCode, setInviteCode] = useState(null);
+  const canNativeShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
+
+  // Social posts carry the member's personal invite link so new signups are credited to them.
+  useEffect(() => {
+    if (!isAuthenticated || !generatedContent || inviteCode) return;
+    let alive = true;
+    getMyInvite().then((data) => { if (alive) setInviteCode(data?.code || null); }).catch(() => {});
+    return () => { alive = false; };
+  }, [isAuthenticated, generatedContent, inviteCode]);
 
   const contentTypeIcons = {
     loveNote: Heart,
@@ -260,15 +279,41 @@ export default function AIContentCreator() {
     }
   };
 
+  const handleShare = async (channel) => {
+    const text = withContentFooter(generatedContent);
+    const link = inviteCode ? buildInviteLink({ code: inviteCode }) : "https://one2onelove.com";
+    const subject = `${t.contentTypes[formData.contentType] || t.title} · One2OneLove`;
+    try {
+      if (channel === "facebook" || channel === "linkedin") {
+        // These sites only accept a link, so put the note on the clipboard for pasting.
+        navigator.clipboard?.writeText(text).catch(() => {});
+        await shareVia(channel, { link, text, subject });
+        toast.success(t.pasteHint);
+      } else if (channel === "x") {
+        await shareVia("x", { link, text: fitForX(generatedContent, link), subject });
+        toast.success(t.shareOpened);
+      } else if (channel === "whatsapp" || channel === "native_share") {
+        await shareVia(channel, { link, text: channel === "whatsapp" ? `${text}\n${link}` : text, subject });
+        toast.success(t.shareOpened);
+      } else {
+        await shareVia(channel, { link, text, subject });
+        toast.success(t.shareOpened);
+      }
+      if (inviteCode) logInviteEvent({ code: inviteCode, surface: "content_creator", event: "share_channel", channel }).catch(() => {});
+    } catch (error) {
+      if (error?.name !== "AbortError") toast.error(t.shareError);
+    }
+  };
+
   const handleCopy = () => {
-    navigator.clipboard.writeText(generatedContent);
+    navigator.clipboard.writeText(withContentFooter(generatedContent));
     setCopied(true);
     toast.success(t.copied);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleDownload = () => {
-    const blob = new Blob([generatedContent], { type: 'text/plain' });
+    const blob = new Blob([withContentFooter(generatedContent)], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -486,6 +531,34 @@ export default function AIContentCreator() {
                       <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
                         {generatedContent}
                       </p>
+                      <p className="mt-4 border-t border-purple-200 pt-2 text-right text-xs font-semibold tracking-wide text-purple-700" data-content-footer="one2onelove">
+                        {CONTENT_FOOTER}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-purple-200 bg-white p-4" data-content-share="ai-content-creator">
+                      <p className="mb-3 text-sm font-bold text-slate-800">{t.shareBy}</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button type="button" variant="outline" className="min-h-11" data-analytics-id="content-share-sms" onClick={() => handleShare("sms")}>
+                          <MessageCircle className="w-4 h-4 mr-2" />{t.shareText}
+                        </Button>
+                        <Button type="button" variant="outline" className="min-h-11" data-analytics-id="content-share-email" onClick={() => handleShare("email")}>
+                          <Mail className="w-4 h-4 mr-2" />{t.shareEmail}
+                        </Button>
+                      </div>
+                      <p className="mb-2 mt-4 text-xs font-bold uppercase tracking-wide text-slate-600">{t.shareSocial}</p>
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                        {[["whatsapp", "WhatsApp"], ["facebook", "Facebook"], ["x", "X"], ["linkedin", "LinkedIn"]].map(([channel, label]) => (
+                          <Button key={channel} type="button" variant="outline" className="min-h-11" data-analytics-id={`content-share-${channel}`} onClick={() => handleShare(channel)}>
+                            {label}
+                          </Button>
+                        ))}
+                      </div>
+                      {canNativeShare && (
+                        <Button type="button" variant="outline" className="mt-2 w-full min-h-11" data-analytics-id="content-share-more" onClick={() => handleShare("native_share")}>
+                          <Share2 className="w-4 h-4 mr-2" />{t.shareMore}
+                        </Button>
+                      )}
                     </div>
 
                     <div className="flex flex-wrap gap-3">
