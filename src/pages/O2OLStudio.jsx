@@ -9,25 +9,25 @@ import { isO2OLFreePromoActive, isO2OLPromoFreeFeature } from '@/lib/o2olFreePro
 import { isUnifiedPrelaunchGuestAccessEnabled } from '@/lib/prelaunchGuestAccess';
 
 const freeStudioAccessCopy = {
-  en:{title:'FREE for verified members',body:'Episode 2 is free during the promotion. Sign in to watch with no Credit charge.',retry:'Check free access',join:'Create free account'},
-  es:{title:'GRATIS para miembros verificados',body:'El Episodio 2 es gratis durante la promoción. Accede sin pagar Crédito.',retry:'Comprobar acceso gratis',join:'Crear cuenta gratis'},
-  fr:{title:'GRATUIT pour les membres vérifiés',body:'L’Épisode 2 est gratuit pendant l’offre. Connectez-vous pour regarder sans payer de Crédit.',retry:'Vérifier l’accès gratuit',join:'Créer un compte gratuit'},
-  it:{title:'GRATIS per i membri verificati',body:'L’Episodio 2 è gratis durante la promozione. Accedi senza pagare Credito.',retry:'Controlla accesso gratuito',join:'Crea account gratis'},
-  de:{title:'KOSTENLOS für bestätigte Mitglieder',body:'Folge 2 ist während der Aktion kostenlos. Melde dich an, um ohne Credit zu schauen.',retry:'Gratis-Zugang prüfen',join:'Kostenloses Konto erstellen'},
+  en:{title:'FREE for everyone',body:'Episode 2 is free until December 31. Watch without signing up or using Credit.',retry:'Check free access',join:'Create free account'},
+  es:{title:'GRATIS para todos',body:'El Episodio 2 es gratis hasta el 31 de diciembre. Míralo sin registrarte ni pagar Crédito.',retry:'Comprobar acceso gratis',join:'Crear cuenta gratis'},
+  fr:{title:'GRATUIT pour tous',body:'L’Épisode 2 est gratuit jusqu’au 31 décembre. Regardez sans inscription ni Crédit.',retry:'Vérifier l’accès gratuit',join:'Créer un compte gratuit'},
+  it:{title:'GRATIS per tutti',body:'L’Episodio 2 è gratis fino al 31 dicembre. Guardalo senza registrarti né pagare Credito.',retry:'Controlla accesso gratuito',join:'Crea account gratis'},
+  de:{title:'KOSTENLOS für alle',body:'Folge 2 ist bis zum 31. Dezember kostenlos. Schau ohne Anmeldung und ohne Credit.',retry:'Gratis-Zugang prüfen',join:'Kostenloses Konto erstellen'},
 };
 const studioGuestPreviewCopy = {
-  en:'Explore Studio without signing up during prelaunch revisions. Protected episode playback is not unlocked for anonymous visitors.',
-  es:'Explora Studio sin registrarte durante la revisión de prelanzamiento. La reproducción protegida no se desbloquea para visitantes anónimos.',
-  fr:'Explorez Studio sans inscription pendant les révisions de prélancement. La lecture protégée reste indisponible aux visiteurs anonymes.',
-  it:'Esplora Studio senza registrarti durante le revisioni di pre-lancio. La riproduzione protetta resta non disponibile ai visitatori anonimi.',
-  de:'Erkunde Studio während der Prelaunch-Überarbeitung ohne Registrierung. Geschützte Videos bleiben für anonyme Gäste gesperrt.',
+  en:'Watch currently free Studio episodes without registering. Paid episodes will require Credit after the promotion.',
+  es:'Mira los episodios gratuitos de Studio sin registrarte. Los episodios de pago volverán a necesitar Crédito después de la promoción.',
+  fr:'Regardez les épisodes Studio gratuits sans inscription. Les épisodes payants nécessiteront des Crédits après l’offre.',
+  it:'Guarda gli episodi gratuiti di Studio senza registrarti. Gli episodi a pagamento richiederanno Credito dopo la promozione.',
+  de:'Sieh dir kostenlose Studio-Folgen ohne Anmeldung an. Kostenpflichtige Folgen benötigen nach der Aktion Credit.',
 };
 const studioPromoNote = {
-  en: 'Episode 1 is free. Episode 2 is also FREE for verified members through Dec 31, 2026. From Jan 1, standard Credit prices return; previously paid permanent unlocks remain. Bianca and other paid AI actions still use Credit.',
-  es: 'El Episodio 1 es gratis. El Episodio 2 también es GRATIS para miembros verificados hasta el 31 de diciembre de 2026. Desde el 1 de enero vuelven los precios en Crédito; se conservan las compras permanentes. Las funciones de IA de pago siguen usando Crédito.',
-  fr: 'L’épisode 1 est gratuit. L’épisode 2 est également GRATUIT pour les membres vérifiés jusqu’au 31 décembre 2026. Dès le 1er janvier, les tarifs habituels en Crédit reviennent ; les achats définitifs restent acquis. Les services IA payants restent facturés en Crédit.',
-  it: 'L’episodio 1 è gratuito. Anche l’episodio 2 è GRATIS per gli iscritti verificati fino al 31 dicembre 2026. Dal 1° gennaio tornano i prezzi normali in Credito; gli sblocchi già acquistati restano. Le funzioni IA a pagamento usano ancora Credito.',
-  de: 'Folge 1 ist kostenlos. Auch Folge 2 ist bis zum 31. Dezember 2026 für verifizierte Mitglieder KOSTENLOS. Ab 1. Januar gelten wieder die regulären Credit-Preise; dauerhaft gekaufte Freischaltungen bleiben. Kostenpflichtige KI-Funktionen kosten weiterhin Credit.',
+  en: 'Episode 1 is free. Episode 2 is also FREE for everyone through Dec 31, 2026. From Jan 1, standard Credit prices return; previously paid permanent unlocks remain. Bianca and other paid AI actions still use Credit.',
+  es: 'El Episodio 1 es gratis. El Episodio 2 también es GRATIS para todos hasta el 31 de diciembre de 2026. Desde el 1 de enero vuelven los precios en Crédito; se conservan las compras permanentes. Las funciones de IA de pago siguen usando Crédito.',
+  fr: 'L’épisode 1 est gratuit. L’épisode 2 est également GRATUIT pour tous jusqu’au 31 décembre 2026. Dès le 1er janvier, les tarifs habituels en Crédit reviennent ; les achats définitifs restent acquis. Les services IA payants restent facturés en Crédit.',
+  it: 'L’episodio 1 è gratuito. Anche l’episodio 2 è GRATIS per tutti fino al 31 dicembre 2026. Dal 1° gennaio tornano i prezzi normali in Credito; gli sblocchi già acquistati restano. Le funzioni IA a pagamento usano ancora Credito.',
+  de: 'Folge 1 ist kostenlos. Auch Folge 2 ist bis zum 31. Dezember 2026 für alle KOSTENLOS. Ab 1. Januar gelten wieder die regulären Credit-Preise; dauerhaft gekaufte Freischaltungen bleiben. Kostenpflichtige KI-Funktionen kosten weiterhin Credit.',
 };
 const COPY={
   en:{
