@@ -394,16 +394,16 @@ export default function WhatShouldTheyDo() {
       {browserOpen && <QuestionBrowser questions={QUESTIONS} onClose={() => setBrowserOpen(false)} onSelect={openQuestion} t={t} currentLanguage={currentLanguage} />}
 
       <div className="border-b bg-white">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-7">
+        <div className="mx-auto flex max-w-7xl flex-col items-stretch gap-3 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-7">
           <Link to="/CooperativeGames" className="inline-flex min-h-11 items-center gap-2 rounded-xl px-2 text-sm font-black text-[#17345f] hover:bg-slate-100">
             <ArrowLeft className="h-5 w-5" /> {t.relationshipGames}
           </Link>
-          <div className="flex flex-wrap items-center gap-2">
-            <button type="button" onClick={() => setBrowserOpen(true)} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-slate-100 px-4 text-sm font-black text-[#17345f]">
+          <div className="grid w-full grid-cols-1 gap-2 min-[480px]:grid-cols-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
+            <button type="button" onClick={() => setBrowserOpen(true)} className="inline-flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl bg-slate-100 px-3 text-center text-sm font-black text-[#17345f]">
               <Search className="h-4 w-4" /> {t.questions}
             </button>
-            <InviteButton game="what_should_they_do"/>
-            <Link to="/Suggestions" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#1976f3] px-4 text-sm font-black text-white">
+            <InviteButton game="what_should_they_do" className="w-full sm:w-auto"/>
+            <Link to="/Suggestions" className="inline-flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl bg-[#1976f3] px-3 text-center text-sm font-black text-white">
               <Send className="h-4 w-4" /> {t.suggestQuestion}
             </Link>
           </div>
