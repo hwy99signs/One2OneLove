@@ -11,6 +11,7 @@ import { createPageUrl } from '@/utils';
 
 
 import GameLeaderboard from '@/components/activities/GameLeaderboard';
+import { trackFeatureActionEvent } from '@/lib/interactionAnalytics';
 
 const LANGS = ['en','es','fr','it','de'];
 
@@ -633,6 +634,7 @@ export default function LikeMinded() {
     if(scoreSubmittedRef.current.has(sessionRef))return;
     scoreSubmittedRef.current.add(sessionRef);
     api('/api/games/scores',{method:'POST',body:JSON.stringify({game:'like_minded',score:Number(current.matches||0),sessionRef})})
+      .then(()=>trackFeatureActionEvent('Relationship Games','game:score_saved:like_minded'))
       .catch(()=>scoreSubmittedRef.current.delete(sessionRef));
   },[roomState,room,gamePass?.id]);
 
