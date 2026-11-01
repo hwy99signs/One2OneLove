@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { Client } from 'pg';
+import { validateInviteAttribution, saveInviteReferral, qualifyInviteReferral } from './invites';
 import {
   USERNAME_FORMAT_MESSAGE,
   USERNAME_LOOKUP_SQL,
@@ -205,6 +206,7 @@ function registrationContext(body, { requireUsername = true } = {}) {
     marketingEmailOptIn,
     visitorId,
     ageRange,
+    inviteAttribution: validateInviteAttribution(body.inviteAttribution),
   };
 }
 
@@ -504,6 +506,10 @@ async function registerLaunchUser(request, env) {
   let profileReady = true;
   try {
     await withDb(env, db => persistRegistration(db, user, registration));
+    if(registration.inviteAttribution){
+      try { await withDb(env,db=>saveInviteReferral(db,user,registration.inviteAttribution)); }
+      catch(error){console.error('Invite referral deferred; signup continues',error?.code||'invite_unavailable');}
+    }
   } catch (error) {
     // Authentication already accepted the account. Do not leave a member
     // stranded or invite a duplicate submission: email verification retries
@@ -594,6 +600,12 @@ async function verifyLaunchEmail(request, env) {
       if (registration && !user.profile_ready) {
         await persistRegistration(db, user, registration);
       }
+      if(registration?.inviteAttribution){
+        try { await saveInviteReferral(db,user,registration.inviteAttribution); }
+        catch(error){console.error('Invite attribution recovery deferred',error?.code||'invite_unavailable');}
+      }
+      try { await qualifyInviteReferral(db,user.id); }
+      catch(error){console.error('Invite qualification deferred; email verified',error?.code||'invite_unavailable');}
     });
   } catch (error) {
     // The email is already verified upstream. Sign-in remains a safe recovery
