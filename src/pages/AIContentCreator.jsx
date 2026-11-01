@@ -234,11 +234,11 @@ export default function AIContentCreator() {
 
   // Social posts carry the member's personal invite link so new signups are credited to them.
   useEffect(() => {
-    if (!isAuthenticated || !generatedContent || inviteCode) return;
+    if (!isAuthenticated || inviteCode) return;
     let alive = true;
     getMyInvite().then((data) => { if (alive) setInviteCode(data?.code || null); }).catch(() => {});
     return () => { alive = false; };
-  }, [isAuthenticated, generatedContent, inviteCode]);
+  }, [isAuthenticated, inviteCode]);
 
   const contentTypeIcons = {
     loveNote: Heart,
