@@ -22,6 +22,7 @@ import { getAiConfig } from "@/lib/aiService";
 import { getTokenWallet, isTokensRequiredError, isPhoneVerificationError, tokenRequiredDetails, listTokenUnlocks, unlockTokenContent } from "@/lib/tokenService";
 import { apiRequest } from "@/lib/apiClient";
 import { isO2OLPromoFreeFeature } from "@/lib/o2olFreePromo2026";
+import { isUnifiedPrelaunchGuestAccessEnabled } from '@/lib/prelaunchGuestAccess';
 
 const FREE_NOTE_ACCESS_COPY = {
   en:{guest:'FREE for verified members — sign in to read.',join:'Sign in to read FREE',body:'This Love Note is FREE during the promotion. Create a verified account to reveal its text. No Credit charge.',open:'Read'},
