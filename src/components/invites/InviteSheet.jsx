@@ -1,6 +1,6 @@
 import React,{useEffect,useRef,useState} from 'react';
 import { Link } from 'react-router-dom';
-import { Copy, Heart, Share2, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/Layout';
 import { getMyInvite, buildInviteLink, buildShareText, shareVia, logInviteEvent, inviteGame } from '@/lib/inviteService';
