@@ -9,6 +9,7 @@ import {
 import { getAdminAnalytics, getAdminDashboard, getAdminPresence, getMemberActivity, grantVerificationGameCredit, manageMemberAccount, manageMemberAccountsBulk, grantMemberGameCredit } from '../lib/adminService';
 import { touchAdminMfa } from '../lib/adminMfaService';
 import GameEconomyPanel from '../components/admin/GameEconomyPanel';
+import MessageFeatureIntelligence from '../components/admin/MessageFeatureIntelligence';
 import {
   ADMIN_AUTH_REDIRECT,
   ADMIN_IDLE_LIMIT_MS,
@@ -731,6 +732,7 @@ export default function Admin() {
               <Metric icon={CreditCard} label="Subscribed Clicks" value={number(clickSummary.subscribed_30d)} note={`${number(clickSummary.unique_subscribed_30d)} unique subscribed users · 30 days`} tone="green"/>
             </div>
             <div className={cx('mb-5 rounded-xl border p-4 text-sm',clickAnalytics.liveTracking?'border-emerald-200 bg-emerald-50 text-emerald-800':'border-amber-200 bg-amber-50 text-amber-800')}>{clickAnalytics.trackingMessage || 'All-visitor click tracking has not produced data yet.'}</div>
+            <MessageFeatureIntelligence data={data?.messageIntelligence} onRefresh={()=>load(true)} refreshing={refreshing}/>
             <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
