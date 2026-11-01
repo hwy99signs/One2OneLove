@@ -1,0 +1,57 @@
+name: Upload O2OL Unified Prelaunch Preview (version only)
+
+# Uploads a NON-deployed Worker version with the preview alias
+# prelaunch-o2ol-unified-20261030. It never runs `wrangler deploy`, so
+# one2onelove.com keeps serving its current live version.
+# Runs only when the pushed commit message contains [preview-upload].
+on:
+  push:
+    branches:
+      - prelaunch/o2ol-unified-20261030
+
+permissions:
+  contents: read
+
+concurrency:
+  group: o2ol-unified-preview-upload
+  cancel-in-progress: false
+
+jobs:
+  upload:
+    if: contains(github.event.head_commit.message, '[preview-upload]')
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      PREVIEW_URL: https://prelaunch-o2ol-unified-20261030-one2onelove-launch.hwy99signs.workers.dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Guard preview config
+        shell: bash
+        run: |
+          set -euo pipefail
+          CFG=cloudflare/wrangler.unified-prelaunch.jsonc
+          grep -q 'ep-quiet-meadow-arq3q1vh' "$CFG"
+          grep -q '"O2OL_PRELAUNCH_NO_OUTBOUND": "true"' "$CFG" || grep -q '"O2OL_PRELAUNCH_NO_OUTBOUND":"true"' "$CFG"
+          ! grep -q 'ef44564dbfca4e1bb13176ee568aaddf' "$CFG"
+      - name: Build
+        run: |
+          npm ci
+          npm run build
+      - name: Upload preview version (no deploy)
+        run: npx --yes wrangler@4 versions upload --config cloudflare/wrangler.unified-prelaunch.jsonc --preview-alias prelaunch-o2ol-unified-20261030 --message "unified prelaunch ${GITHUB_SHA::7}"
+      - name: Verify preview serves this build
+        shell: bash
+        run: |
+          set -euo pipefail
+          EXPECTED=$(grep -oE 'assets/index-[^"]+\.js' dist/index.html | head -1)
+          for i in $(seq 1 24); do
+            GOT=$(curl -fsSL --max-time 20 "$PREVIEW_URL/" | grep -oE 'assets/index-[^"]+\.js' | head -1 || true)
+            echo "expected=$EXPECTED got=$GOT"
+            [ "$GOT" = "$EXPECTED" ] && exit 0
+            sleep 5
+          done
+          exit 1
