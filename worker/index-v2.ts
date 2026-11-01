@@ -13,6 +13,7 @@ import { handleLoveNoteLibraryRequest } from './love-note-library';
 import { handleDateIdeaLibraryRequest } from './date-idea-library';
 import { handleBillingPlanChangeRequest } from './billing-plan-change';
 import { handleLaunchAuthRequest } from './launch-auth';
+import { handleInviteRequest } from './invites';
 import { handleProfessionalSignup } from './professional-signup';
 import { handleSpecialProfileRequest } from './onboarding';
 import { handleMemberOnboarding } from './member-onboarding';
@@ -367,6 +368,11 @@ async function handleFetchV2(request, env, ctx) {
 
     if (url.pathname.startsWith('/api/love-note-library')) {
       return handleLoveNoteLibraryRequest(request,env,url);
+    }
+
+    if(url.pathname.startsWith('/api/invites/') || url.pathname.startsWith('/api/admin/invites/')) {
+      const inviteResponse=await handleInviteRequest(request,env,url);
+      if(inviteResponse)return inviteResponse;
     }
 
     const identityGate = await enforceLaunchIdentity(request, env, url);
