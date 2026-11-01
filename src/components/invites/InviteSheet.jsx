@@ -1,4 +1,4 @@
-import React,{useEffect,useState} from 'react';
+import React,{useEffect,useRef,useState} from 'react';
 import { Link } from 'react-router-dom';
 import { Copy, Heart, Share2, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,6 +16,7 @@ export default function InviteSheet({open,onClose,game=null,surface='game_button
  const {currentLanguage}=useLanguage(),t=copy[currentLanguage]||copy.en;
  const {isAuthenticated}=useAuth();
  const [code,setCode]=useState(codeProp),[text,setText]=useState(''),[busy,setBusy]=useState(false);
+ const openedRef=useRef(false);
  const link=buildInviteLink({code,game,source:'member_signed_out'});
  const gameInfo=inviteGame(game);
  useEffect(()=>{setCode(codeProp)},[codeProp]);
@@ -31,9 +32,13 @@ export default function InviteSheet({open,onClose,game=null,surface='game_button
  },[open,game,isAuthenticated,codeProp,currentLanguage]);
  useEffect(()=>{if(open)setText(buildShareText({language:currentLanguage,game,link}))},[link,open,game,currentLanguage]);
  useEffect(()=>{
-  if(!open)return;
+  if(!open){openedRef.current=false;return;}
+  // One open event per opening; wait for member code before attributing.
+  if(isAuthenticated&&!code)return;
+  if(openedRef.current)return;
+  openedRef.current=true;
   logInviteEvent({code:code||undefined,game,surface,event:'share_opened'}).catch(()=>{});
- },[open,code,game,surface]);
+ },[open,code,game,surface,isAuthenticated]);
  useEffect(()=>{
   if(!open)return;const esc=e=>{if(e.key==='Escape')onClose?.()};window.addEventListener('keydown',esc);return()=>window.removeEventListener('keydown',esc)
  },[open,onClose]);
