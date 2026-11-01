@@ -55,14 +55,14 @@ const STUDIO_E2_COPY = {
   de:{eyebrow:'O2OL STUDIO SHOW',badge:'NEUE FOLGE',season:'Staffel 1 • Folge 2',title:'Wer zahlt beim ersten Date?',body:'Das neueste O2OL-Studio-Gespräch ist da. Schalte Folge 2 einmal mit $1 Credit frei und sieh sie dir jederzeit an — kein Abo, niemals.',watch:'Folge 2 Freischalten — $1',lockNote:'$1 Credit Freischaltung • Jederzeit ansehen'}
 };
 
-// Episode 2 is free for verified members while the non-game promotion runs.
+// Episode 2 is open to everyone during the free promotion on unified prelaunch.
 // Its original paid messaging automatically returns after the promotion ends.
 const STUDIO_E2_PROMO_COPY = {
-  en:{body:'Episode 2 is FREE for verified members through Dec 31, 2026. Enjoy the latest O2OL Studio conversation without a Credit charge.',watch:'Watch Episode 2'},
-  es:{body:'El Episodio 2 es GRATIS para miembros verificados hasta el 31 de diciembre de 2026, sin cobrar Crédito.',watch:'Ver Episodio 2'},
-  fr:{body:'L’Épisode 2 est GRATUIT pour les membres vérifiés jusqu’au 31 décembre 2026, sans débit de Crédit.',watch:'Voir l’Épisode 2'},
-  it:{body:'L’Episodio 2 è GRATIS per i membri verificati fino al 31 dicembre 2026, senza addebiti di Credito.',watch:'Guarda Episodio 2'},
-  de:{body:'Folge 2 ist für bestätigte Mitglieder bis zum 31. Dezember 2026 KOSTENLOS, ohne Credit-Abzug.',watch:'Folge 2 Ansehen'},
+  en:{body:'Episode 2 is FREE for everyone through Dec 31, 2026. Enjoy the latest O2OL Studio conversation without a Credit charge.',watch:'Watch Episode 2'},
+  es:{body:'El Episodio 2 es GRATIS para todos hasta el 31 de diciembre de 2026, sin cobrar Crédito.',watch:'Ver Episodio 2'},
+  fr:{body:'L’Épisode 2 est GRATUIT pour tous jusqu’au 31 décembre 2026, sans débit de Crédit.',watch:'Voir l’Épisode 2'},
+  it:{body:'L’Episodio 2 è GRATIS per tutti fino al 31 dicembre 2026, senza addebiti di Credito.',watch:'Guarda Episodio 2'},
+  de:{body:'Folge 2 ist für alle bis zum 31. Dezember 2026 KOSTENLOS, ohne Credit-Abzug.',watch:'Folge 2 Ansehen'},
 };
 const HOME_PROMO_TOOL_CODES = {
   MemoryLane:'memories_unlock',
