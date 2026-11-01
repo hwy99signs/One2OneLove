@@ -13,8 +13,9 @@ const EPISODES=[
     chatRoom:'studio-who-pays-for-the-first-date',
     posterPath:null,
     releasedAt:'2026-10-09T22:00:00.000Z',
-    unlockFeatureCode:'studio_episode_unlock',
-    unlockPriceCents:100,
+    // Owner-approved: both published O2OL Studio videos are free forever.
+    // Keep prior Credit unlock history intact; this media itself is public.
+    freeForever:true,
   },
   {
     id:'season-1-episode-1',
@@ -25,6 +26,7 @@ const EPISODES=[
     path:'/studio-media/season-1-episode-1.mp4',
     chatRoom:'studio-who-should-apologize-first',
     posterPath:'/assets/o2ol-studio-bianca-card.webp',
+    freeForever:true,
     releasedAt:'2026-10-03T00:00:00.000Z',
   },
 ];
@@ -106,9 +108,9 @@ async function accessState(request,env,episode){
   const member=await verifiedFreeMember(request,env).catch(()=>false);
   const availableAt=publicAvailableAt(episode);
   const paywalled=Boolean(episode.unlockPriceCents);
-  // Paywalled episodes never open to the public for free — the Credit
-  // unlock is the only door (owner call, 2026-10-09).
-  const publicAvailable=!paywalled&&Date.now()>=availableAt.getTime();
+  // Studio episodes explicitly marked freeForever have no login, paywall,
+  // replay delay or expiration. Other future paid episodes keep their gates.
+  const publicAvailable=episode.freeForever===true||(!paywalled&&Date.now()>=availableAt.getTime());
   const {unlocked,isAdmin}=await unlockState(request,env,episode).catch(()=>({unlocked:false,isAdmin:false}));
   const promoAccess=paywalled&&member&&isO2OLPromoFreeFeature(episode.unlockFeatureCode);
   // Public catalog rule (owner 2026-10-31): guests may see episode titles
@@ -116,7 +118,7 @@ async function accessState(request,env,episode){
   // Episode 1 stays free for verified members; paid Studio terms are unchanged.
   const openPreview=new URL(request.url).hostname==='prelaunch-o2ol-unified-20261030-one2onelove-launch.hwy99signs.workers.dev';
   const publicPromo=openPreview&&paywalled&&isO2OLPromoFreeFeature(episode.unlockFeatureCode);
-  const canWatch=paywalled?(unlocked||isAdmin||promoAccess||publicPromo):(member||(openPreview&&publicAvailable));
+  const canWatch=episode.freeForever===true || (paywalled?(unlocked||isAdmin||promoAccess||publicPromo):(member||(openPreview&&publicAvailable)));
   return {
     member,
     publicAvailable,
@@ -124,7 +126,8 @@ async function accessState(request,env,episode){
     unlocked,
     promoAccess,
     isAdmin,
-    unlockPriceCents:(promoAccess||publicPromo)?0:(episode.unlockPriceCents||null),
+    unlockPriceCents:episode.freeForever===true?0:((promoAccess||publicPromo)?0:(episode.unlockPriceCents||null)),
+    freeForever:episode.freeForever===true,
     publicAvailableAt:availableAt.toISOString(),
     releasedAt:episode.releasedAt,
   };
@@ -168,6 +171,7 @@ export async function handleStudioMediaRequest(request,env,url){
         releasedAt:episode.releasedAt,publicAvailableAt:access.publicAvailableAt,
         publicAvailable:access.publicAvailable,memberAvailable:access.member,
         unlockPriceCents:access.unlockPriceCents,unlocked:access.unlocked,
+        freeForever:access.freeForever,
         canWatch:access.canWatch&&mediaReady,mediaReady,
         mediaPath:access.canWatch&&mediaReady?episode.path:null,
         chatRoom:episode.chatRoom,
@@ -208,7 +212,7 @@ export async function handleStudioMediaRequest(request,env,url){
   headers.set('cache-control',access.member||access.unlocked||access.isAdmin?'private, max-age=300':'public, max-age=3600');
   headers.set('etag',head.httpEtag);
   headers.set('x-content-type-options','nosniff');
-  headers.set('x-o2ol-access',access.isAdmin?'admin':access.unlocked?'credit-unlock':access.member?'free-member':'public-replay');
+  headers.set('x-o2ol-access',access.freeForever?'public-free-forever':access.isAdmin?'admin':access.unlocked?'credit-unlock':access.member?'free-member':'public-replay');
 
   if(request.method==='HEAD'){
     headers.set('content-length',String(head.size));
