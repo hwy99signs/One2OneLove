@@ -35,6 +35,7 @@ import { handleBillingRequest } from './billing';
 import { handleEngagementRequest } from './engagement';
 import { handleReviewsRequest } from './reviews';
 import { handleConsentsRequest } from './consents';
+import { saveConsentGate } from './save-consent-gate';
 import { handleContestsRequest } from './contests';
 import { handleAiRequest } from './ai';
 import { handleMyMatchIQAiRequest } from './mymatchiq-ai';
@@ -266,6 +267,11 @@ async function handleFetchV2(request, env, ctx) {
     if (url.hostname === 'www.one2onelove.com') {
       url.hostname = 'one2onelove.com';
       return Response.redirect(url.toString(), 308);
+    }
+    // Terms + Disclaimer acceptance is required before any member save/send.
+    {
+      const blocked = await saveConsentGate(request, env, url);
+      if (blocked) return blocked;
     }
     // Preview-only external delivery guard: never place live payments, SMS, AI or posts.
     if (env.O2OL_PRELAUNCH_NO_OUTBOUND === 'true' && request.method !== 'GET' &&

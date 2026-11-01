@@ -1,3 +1,4 @@
+import { requestSaveConsent } from './saveConsentBus';
 const JSON_HEADERS = { 'content-type': 'application/json' };
 
 // Safety hardening retained from the previously staged Credit/error-protection work.
@@ -30,7 +31,7 @@ function retryAfterMs(response) {
 }
 
 export async function apiRequest(path, options = {}) {
-  const { method = 'GET', body, headers = {}, rawBody, ...rest } = options;
+  const { method = 'GET', body, headers = {}, rawBody, consentRetried = false, ...rest } = options;
   const requestHeaders = new Headers(headers);
   let requestBody = rawBody;
 
@@ -53,6 +54,12 @@ export async function apiRequest(path, options = {}) {
     payload = await response.json().catch(() => null);
   } else if (response.status !== 204) {
     payload = await response.text().catch(() => null);
+  }
+
+  // Saving needs the current Terms + Disclaimer acceptance. Show the agreement,
+  // then retry the same save once if the member accepts.
+  if (response.status === 428 && payload?.error?.code === 'terms_consent_required' && !consentRetried) {
+    if (await requestSaveConsent()) return apiRequest(path, { ...options, consentRetried: true });
   }
 
   if (!response.ok) {

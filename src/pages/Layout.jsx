@@ -1,5 +1,6 @@
 
 import { isO2OLFreePromoActive, isO2OLPromoFreeFeature, freePromoMessage } from '@/lib/o2olFreePromo2026';
+import SaveConsentDialog from '@/components/launch/SaveConsentDialog';
 
 import React, { useState, createContext, useContext, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -148,6 +149,7 @@ function LanguageProvider({ children }) {
   return (
     <LanguageContext.Provider value={{ currentLanguage, changeLanguage }}>
       {children}
+      <SaveConsentDialog />
     </LanguageContext.Provider>
   );
 }

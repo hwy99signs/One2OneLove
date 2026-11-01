@@ -11,6 +11,7 @@ const AGE_RANGES = ['18-24', '25-34', '35-44', '45-54', '55-64', '65+'];
 
 const copy = {
   en:{
+    agreeTerms:'I have read and agree to the One2OneLove Terms of Service and Disclaimer, and I confirm I am 18 or older.',agreeError:'Please accept the Terms of Service and Disclaimer to continue.',
     eyebrow:'Registered Free',
     title:'Create your free One2OneLove account',
     body:'Choose a username, enter your email, and create a password to continue.',
@@ -32,6 +33,7 @@ const copy = {
     passwordError:'Password must be at least 8 characters.',
   },
   es:{
+    agreeTerms:'He leído y acepto los Términos del Servicio y el Aviso Legal de One2OneLove, y confirmo que tengo 18 años o más.',agreeError:'Acepta los Términos del Servicio y el Aviso Legal para continuar.',
     eyebrow:'Registro Gratis',title:'Crea tu cuenta gratuita de One2OneLove',body:'Elige un nombre de usuario, ingresa tu correo y crea una contraseña para continuar.',
     username:'Nombre de usuario',usernamePh:'Elige un nombre de usuario',email:'Correo electrónico',emailPh:'Ingresa tu correo',
     password:'Crear contraseña',passwordPh:'8 caracteres o más',promo:'Sí, envíame correos promocionales y novedades de One2OneLove.',
@@ -41,6 +43,7 @@ const copy = {
     ageRange:'Rango de edad',ageRangePh:'Selecciona tu rango de edad',ageRangeError:'Selecciona tu rango de edad.',passwordError:'La contraseña debe tener al menos 8 caracteres.',
   },
   fr:{
+    agreeTerms:'J’ai lu et j’accepte les Conditions d’utilisation et l’Avertissement de One2OneLove, et je confirme avoir 18 ans ou plus.',agreeError:'Veuillez accepter les Conditions d’utilisation et l’Avertissement pour continuer.',
     eyebrow:'Inscription Gratuite',title:'Créez votre compte One2OneLove gratuit',body:'Choisissez un nom d’utilisateur, saisissez votre e-mail et créez un mot de passe pour continuer.',
     username:'Nom d’utilisateur',usernamePh:'Choisissez un nom d’utilisateur',email:'E-mail',emailPh:'Saisissez votre e-mail',
     password:'Créer un mot de passe',passwordPh:'8 caractères ou plus',promo:'Oui, envoyez-moi des e-mails promotionnels et les actualités One2OneLove.',
@@ -50,6 +53,7 @@ const copy = {
     ageRange:'Tranche d’âge',ageRangePh:'Sélectionnez votre tranche d’âge',ageRangeError:'Veuillez sélectionner votre tranche d’âge.',passwordError:'Le mot de passe doit contenir au moins 8 caractères.',
   },
   it:{
+    agreeTerms:'Ho letto e accetto i Termini di Servizio e l’Esclusione di responsabilità di One2OneLove e confermo di avere almeno 18 anni.',agreeError:'Accetta i Termini di Servizio e l’Esclusione di responsabilità per continuare.',
     eyebrow:'Registrazione Gratuita',title:'Crea il tuo account One2OneLove gratuito',body:'Scegli un nome utente, inserisci la tua email e crea una password per continuare.',
     username:'Nome utente',usernamePh:'Scegli un nome utente',email:'Email',emailPh:'Inserisci la tua email',
     password:'Crea password',passwordPh:'8 o più caratteri',promo:'Sì, inviami email promozionali e aggiornamenti One2OneLove.',
@@ -59,6 +63,7 @@ const copy = {
     ageRange:'Fascia di età',ageRangePh:'Seleziona la tua fascia di età',ageRangeError:'Seleziona la tua fascia di età.',passwordError:'La password deve contenere almeno 8 caratteri.',
   },
   de:{
+    agreeTerms:'Ich habe die Nutzungsbedingungen und den Haftungsausschluss von One2OneLove gelesen, stimme zu und bestätige, dass ich mindestens 18 Jahre alt bin.',agreeError:'Bitte akzeptieren Sie die Nutzungsbedingungen und den Haftungsausschluss, um fortzufahren.',
     eyebrow:'Kostenlos Registriert',title:'Erstellen Sie Ihr kostenloses One2OneLove-Konto',body:'Wählen Sie einen Benutzernamen, geben Sie Ihre E-Mail ein und erstellen Sie ein Passwort.',
     username:'Benutzername',usernamePh:'Benutzernamen wählen',email:'E-Mail',emailPh:'E-Mail eingeben',
     password:'Passwort erstellen',passwordPh:'8 oder mehr Zeichen',promo:'Ja, senden Sie mir Werbe-E-Mails und One2OneLove-Updates.',
@@ -82,6 +87,7 @@ export default function QuickAccountGate({ intendedPath='/' }) {
   const [promo,setPromo]=useState(false);
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
+  const [agreeTerms,setAgreeTerms]=useState(false);
   const [verifyEmail,setVerifyEmail]=useState('');
   const [otp,setOtp]=useState('');
   const [verifying,setVerifying]=useState(false);
@@ -95,6 +101,7 @@ export default function QuickAccountGate({ intendedPath='/' }) {
     preferredLanguage:language,
     termsAcceptedAt:new Date().toISOString(),
     termsVersion:'2026-10-09-quick',
+    termsDisclaimerAccepted:agreeTerms,
     privacyPolicyAcknowledged:true,
     age18Confirmed:true,
     marketingEmailOptIn:promo,
@@ -109,6 +116,7 @@ export default function QuickAccountGate({ intendedPath='/' }) {
     if(!/^[A-Za-z0-9._-]{3,40}$/.test(username.trim())) return setError(t.usernameError);
     if(password.length<8) return setError(t.passwordError);
     if(!AGE_RANGES.includes(ageRange)) return setError(t.ageRangeError);
+    if(!agreeTerms) return setError(t.agreeError);
     setBusy(true);
     const result=await registerQuickUser({
       username:username.trim(),
@@ -118,6 +126,7 @@ export default function QuickAccountGate({ intendedPath='/' }) {
       visitorId,
       preferredLanguage:language,
       ageRange,
+      termsDisclaimerAccepted:agreeTerms,
     });
     setBusy(false);
     if(!result?.success) return setError(result?.error||'Account creation failed.');
@@ -176,6 +185,10 @@ export default function QuickAccountGate({ intendedPath='/' }) {
         <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
           <input type="checkbox" checked={promo} onChange={e=>setPromo(e.target.checked)} className="mt-1 h-4 w-4"/>
           <span>{t.promo}</span>
+        </label>
+        <label data-terms-disclaimer-checkbox className="flex cursor-pointer items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-slate-800">
+          <input type="checkbox" required checked={agreeTerms} onChange={e=>setAgreeTerms(e.target.checked)} className="mt-1 h-4 w-4"/>
+          <span>{t.agreeTerms} <a href="/TermsOfService" target="_blank" rel="noopener noreferrer" className="font-bold text-rose-600 underline">Terms</a></span>
         </label>
         {error&&<div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</div>}
         <Button type="submit" disabled={busy} className="w-full bg-rose-600 hover:bg-rose-700">

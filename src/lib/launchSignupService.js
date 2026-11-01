@@ -34,6 +34,7 @@ export async function registerLaunchUser({
   marketingEmailOptIn = false,
   visitorId = null,
   ageRange = null,
+  termsDisclaimerAccepted = false,
 }) {
   try {
     const payload = await apiRequest('/api/launch-signup', {
@@ -55,6 +56,7 @@ export async function registerLaunchUser({
         marketingEmailOptIn,
         visitorId,
         ageRange,
+        termsDisclaimerAccepted: termsDisclaimerAccepted === true,
         inviteAttribution:readAttribution(),
       },
     });
@@ -119,6 +121,7 @@ export async function registerQuickUser({
   visitorId = null,
   preferredLanguage = 'en',
   ageRange = null,
+  termsDisclaimerAccepted = false,
 }) {
   return registerLaunchUser({
     name: username,
@@ -137,5 +140,6 @@ export async function registerQuickUser({
     marketingEmailOptIn,
     visitorId,
     ageRange,
+    termsDisclaimerAccepted,
   });
 }

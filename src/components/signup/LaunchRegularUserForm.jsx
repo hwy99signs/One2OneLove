@@ -127,6 +127,8 @@ export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Free', f
     termsVersion: TERMS_VERSION,
     privacyPolicyAcknowledged: true,
     age18Confirmed: true,
+    // The full Terms (read to the end) include Section 18, Disclaimers.
+    termsDisclaimerAccepted: Boolean(termsAcceptedAt),
     ageRange: formData.ageRange || null,
     selectedPlan,
     freeAccount,
@@ -167,6 +169,7 @@ export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Free', f
         selectedPlan,
         freeAccount,
         ageRange:formData.ageRange,
+        termsDisclaimerAccepted:Boolean(termsAcceptedAt),
       });
       if (result?.success && result.emailVerificationRequired) {
         setSuccessEmail(formData.email.trim().toLowerCase());

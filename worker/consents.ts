@@ -49,6 +49,38 @@ export async function requireCurrentCoachingConsent(db,userId){
   return row;
 }
 
+// Save consent (owner, 2026-11-01): members must explicitly accept the Terms of
+// Service AND the One2OneLove Disclaimer before anything they create is saved
+// or sent. Stored as its own row in public.signup_consents (no schema change).
+export const SAVE_CONSENT_VERSION='2026-11-01-terms-disclaimer-v1';
+export const SAVE_CONSENT_SOURCE='save_terms_disclaimer';
+
+export async function hasSaveConsent(db,userId){
+  const r=await db.query(
+    'SELECT 1 FROM public.signup_consents WHERE user_id=$1::uuid AND terms_version=$2 LIMIT 1',
+    [userId,SAVE_CONSENT_VERSION],
+  );
+  return r.rowCount>0;
+}
+
+export async function recordSaveConsent(db,{userId,email,country=null,preferredLanguage=null,source=SAVE_CONSENT_SOURCE}){
+  const prior=(await db.query(
+    'SELECT country,preferred_language FROM public.signup_consents WHERE user_id=$1::uuid ORDER BY created_at DESC LIMIT 1',
+    [userId],
+  )).rows[0]||{};
+  const r=await db.query(
+    `INSERT INTO public.signup_consents
+      (user_id,email,country,preferred_language,terms_version,terms_accepted_at,
+       privacy_policy_acknowledged,age_18_confirmed,signup_source)
+     VALUES($1::uuid,$2,$3,$4,$5,now(),true,true,$6)
+     ON CONFLICT (user_id, terms_version) DO UPDATE SET terms_accepted_at=public.signup_consents.terms_accepted_at
+     RETURNING terms_version,terms_accepted_at`,
+    [userId,String(email||'').toLowerCase(),String(country||prior.country||'ZZ').slice(0,2).toUpperCase(),
+     String(preferredLanguage||prior.preferred_language||'en').slice(0,10).toLowerCase(),SAVE_CONSENT_VERSION,String(source).slice(0,100)],
+  );
+  return r.rows[0];
+}
+
 export async function handleConsentsRequest(request, env, url) {
   if (!url.pathname.startsWith('/api/consents')) return null;
   const auth = await session(request, env);
@@ -108,6 +140,23 @@ export async function handleConsentsRequest(request, env, url) {
             try{await db.query('ROLLBACK');}catch(_){}
             throw error;
           }
+        });
+      }
+      return fail('Method not allowed.',405,'method_not_allowed');
+    }
+
+    if (url.pathname === '/api/consents/terms') {
+      if (request.method === 'GET') {
+        return await withDb(env, async db => json({ ok:true, version:SAVE_CONSENT_VERSION, accepted:await hasSaveConsent(db,auth.user.id) }));
+      }
+      if (request.method === 'PUT') {
+        const input=await readJson(request);
+        if(input?.accepted!==true || input?.age18Confirmed!==true || String(input?.version||'')!==SAVE_CONSENT_VERSION){
+          return fail('Please accept the current Terms of Service and Disclaimer and confirm you are 18 or older.',400,'terms_consent_invalid');
+        }
+        return await withDb(env, async db => {
+          const row=await recordSaveConsent(db,{userId:auth.user.id,email:auth.user.email,preferredLanguage:input?.language,source:input?.source||SAVE_CONSENT_SOURCE});
+          return json({ ok:true, accepted:true, version:SAVE_CONSENT_VERSION, acceptedAt:row?.terms_accepted_at||null });
         });
       }
       return fail('Method not allowed.',405,'method_not_allowed');

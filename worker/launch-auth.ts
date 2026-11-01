@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { Client } from 'pg';
+import { recordSaveConsent } from './consents';
 import { validateInviteAttribution, saveInviteReferral, qualifyInviteReferral } from './invites';
 import {
   USERNAME_FORMAT_MESSAGE,
@@ -163,6 +164,9 @@ function registrationContext(body, { requireUsername = true } = {}) {
   const privacyAcknowledged = body.privacyPolicyAcknowledged !== false;
   const age18Confirmed = body.age18Confirmed !== false;
   const foundingIntent = body.foundingIntent === true;
+  // Explicit Terms + Disclaimer checkbox (owner, 2026-11-01). Recorded as the
+  // save consent so new members can save right away without a second prompt.
+  const termsDisclaimerAccepted = body.termsDisclaimerAccepted === true;
   // Age range (owner, 2026-10-11): sign-up collects a RANGE, never a
   // birthdate. Invalid or missing values store null (older/resumed flows
   // keep working); the forms require a selection client-side.
@@ -193,6 +197,7 @@ function registrationContext(body, { requireUsername = true } = {}) {
   if (Number.isNaN(acceptedDate.getTime())) throw new Error('Terms acceptance date is invalid.');
 
   return {
+    termsDisclaimerAccepted,
     quickAccount,
     username,
     name,
@@ -268,6 +273,9 @@ async function persistRegistration(db, user, registration) {
       [user.id, registration.email, registration.country, registration.preferredLanguage, registration.termsVersion, registration.termsAcceptedAt,
        registration.quickAccount ? 'interactive_quick_signup' : 'one2onelove_free_token_launch', registration.marketingEmailOptIn],
     );
+    if (registration.termsDisclaimerAccepted) {
+      await recordSaveConsent(db, { userId: user.id, email: registration.email, country: registration.country, preferredLanguage: registration.preferredLanguage, source: 'signup_terms_disclaimer' });
+    }
 
     await db.query(
       `INSERT INTO public.users
