@@ -1,0 +1,86 @@
+name: O2OL www to apex redirect rule
+
+# Owner-approved 2026-11-01: forward ALL www.one2onelove.com traffic to
+# https://one2onelove.com (path + query preserved, 308). Session cookies are
+# host-only, so pages served directly on www looked signed out. Idempotent.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - .github/workflows/o2ol-www-apex-redirect.yml
+
+permissions:
+  contents: read
+
+jobs:
+  redirect:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      RULE_REF: o2ol_www_to_apex_308
+    steps:
+      - name: Create or confirm the www to apex Single Redirect rule
+        shell: bash
+        run: |
+          set -euo pipefail
+          API=https://api.cloudflare.com/client/v4
+          AUTH="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+          ZONE_ID=$(curl -fsS -H "$AUTH" "$API/zones?name=one2onelove.com" | jq -r '.result[0].id')
+          test -n "$ZONE_ID" && test "$ZONE_ID" != null
+          RULE=$(jq -nc --arg ref "$RULE_REF" '{
+            ref: $ref,
+            description: "O2OL: forward all www.one2onelove.com traffic to one2onelove.com (owner-approved 2026-11-01)",
+            expression: "(http.host eq \"www.one2onelove.com\")",
+            action: "redirect",
+            action_parameters: { from_value: {
+              status_code: 308,
+              target_url: { expression: "concat(\"https://one2onelove.com\", http.request.uri.path)" },
+              preserve_query_string: true } },
+            enabled: true }')
+          CODE=$(curl -sS -o /tmp/ep.json -w '%{http_code}' -H "$AUTH" \
+            "$API/zones/$ZONE_ID/rulesets/phases/http_request_dynamic_redirect/entrypoint")
+          echo "entrypoint lookup HTTP $CODE"
+          if [ "$CODE" = "200" ]; then
+            RS_ID=$(jq -r '.result.id' /tmp/ep.json)
+            echo "existing rules:"; jq -c '[.result.rules[]? | {ref, description, expression, enabled}]' /tmp/ep.json
+            EXISTING=$(jq -r --arg ref "$RULE_REF" '.result.rules[]? | select(.ref == $ref) | .id' /tmp/ep.json)
+            if [ -n "$EXISTING" ]; then
+              curl -fsS -X PATCH -H "$AUTH" -H 'Content-Type: application/json' \
+                "$API/zones/$ZONE_ID/rulesets/$RS_ID/rules/$EXISTING" --data "$RULE" | jq -c '{success,errors}'
+            else
+              curl -fsS -X POST -H "$AUTH" -H 'Content-Type: application/json' \
+                "$API/zones/$ZONE_ID/rulesets/$RS_ID/rules" --data "$RULE" | jq -c '{success,errors}'
+            fi
+          elif [ "$CODE" = "404" ]; then
+            jq -nc --argjson rule "$RULE" '{name:"default", kind:"zone", phase:"http_request_dynamic_redirect", rules:[$rule]}' > /tmp/new.json
+            curl -fsS -X PUT -H "$AUTH" -H 'Content-Type: application/json' \
+              "$API/zones/$ZONE_ID/rulesets/phases/http_request_dynamic_redirect/entrypoint" \
+              --data @/tmp/new.json | jq -c '{success,errors}'
+          else
+            cat /tmp/ep.json
+            echo "Cloudflare token cannot read redirect rules (HTTP $CODE). It needs Zone > Single Redirect (or Zone Rulesets) Edit." >&2
+            exit 1
+          fi
+
+      - name: Verify every www path forwards to the apex
+        shell: bash
+        run: |
+          set -euo pipefail
+          for P in "/" "/Scrabluko" "/VerifyPhone?x=1" "/WhatShouldTheyDo" "/assets/does-not-exist.js" "/api/health"; do
+            OK=no
+            for attempt in $(seq 1 12); do
+              CODE=$(curl -sS --max-time 20 -o /dev/null -w '%{http_code}' "https://www.one2onelove.com$P" || true)
+              LOC=$(curl -sS --max-time 20 -o /dev/null -w '%{redirect_url}' "https://www.one2onelove.com$P" || true)
+              if [ "$CODE" = "308" ] && [ "$LOC" = "https://one2onelove.com$P" ]; then OK=yes; break; fi
+              sleep 5
+            done
+            echo "www$P -> HTTP $CODE $LOC"
+            test "$OK" = yes
+          done
+          CODE=$(curl -sS --max-time 20 -o /dev/null -w '%{http_code}' https://one2onelove.com/Scrabluko)
+          echo "apex /Scrabluko -> HTTP $CODE"
+          test "$CODE" = "200"
+          echo O2OL_WWW_APEX_REDIRECT_VERIFIED=yes
