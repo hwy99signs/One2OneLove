@@ -95,6 +95,7 @@ function cleanRoutePath(value) {
 export function featureForRoutePath(pathname) {
   const clean = cleanRoutePath(pathname);
   if (!clean) return null;
+  if (clean.startsWith('/i/')) return 'Invite & Share';
   if (FEATURE_BY_ROUTE[clean]) return FEATURE_BY_ROUTE[clean];
   if (clean.startsWith('/mymatchiq/')) return 'MyMatchIQ';
   return null;
