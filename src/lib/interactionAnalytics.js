@@ -552,7 +552,9 @@ export function installClickAnalytics() {
     const gameName = safeText(frame.getAttribute('title'), 70) || 'Game';
     doc.addEventListener('click', ev => {
       if (isAdminAnalyticsSurface()) return;
-      const target = ev.target instanceof Element ? ev.target : null;
+      // Iframe nodes belong to a different JS realm. instanceof Element
+      // against the parent window rejects every actual game click.
+      const target = ev.target && ev.target.nodeType === 1 ? ev.target : null;
       if (!target) return;
       const element = target.closest('button,a,[role="button"],[data-analytics-id],canvas,input,select') || target;
       const rawId = safeText(element.getAttribute('data-analytics-id') || element.id || element.getAttribute('aria-label'), 65);
@@ -563,7 +565,7 @@ export function installClickAnalytics() {
     },true);
     doc.addEventListener('change', ev => {
       const el = ev.target;
-      if (!(el instanceof Element) || !el.matches('select,input[type="checkbox"],input[type="radio"]')) return;
+      if (!el || el.nodeType !== 1 || !el.matches('select,input[type="checkbox"],input[type="radio"]')) return;
       trackFeatureActionEvent(featureForPath(window.location.pathname),'game:selection:'+gameName);
     },true);
   };
