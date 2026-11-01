@@ -6,8 +6,13 @@ import { createPageUrl } from "@/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/Layout";
 import { getAdultSensitiveConsent, saveAdultSensitiveConsent } from "@/lib/consentService";
+import { isUnifiedPrelaunchGuestAccessEnabled } from "@/lib/prelaunchGuestAccess";
 
 export const ADULT_SENSITIVE_CONTENT_CONSENT_VERSION = "2026-09-13-v1";
+const GUEST_CONSENT_KEY = "o2ol_podcast_guest_adult_consent_" + ADULT_SENSITIVE_CONTENT_CONSENT_VERSION;
+const readGuestConsent = () => {
+  try { return sessionStorage.getItem(GUEST_CONSENT_KEY) === "accepted"; } catch { return false; }
+};
 
 const copy = {
   en: {
@@ -141,6 +146,15 @@ export default function AdultSensitiveContentGate({ children }) {
   const { user, isAuthenticated, isLoading } = useAuth();
   const { currentLanguage } = useLanguage();
   const t = copy[currentLanguage] || copy.en;
+  // The open-house guest acknowledgment is session-only and does not create an account.
+  const guestOpenHouse = !isAuthenticated && isUnifiedPrelaunchGuestAccessEnabled();
+  const guestPrivacy = {
+    en:"Your acknowledgment lasts only for this browser session. No signup, email or phone number is required.",
+    es:"Tu confirmación dura solo esta sesión del navegador. No necesitas registrarte ni dar correo o teléfono.",
+    fr:"Votre confirmation reste valable uniquement durant cette session. Aucune inscription ni coordonnées requises.",
+    it:"La conferma vale solo per questa sessione del browser. Nessuna registrazione, email o telefono richiesti.",
+    de:"Deine Bestätigung gilt nur für diese Browser-Sitzung. Keine Anmeldung, E-Mail oder Telefonnummer nötig."
+  };
   const [isChecking, setIsChecking] = useState(true);
   const [hasConsent, setHasConsent] = useState(false);
   const [ageConfirmed, setAgeConfirmed] = useState(false);
@@ -163,7 +177,7 @@ export default function AdultSensitiveContentGate({ children }) {
 
       if (!isAuthenticated || !user?.id) {
         if (active) {
-          setHasConsent(false);
+          setHasConsent(guestOpenHouse && readGuestConsent());
           setIsChecking(false);
         }
         return;
@@ -205,13 +219,20 @@ export default function AdultSensitiveContentGate({ children }) {
     return () => {
       active = false;
     };
-  }, [isAuthenticated, isLoading, user?.id, t.error, retryNonce]);
+  }, [isAuthenticated, isLoading, user?.id, t.error, retryNonce, guestOpenHouse]);
 
   const acceptConsent = async () => {
     if (!canSubmit) return;
 
     setIsSaving(true);
     setError("");
+
+    if(guestOpenHouse){
+      try { sessionStorage.setItem(GUEST_CONSENT_KEY, "accepted"); } catch { /* state still lasts for this page view */ }
+      setHasConsent(true);
+      setIsSaving(false);
+      return;
+    }
 
     try {
       await saveAdultSensitiveConsent({
@@ -240,7 +261,7 @@ export default function AdultSensitiveContentGate({ children }) {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated && !guestOpenHouse) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 px-4 py-12">
         <div className="w-full max-w-xl rounded-3xl border border-purple-100 bg-white p-8 shadow-xl text-center">
@@ -334,7 +355,7 @@ export default function AdultSensitiveContentGate({ children }) {
           )}
         </Button>
 
-        <p className="mt-4 text-center text-xs leading-5 text-gray-500">{t.privacy}</p>
+        <p className="mt-4 text-center text-xs leading-5 text-gray-500">{guestOpenHouse ? (guestPrivacy[currentLanguage] || guestPrivacy.en) : t.privacy}</p>
       </div>
     </div>
   );
