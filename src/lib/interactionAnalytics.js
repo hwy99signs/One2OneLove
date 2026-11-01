@@ -219,6 +219,7 @@ export function isAdminAnalyticsSurface(pathname = window.location.pathname) {
 
 export function featureForPath(pathname) {
   const clean = String(pathname || '').toLowerCase().replace(/\/$/, '') || '/';
+  if (clean.startsWith('/i/')) return 'Invite & Share';
   if (FEATURE_BY_ROUTE[clean]) return FEATURE_BY_ROUTE[clean];
   if (clean.startsWith('/mymatchiq/')) return 'MyMatchIQ';
   return null;
