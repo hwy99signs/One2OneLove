@@ -6,7 +6,7 @@ import { createPageUrl } from "@/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/Layout";
 import { getAdultSensitiveConsent, saveAdultSensitiveConsent } from "@/lib/consentService";
-import { isUnifiedPrelaunchGuestAccessEnabled } from "@/lib/prelaunchGuestAccess";
+import { isGuestBrowseEnabled } from '@/lib/guestAccessPolicy';
 
 export const ADULT_SENSITIVE_CONTENT_CONSENT_VERSION = "2026-09-13-v1";
 const GUEST_CONSENT_KEY = "o2ol_podcast_guest_adult_consent_" + ADULT_SENSITIVE_CONTENT_CONSENT_VERSION;
@@ -147,7 +147,7 @@ export default function AdultSensitiveContentGate({ children }) {
   const { currentLanguage } = useLanguage();
   const t = copy[currentLanguage] || copy.en;
   // The open-house guest acknowledgment is session-only and does not create an account.
-  const guestOpenHouse = !isAuthenticated && isUnifiedPrelaunchGuestAccessEnabled();
+  const guestOpenHouse = !isAuthenticated && isGuestBrowseEnabled();
   const guestPrivacy = {
     en:"Your acknowledgment lasts only for this browser session. No signup, email or phone number is required.",
     es:"Tu confirmación dura solo esta sesión del navegador. No necesitas registrarte ni dar correo o teléfono.",

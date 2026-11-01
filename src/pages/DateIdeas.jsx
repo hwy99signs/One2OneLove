@@ -19,7 +19,7 @@ import { createCalendarEvent } from "@/lib/calendarService";
 import { listDateIdeas, createDateIdea, updateDateIdea } from "@/lib/dateIdeasService";
 import { getTokenWallet, isTokensRequiredError, listTokenUnlocks, tokenRequiredDetails, unlockTokenContent } from "@/lib/tokenService";
 import { isO2OLPromoFreeFeature } from "@/lib/o2olFreePromo2026";
-import { isUnifiedPrelaunchGuestAccessEnabled } from '@/lib/prelaunchGuestAccess';
+import { isGuestBrowseEnabled } from '@/lib/guestAccessPolicy';
 
 const FREE_DATE_IDEAS_COPY = {
   en:{label:'FREE for verified members',title:'Sign in for FREE Date Ideas',body:'These Date Ideas are FREE during the promotion. A verified account is required to view the full descriptions. No Credit will be deducted.',play:'Open for FREE',signup:'Create FREE Account · No Credit Required'},
@@ -250,7 +250,7 @@ export default function DateIdeas() {
   const dateIdeaTokenCost = Number(tokenWalletData?.featurePrices?.find(item => item.feature_code === 'date_idea_unlock')?.token_cost || 49);
   const hasDateIdeaAccess = (idea) => {
     if (!idea?.week) return hasMemberAccess;
-    return (isUnifiedPrelaunchGuestAccessEnabled()&&promoDateIdeasFree) || dateIdeasPromoAccess || unlockedDateKeys.has(String(idea.id));
+    return (isGuestBrowseEnabled()&&promoDateIdeasFree) || dateIdeasPromoAccess || unlockedDateKeys.has(String(idea.id));
   };
 
   const { data: customDates = [] } = useQuery({

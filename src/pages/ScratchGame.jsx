@@ -10,7 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { hasFullMemberAccess } from "@/lib/openHouseAccess";
 import OpenHouseBrowseNotice from "@/components/launch/OpenHouseBrowseNotice";
 import { trackFeatureActionEvent } from '@/lib/interactionAnalytics';
-import { isUnifiedPrelaunchGuestAccessEnabled } from '@/lib/prelaunchGuestAccess';
+import { isGuestBrowseEnabled } from '@/lib/guestAccessPolicy';
 
 const GAME_URL = "https://play.one2onelove.com/";
 const copy = {
@@ -25,7 +25,7 @@ export default function ScratchGame(){
   const t=copy[currentLanguage]||copy.en;
   const {user}=useAuth();
   const fullMemberAccess=hasFullMemberAccess(user);
-  const anonymousFreePlay=!fullMemberAccess&&isUnifiedPrelaunchGuestAccessEnabled();
+  const anonymousFreePlay=!fullMemberAccess&&isGuestBrowseEnabled();
   const [gameUrl,setGameUrl]=useState(null),[error,setError]=useState(''),[busy,setBusy]=useState(false);
   // Public Scratch origin currently serves its own playable game without a ticket.
   // Member launch tickets and scoring remain protected by the existing service.

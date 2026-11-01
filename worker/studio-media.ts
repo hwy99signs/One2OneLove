@@ -1,3 +1,4 @@
+import { guestBrowseEnabled } from './guest-access-policy.js';
 // @ts-nocheck
 import { Client } from 'pg';
 import { isO2OLPromoFreeFeature } from '../src/lib/o2olFreePromo2026';
@@ -116,7 +117,7 @@ async function accessState(request,env,episode){
   // Public catalog rule (owner 2026-10-31): guests may see episode titles
   // but may never stream the underlying media, even after its former replay date.
   // Episode 1 stays free for verified members; paid Studio terms are unchanged.
-  const openPreview=new URL(request.url).hostname==='prelaunch-o2ol-unified-20261030-one2onelove-launch.hwy99signs.workers.dev';
+  const openPreview=guestBrowseEnabled(env);
   const publicPromo=openPreview&&paywalled&&isO2OLPromoFreeFeature(episode.unlockFeatureCode);
   const canWatch=episode.freeForever===true || (paywalled?(unlocked||isAdmin||promoAccess||publicPromo):(member||(openPreview&&publicAvailable)));
   return {

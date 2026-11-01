@@ -1,3 +1,4 @@
+import { guestBrowseEnabled } from './guest-access-policy.js';
 // The public SPA contains article metadata only. Full article paragraphs and
 // takeaways are returned by this verified-member endpoint, never in a public
 // catalog response or client bundle. No prices, credits or promotions change.
@@ -18,7 +19,7 @@ export async function handleRelationshipArticleRequest(request,env,url){
   let member=false;
   try{member=await verifiedFreeMember(request,env)}catch(_){member=false}
   // Prelaunch-only open access for published educational articles (never private records).
-  const openPreview=url.hostname==='prelaunch-o2ol-unified-20261030-one2onelove-launch.hwy99signs.workers.dev';
+  const openPreview=guestBrowseEnabled(env);
   if(!member&&!openPreview)return reply({ok:false,error:'verified_signup_required'},401);
   const lang=['en','es','fr','it','de'].includes(url.searchParams.get('lang'))?url.searchParams.get('lang'):'en';
   const id=String(url.searchParams.get('id')||'').slice(0,120);

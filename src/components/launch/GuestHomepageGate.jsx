@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import QuickAccountGate from '@/components/launch/QuickAccountGate.jsx';
-import { isUnifiedPrelaunchGuestAccessEnabled } from '@/lib/prelaunchGuestAccess';
+import { isGuestOpenRoute } from '@/lib/guestAccessPolicy';
 import { PUBLIC_INFORMATION_ROUTES, VIEW_ONLY_ROUTES } from '@/components/launch/LaunchAccessGate.jsx';
 
 // View-only homepage (owner, 2026-10-11): guests may open and SCROLL the
@@ -36,8 +36,9 @@ export default function GuestHomepageGate({ pathname }) {
   const { isAuthenticated, isLoading } = useAuth();
   const [open, setOpen] = useState(false);
   const route = String(pathname || '/').toLowerCase().replace(/\/$/, '') || '/';
-  // The preview is temporarily open for revisions; production retains its current gate.
-  const active = !isLoading && !isAuthenticated && VIEW_ONLY_ROUTES.has(route) && !isUnifiedPrelaunchGuestAccessEnabled();
+  // Launch policy: the homepage stays browsable; taps that lead to guest-open
+  // features act normally, and taps on account-only features open free signup.
+  const active = !isLoading && !isAuthenticated && VIEW_ONLY_ROUTES.has(route);
 
   useEffect(() => { setOpen(false); }, [route]);
   useEffect(() => { if (!active) setOpen(false); }, [active]);
@@ -61,10 +62,11 @@ export default function GuestHomepageGate({ pathname }) {
       // to the live standalone MyMatchIQ signup without opening O2OL signup.
       const destination = event.target.closest('[data-analytics-destination]')?.getAttribute('data-analytics-destination');
       if (isStandaloneMyMatchIQDestination(destination)) return;
+      if (destination && isGuestOpenRoute(destination)) return;
       const marked = event.target.closest('[data-guest-path]');
       if (marked) {
         const declared = String(marked.getAttribute('data-guest-path') || '').toLowerCase().replace(/\/$/, '') || '/';
-        if (PUBLIC_INFORMATION_ROUTES.has(declared) || EXTRA_OPEN_PATHS.has(declared)) return;
+        if (PUBLIC_INFORMATION_ROUTES.has(declared) || EXTRA_OPEN_PATHS.has(declared) || isGuestOpenRoute(declared)) return;
       }
       const interactive = event.target.closest('a,button,[role="button"],input,select,textarea,summary,video,[data-analytics-destination],[class*="cursor-pointer"]');
       if (!interactive) return;
@@ -75,7 +77,7 @@ export default function GuestHomepageGate({ pathname }) {
         if (isStandaloneMyMatchIQDestination(path)) return;
         if (path) {
           const normalized = path.toLowerCase().replace(/\/$/, '') || '/';
-          if (PUBLIC_INFORMATION_ROUTES.has(normalized) || EXTRA_OPEN_PATHS.has(normalized)) return;
+          if (PUBLIC_INFORMATION_ROUTES.has(normalized) || EXTRA_OPEN_PATHS.has(normalized) || (normalized !== '/' && normalized !== '/home' && isGuestOpenRoute(normalized))) return;
         }
       }
       event.preventDefault();

@@ -1,3 +1,4 @@
+import { guestBrowseEnabled } from './guest-access-policy.js';
 // @ts-nocheck
 // Server-only catalog. DO NOT import this from client components: the contents
 // must never be included in the public JavaScript bundle.
@@ -114,7 +115,7 @@ export async function handleLoveNoteLibraryRequest(request,env,url) {
   // PRELAUNCH OPEN HOUSE ONLY. During the 2026 free window, template
   // content is free for all visitors. Outside it, retain per-member Credit gates.
   // Never expose member records, scheduled deliveries or AI-generated text here.
-  if(url.hostname==='prelaunch-o2ol-unified-20261030-one2onelove-launch.hwy99signs.workers.dev' &&
+  if(guestBrowseEnabled(env) &&
       isO2OLPromoFreeFeature('love_note_template_unlock')){
     const note=notes.find(n=>n.id===id);
     return note?json({ok:true,note,openHouseFree:true}):json({ok:false,error:{code:'note_not_found'}},404);

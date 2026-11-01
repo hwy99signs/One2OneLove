@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getTokenWallet, isTokensRequiredError, tokenRequiredDetails, unlockTokenContent } from '@/lib/tokenService';
 import UnlockPriceDialog from '@/components/pricing/UnlockPriceDialog';
 import { isO2OLFreePromoActive, isO2OLPromoFreeFeature } from '@/lib/o2olFreePromo2026';
-import { isUnifiedPrelaunchGuestAccessEnabled } from '@/lib/prelaunchGuestAccess';
+import { isGuestBrowseEnabled } from '@/lib/guestAccessPolicy';
 
 const freeStudioAccessCopy = {
   en:{title:'FREE for everyone',body:'Both Studio episodes are FREE FOREVER. Watch without signing up or using Credit.',retry:'Check free access',join:'Create free account'},
@@ -102,7 +102,7 @@ export default function O2OLStudio(){
   const requestedEpisodeId=searchParams.get('episode');
   const t=COPY[currentLanguage]||COPY.en;
   const promoEpisodeFree=isO2OLPromoFreeFeature('studio_episode_unlock');
-  const previewGuest = !isAuthenticated && isUnifiedPrelaunchGuestAccessEnabled();
+  const previewGuest = !isAuthenticated && isGuestBrowseEnabled();
   const freeStudioCopy=freeStudioAccessCopy[currentLanguage]||freeStudioAccessCopy.en;
   const [videoUnavailable,setVideoUnavailable]=useState(false);
   const [episode,setEpisode]=useState(null);

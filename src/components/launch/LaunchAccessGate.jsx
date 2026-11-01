@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import QuickAccountGate from '@/components/launch/QuickAccountGate.jsx';
 import PrivateSpaceNotice from '@/components/launch/PrivateSpaceNotice.jsx';
-import { isUnifiedPrelaunchGuestAccessEnabled } from '@/lib/prelaunchGuestAccess';
+import { isGuestOpenRoute } from '@/lib/guestAccessPolicy';
 
 // Site locked behind sign-up (owner decision, 2026-10-11): guests may open
 // only the entry pages (sign in / sign up / invite / recovery / admin entry)
@@ -142,9 +142,10 @@ export default function LaunchAccessGate({ pathname, children }) {
   const isStandaloneMyMatchIQ = route === '/mymatchiq' || route.startsWith('/mymatchiq/');
   const isPublic=PUBLIC_INFORMATION_ROUTES.has(route) || !isKnown || isStandaloneMyMatchIQ;
   const isViewOnly=VIEW_ONLY_ROUTES.has(route);
-  // Temporary PRELAUNCH browsing only. Never expose admin/account/payment routes
-  // or relax server-side ownership, verification, entitlement or Credit rules.
-  const openAccess = isUnifiedPrelaunchGuestAccessEnabled();
+  // Launch guest policy (owner 2026-11-01): only routes in GUEST_OPEN_ROUTES
+  // open without an account. Never admin/account/payment/private routes, and
+  // server-side ownership, verification, entitlement and Credit rules still apply.
+  const openAccess = isGuestOpenRoute(route);
   const paidRoute = new Set(['/credit','/sendcredits','/aicontentcreator','/amora','/relationshipcoach','/mymatchiq/credits']).has(route);
   // Private member-owned records and person-to-person interactions require a verified identity.
   // This is an account privacy boundary, never a public signup marketing gate.
@@ -169,11 +170,8 @@ export default function LaunchAccessGate({ pathname, children }) {
   }
 
   if(!isAuthenticated || !user){
-    if(openAccess){
-      if(privateRoute && !paidRoute) return <PrivateSpaceNotice path={pathname||'/'} />;
-      if(paidRoute) return <QuickAccountGate intendedPath={pathname||'/'} />;
-      return children;
-    }
+    if(previewGuestBrowse) return children;
+    if(privateRoute && !paidRoute) return <PrivateSpaceNotice path={pathname||'/'} />;
     return (isPublic || isViewOnly || previewGuestBrowse) ? children : <QuickAccountGate intendedPath={pathname||'/'} />;
   }
 

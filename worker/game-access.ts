@@ -1,3 +1,4 @@
+import { guestBrowseEnabled } from './guest-access-policy.js';
 // @ts-nocheck
 import { Client } from 'pg';
 import { maybeAutoReplenish } from './o2ol-tokens';
@@ -158,7 +159,7 @@ export async function handleGameFileRequest(request,env,url){
   // The permanently free standalone game HTML has no personal data.
   // Permit anonymous asset delivery on the SINGLE unified prelaunch preview
   // only; do not open scores, session passes, wallets or member APIs.
-  if(url.hostname==='prelaunch-o2ol-unified-20261030-one2onelove-launch.hwy99signs.workers.dev'){
+  if(guestBrowseEnabled(env)){
     if(!['GET','HEAD'].includes(request.method))return new Response('Method not allowed.',{status:405});
     const assetUrl=new URL(GAME_FILES[game].replace(/\.html$/,''),url);
     let asset=await env.ASSETS.fetch(new Request(assetUrl.toString(),{method:'GET',headers:{accept:'text/html'}}));

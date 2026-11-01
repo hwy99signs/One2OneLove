@@ -4,7 +4,7 @@ import { createPageUrl } from '@/utils';
 import { useLanguage } from './Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { isO2OLPromoFreeFeature } from '@/lib/o2olFreePromo2026';
-import { isUnifiedPrelaunchGuestAccessEnabled } from '@/lib/prelaunchGuestAccess';
+import { isGuestBrowseEnabled } from '@/lib/guestAccessPolicy';
 
 const FOUNDING_STRIP_COPY = {
   en:{eyebrow:'FOUNDING MEMBER GIVEAWAY',body1:'The first 100 signups with a username, email and password get $10 in Game Credit AND 2 FREE Love Note sends.',body2:'The next 100 signups get $5 in Game Credit AND 1 FREE Love Note send.',monthly:'The first 100 also get $10 in Game Credit every month for 6 months.',future:'Future perks will also be awarded to these Founding Members.',requirements:'To claim: an email on your profile, a verified phone number, and at least $5 Credit in your account.',cta:'Join Free'},
@@ -183,7 +183,7 @@ export default function Home() {
         </div>
       </section>
 
-      {foundingOffer?.open && !isUnifiedPrelaunchGuestAccessEnabled() && (
+      {foundingOffer?.open && (
         <section style={{ background:'linear-gradient(90deg,#a23be6 0%,#c630ca 55%,#db2a6e 100%)' }} className="border-y-2 border-amber-300 px-5 py-5 text-white">
           <div className="mx-auto flex max-w-7xl flex-col items-center gap-3 text-center">
             <div className="text-xs font-black uppercase tracking-[0.22em] text-amber-200">🎉 {foundingStrip.eyebrow}</div>
@@ -289,7 +289,7 @@ export default function Home() {
           ) : (
           <div className="mt-6 w-full overflow-hidden rounded-3xl border border-fuchsia-300/35 bg-slate-950 text-white shadow-2xl">
             <div className="aspect-[16/9] w-full overflow-hidden bg-black">
-              {!isAuthenticated ? <button type="button" onClick={() => navigate(isUnifiedPrelaunchGuestAccessEnabled()?'/O2OLStudio?episode=season-1-episode-1':'/Catalog?feature=studio')} className="flex h-full w-full flex-col items-center justify-center gap-4 bg-gradient-to-br from-indigo-950 via-violet-900 to-fuchsia-950 p-6 text-center font-black text-white"><span className="text-5xl">🎬</span><span className="text-xl sm:text-3xl">{studio.title}</span><span className="rounded-full bg-fuchsia-600 px-5 py-3 text-sm">Browse Studio Episodes</span></button> : <video
+              {!isAuthenticated ? <button type="button" onClick={() => navigate(isGuestBrowseEnabled()?'/O2OLStudio?episode=season-1-episode-1':'/Catalog?feature=studio')} className="flex h-full w-full flex-col items-center justify-center gap-4 bg-gradient-to-br from-indigo-950 via-violet-900 to-fuchsia-950 p-6 text-center font-black text-white"><span className="text-5xl">🎬</span><span className="text-xl sm:text-3xl">{studio.title}</span><span className="rounded-full bg-fuchsia-600 px-5 py-3 text-sm">Browse Studio Episodes</span></button> : <video
                 data-home-studio-video="season-1-episode-1"
                 aria-label="O2OL Studio Season 1 Episode 1 — Who Should Apologize First?"
                 className="h-full w-full bg-black object-contain"

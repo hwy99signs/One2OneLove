@@ -1,6 +1,6 @@
 
 import { isO2OLFreePromoActive, isO2OLPromoFreeFeature, freePromoMessage } from '@/lib/o2olFreePromo2026';
-import { isUnifiedPrelaunchGuestAccessEnabled } from '@/lib/prelaunchGuestAccess';
+
 import React, { useState, createContext, useContext, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -522,7 +522,7 @@ function LanguageContent({ children, currentPageName }) {
               <>
                 <Link to={isMyMatchIQPage ? '/MyMatchIQ/Invite' : createPageUrl("Invite")} className={mmiqHeaderButton('from-emerald-400 to-cyan-600')}>{t.nav.invite}</Link>
                 <button data-guest-allow onClick={handleSignIn} aria-label={`${t.nav.signIn} — navigation`} className={mmiqHeaderButton('from-blue-500 to-indigo-700')}>{t.nav.signIn}</button>
-                {(!isUnifiedPrelaunchGuestAccessEnabled()||isMyMatchIQPage)&&<button data-guest-allow onClick={handleSignUp} className={isMyMatchIQPage ? mmiqHeaderButton('from-rose-500 to-fuchsia-600') : 'text-yellow-300 text-xl hover:text-yellow-100'}>{t.nav.signUp}</button>}
+                {<button data-guest-allow onClick={handleSignUp} className={isMyMatchIQPage ? mmiqHeaderButton('from-rose-500 to-fuchsia-600') : 'text-yellow-300 text-xl hover:text-yellow-100'}>{t.nav.signUp}</button>}
               </>
             )}
 
@@ -733,7 +733,7 @@ function LanguageContent({ children, currentPageName }) {
                 </Link>
                 {!isAuthenticated && (
                   <>
-                    {(!isUnifiedPrelaunchGuestAccessEnabled()||isMyMatchIQPage)&&<button
+                    {<button
                       data-guest-allow
                       onClick={() => {
                         handleSignUp();

@@ -22,7 +22,7 @@ import { getAiConfig } from "@/lib/aiService";
 import { getTokenWallet, isTokensRequiredError, isPhoneVerificationError, tokenRequiredDetails, listTokenUnlocks, unlockTokenContent } from "@/lib/tokenService";
 import { apiRequest } from "@/lib/apiClient";
 import { isO2OLPromoFreeFeature } from "@/lib/o2olFreePromo2026";
-import { isUnifiedPrelaunchGuestAccessEnabled } from '@/lib/prelaunchGuestAccess';
+import { isGuestBrowseEnabled } from '@/lib/guestAccessPolicy';
 
 const FREE_NOTE_ACCESS_COPY = {
   en:{guest:'FREE through Dec 31 — tap to read without signup.',join:'Read for FREE',body:'This Love Note is FREE during the promotion. Open it without signing up. No Credit charge.',open:'Read'},
@@ -881,7 +881,7 @@ export default function LoveNotes() {
     return personalizeNote(result.note);
   };
   const openLibraryNote = async (note, send=false) => {
-    if(!(isUnifiedPrelaunchGuestAccessEnabled()&&promoNoteLibraryFree)&&!notePromoAccess&&!purchasedNoteKeys.has(String(note.id))){
+    if(!(isGuestBrowseEnabled()&&promoNoteLibraryFree)&&!notePromoAccess&&!purchasedNoteKeys.has(String(note.id))){
       setNoteToUnlock(note);setNoteUnlockError('');return;
     }
     try{

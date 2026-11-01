@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { BookOpen, Heart, Headphones, Film, Gamepad2, Sparkles, LockKeyhole, Search, X, UserPlus } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { isUnifiedPrelaunchGuestAccessEnabled } from '@/lib/prelaunchGuestAccess';
+import { isGuestOpenRoute } from '@/lib/guestAccessPolicy';
 import { useLanguage } from '@/Layout';
 import { launchPodcastLibrary } from '@/data/podcastLibrary';
 import { publicArticleTitles } from '@/data/publicArticleTitles';
@@ -126,7 +126,7 @@ export default function PublicCatalog(){
  },[type,notes,dates,studio,currentLanguage]);
  const categories=useMemo(()=>['all',...new Set(items.map(i=>i.category))], [items]);
  const shown=useMemo(()=>items.filter(i=>(category==='all'||i.category===category)&&(!search.trim()||[i.title,i.category,i.group].join(' ').toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()))),[items,category,search]);
- const openItem=(item)=>{if(isUnifiedPrelaunchGuestAccessEnabled()||isAuthenticated){navigate(item.target);return}setSelected(item);};
+ const openItem=(item)=>{if(isAuthenticated||isGuestOpenRoute(item.target)){navigate(item.target);return}setSelected(item);};
  const switchType=(value)=>setParams({feature:value});
  useEffect(()=>{if(!selected)return;const close=e=>{if(e.key==='Escape')setSelected(null)};window.addEventListener('keydown',close);return()=>window.removeEventListener('keydown',close)},[selected]);
  return <div className="min-h-[75vh] bg-gradient-to-br from-rose-50 via-white to-sky-50 px-4 py-10 text-slate-900">
@@ -151,11 +151,11 @@ export default function PublicCatalog(){
      <span className="text-xs font-black uppercase tracking-wide text-purple-600">{type==='notes'?(NOTE_CATEGORIES[item.category]||pretty(item.category)):pretty(item.category)}</span>
      <span className="mt-2 flex-1 text-base font-black leading-snug text-slate-900">{item.title}</span>
      {item.group&&<span className="mt-1 text-xs text-slate-500">{item.group}</span>}
-     <span className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-purple-700">{!isUnifiedPrelaunchGuestAccessEnabled()&&<LockKeyhole className="h-3.5 w-3.5"/>}{t.open}</span>
+     <span className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-purple-700">{!isAuthenticated&&!isGuestOpenRoute(item.target)&&<LockKeyhole className="h-3.5 w-3.5"/>}{t.open}</span>
     </button>)}
    </section>
   </div>
-  {!isUnifiedPrelaunchGuestAccessEnabled()&&selected&&<div data-catalog-signup-modal role="dialog" aria-modal="true" aria-label={t.guest} className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 px-4 py-6" onClick={e=>{if(e.target===e.currentTarget)setSelected(null)}}>
+  {selected&&<div data-catalog-signup-modal role="dialog" aria-modal="true" aria-label={t.guest} className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 px-4 py-6" onClick={e=>{if(e.target===e.currentTarget)setSelected(null)}}>
    <div className="relative w-full max-w-md rounded-3xl bg-white p-7 text-center shadow-2xl">
     <button type="button" aria-label={t.close} onClick={()=>setSelected(null)} className="absolute right-4 top-4 rounded-lg p-2 text-slate-600 hover:bg-slate-100"><X className="h-5 w-5"/></button>
     <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-purple-100 text-purple-700"><LockKeyhole className="h-7 w-7"/></div>
