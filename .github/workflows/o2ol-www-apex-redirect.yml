@@ -61,6 +61,11 @@ jobs:
               --data @/tmp/new.json | jq -c '{success,errors}'
           else
             cat /tmp/ep.json
+            echo "--- token diagnostics (no secret values) ---"
+            curl -sS -H "$AUTH" "$API/user/tokens/verify" | jq -c '{token_id:.result.id,status:.result.status,expires:.result.expires_on}' || true
+            for EP in "zones/$ZONE_ID" "zones/$ZONE_ID/rulesets" "zones/$ZONE_ID/workers/routes" "zones/$ZONE_ID/pagerules"; do
+              echo "$EP -> $(curl -sS -o /dev/null -w '%{http_code}' -H "$AUTH" "$API/$EP")"
+            done
             echo "Cloudflare token cannot read redirect rules (HTTP $CODE). It needs Zone > Single Redirect (or Zone Rulesets) Edit." >&2
             exit 1
           fi
