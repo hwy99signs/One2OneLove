@@ -440,7 +440,7 @@ export default function AIContentCreator() {
                   <SelectContent>
                     {Object.entries(t.tones).map(([key, label]) => (
                       <SelectItem key={key} value={key}>
-                        {label} · {t.upTo(CONTENT_LENGTH_LIMITS[key])}
+                        {label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -458,7 +458,7 @@ export default function AIContentCreator() {
                   <SelectContent>
                     {Object.entries(t.lengths).map(([key, label]) => (
                       <SelectItem key={key} value={key}>
-                        {label} · {t.upTo(CONTENT_LENGTH_LIMITS[key])}
+                        {CONTENT_LENGTH_LIMITS[key] ? `${label} · ${t.upTo(CONTENT_LENGTH_LIMITS[key])}` : label}
                       </SelectItem>
                     ))}
                   </SelectContent>
