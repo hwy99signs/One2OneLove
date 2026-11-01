@@ -35,3 +35,9 @@ CREATE TABLE IF NOT EXISTS public.o2ol_referrals (
  reward_status text NOT NULL DEFAULT 'none' CHECK(reward_status IN ('none','granted','failed'))
 );
 CREATE INDEX IF NOT EXISTS o2ol_referrals_inviter_idx ON public.o2ol_referrals(inviter_id,created_at DESC);
+
+-- Shared hashed rate-window counters; never store raw IP addresses.
+CREATE TABLE IF NOT EXISTS public.o2ol_invite_rate_windows(
+ key_hash text NOT NULL,endpoint text NOT NULL,window_start timestamptz NOT NULL,
+ count integer NOT NULL DEFAULT 0,PRIMARY KEY(key_hash,endpoint,window_start)
+);
