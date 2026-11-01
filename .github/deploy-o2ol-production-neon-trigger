@@ -5,3 +5,6 @@ requested_by_owner=2026-10-10
 promotion=prelaunch_o2ol_unified_20261030_to_master
 source_commit=7c0609f
 requested_by_owner=2026-11-01
+promotion=ai_content_creator_share_and_footer
+source_commit=ff2476b
+requested_by_owner=2026-11-01
