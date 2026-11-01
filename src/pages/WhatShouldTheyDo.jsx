@@ -10,6 +10,8 @@ import rawQuestionsFr from "@/data/whatShouldTheyDoQuestions.fr.json";
 import rawQuestionsIt from "@/data/whatShouldTheyDoQuestions.it.json";
 import rawQuestionsDe from "@/data/whatShouldTheyDoQuestions.de.json";
 import { useLanguage } from "@/Layout";
+import InviteButton from "@/components/invites/InviteButton";
+import EndOfRoundInvite from "@/components/invites/EndOfRoundInvite";
 
 const CATEGORY = {
   "communication": { label: "Communication", icon: "💬", a: "#1d4ed8", b: "#60a5fa", soft: "#eff6ff" },
@@ -400,6 +402,7 @@ export default function WhatShouldTheyDo() {
             <button type="button" onClick={() => setBrowserOpen(true)} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-slate-100 px-4 text-sm font-black text-[#17345f]">
               <Search className="h-4 w-4" /> {t.questions}
             </button>
+            <InviteButton game="what_should_they_do"/>
             <Link to="/Suggestions" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#1976f3] px-4 text-sm font-black text-white">
               <Send className="h-4 w-4" /> {t.suggestQuestion}
             </Link>
@@ -491,6 +494,7 @@ export default function WhatShouldTheyDo() {
                     : t.choice(userResult?.percentage, top?.percentage)}
                 </p>
               </div>
+              <EndOfRoundInvite game="what_should_they_do" finished={submitted}/>
               <button type="button" onClick={nextQuestion} className="mt-6 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#102f60] px-5 font-black text-white">
                 {t.anotherQuestion} <ArrowRight className="h-5 w-5" />
               </button>
