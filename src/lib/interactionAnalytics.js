@@ -413,7 +413,10 @@ export function deriveClickControlKey(descriptor = {}) {
   return safeText(`${place} — ${controlTypeName(controlType)}`, 160);
 }
 
+let recordedScrollMilestones = new Set();
+
 export function trackPageView(pathname) {
+  recordedScrollMilestones = new Set();
   if (isAdminAnalyticsSurface(pathname)) return;
   const route = normalizedPath(pathname) || String(pathname || '/').slice(0, 300);
   send({
@@ -465,7 +468,11 @@ export function installClickAnalytics() {
         } catch {}
       }
     }
-    if (!control) return;
+    // Count every document click, including canvas taps and otherwise
+    // unlabelled page surfaces. Never log typed form content or positions.
+    if (!control) control = target.closest('input,textarea,select,[contenteditable]') || target;
+    const unnamedSurface = control === target && !target.closest('a,button,[role="button"],[role="link"],label,summary,[data-analytics-id],[tabindex],canvas,input,textarea,select,[contenteditable]');
+    const privateField = Boolean(target.closest('input:not([type="button"]):not([type="submit"]):not([type="checkbox"]):not([type="radio"]),textarea,[contenteditable="true"]'));
 
     const currentRoute = window.location.pathname || '/';
     const explicitDestination = safeText(control.getAttribute('data-analytics-destination'), 300);
@@ -488,7 +495,7 @@ export function installClickAnalytics() {
     const wrapsFormField = !isButtonInput
       && typeof control.querySelector === 'function'
       && !!control.querySelector('input,textarea,select');
-    const visibleText = isButtonInput
+    const visibleText = privateField || unnamedSurface ? null : isButtonInput
       ? safeText(control.value)
       : (wrapsFormField ? null : safeText(control.innerText || control.textContent));
     const imageAlt = wrapsFormField
@@ -498,7 +505,7 @@ export function installClickAnalytics() {
     const controlType = role
       || (tagName === 'input' ? `input:${control.getAttribute('type') || 'text'}` : tagName);
 
-    const controlKey = deriveClickControlKey({
+    const controlKey = privateField ? 'Form field focus' : unnamedSurface ? 'Page surface tap' : deriveClickControlKey({
       analyticsId: control.getAttribute('data-analytics-id'),
       text: visibleText,
       imageAlt,
@@ -520,6 +527,75 @@ export function installClickAnalytics() {
       destination: sameSiteDestination || (externalDestination ? 'external:' + externalDestination : null),
     });
   }, true);
+
+  // Drop-downs, toggles and radio selections may change without a click
+  // reaching the parent document. Record the control name, NEVER its value.
+  document.addEventListener('change', event => {
+    if (isAdminAnalyticsSurface()) return;
+    const el = event.target;
+    if (!(el instanceof Element) || !el.matches('select,input[type="checkbox"],input[type="radio"],input[type="range"]')) return;
+    const field = safeText(el.getAttribute('data-analytics-id') || el.getAttribute('aria-label') || el.id || el.getAttribute('name'), 80) || el.tagName.toLowerCase();
+    trackFeatureActionEvent(featureForPath(window.location.pathname), 'selection:' + field);
+  }, true);
+
+  // Game HTML lives inside same-origin iframes: parent document listeners
+  // never see its clicks. Attach after each frame load, including restarts.
+  const trackedFrames = new WeakMap();
+  const gameStartIds = new Set(['playBtn','startBtn','swipeStartBtn','motionStartBtn','againBtn','newBtn','overNewBtn','restartBtn']);
+  const attachGameFrame = frame => {
+    if (!(frame instanceof HTMLIFrameElement)) return;
+    if (!/^\\/games-src\\//.test(frame.getAttribute('src') || '')) return;
+    let doc;
+    try { doc = frame.contentDocument; } catch { return; }
+    if (!doc || trackedFrames.get(frame) === doc) return;
+    trackedFrames.set(frame,doc);
+    const gameName = safeText(frame.getAttribute('title'), 70) || 'Game';
+    doc.addEventListener('click', ev => {
+      if (isAdminAnalyticsSurface()) return;
+      const target = ev.target instanceof Element ? ev.target : null;
+      if (!target) return;
+      const element = target.closest('button,a,[role="button"],[data-analytics-id],canvas,input,select') || target;
+      const rawId = safeText(element.getAttribute('data-analytics-id') || element.id || element.getAttribute('aria-label'), 65);
+      const privateInput = Boolean(element.closest('textarea,input:not([type="button"]):not([type="submit"]):not([type="checkbox"]):not([type="radio"]),[contenteditable="true"]'));
+      const label = privateInput ? 'Form field focus' : rawId || (element.matches('button,a') ? safeText(element.textContent,65) : null) || (element.matches('canvas') ? 'Game canvas tap' : 'Game surface tap');
+      send({ eventType:'click',route:window.location.pathname,feature:featureForPath(window.location.pathname),controlType:'game_frame',controlKey:(gameName+' — '+label).slice(0,160) });
+      if (rawId && gameStartIds.has(rawId)) trackFeatureActionEvent(featureForPath(window.location.pathname), 'game:start:'+gameName);
+    },true);
+    doc.addEventListener('change', ev => {
+      const el = ev.target;
+      if (!(el instanceof Element) || !el.matches('select,input[type="checkbox"],input[type="radio"]')) return;
+      trackFeatureActionEvent(featureForPath(window.location.pathname),'game:selection:'+gameName);
+    },true);
+  };
+  const wireFrames = () => document.querySelectorAll('iframe[src^="/games-src/"]').forEach(frame => {
+    if (frame.dataset.o2olAnalyticsFrameLoad !== 'on') {
+      frame.dataset.o2olAnalyticsFrameLoad = 'on';
+      frame.addEventListener('load',() => attachGameFrame(frame));
+    }
+    attachGameFrame(frame);
+  });
+  const frameObserver = new MutationObserver(wireFrames);
+  frameObserver.observe(document.documentElement,{childList:true,subtree:true});
+  wireFrames();
+
+  // Scroll milestones reflect meaningful navigation without recording a
+  // cursor trail, exact position, message content or every scroll tick.
+  let scrollTimer = null;
+  window.addEventListener('scroll', () => {
+    if (scrollTimer !== null || isAdminAnalyticsSurface()) return;
+    scrollTimer = window.setTimeout(() => {
+      scrollTimer = null;
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      if (maxScroll < 200) return;
+      const pct = Math.min(100,Math.floor(100*Math.max(0,window.scrollY)/maxScroll));
+      for (const threshold of [25,50,75,100]) {
+        if (pct >= threshold && !recordedScrollMilestones.has(threshold)) {
+          recordedScrollMilestones.add(threshold);
+          trackFeatureActionEvent(featureForPath(window.location.pathname),'scroll:'+threshold+'%');
+        }
+      }
+    },250);
+  },{passive:true});
 }
 
 let presenceInstalled = false;
