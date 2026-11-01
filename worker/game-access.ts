@@ -160,7 +160,7 @@ export async function handleGameFileRequest(request,env,url){
   // only; do not open scores, session passes, wallets or member APIs.
   if(url.hostname==='prelaunch-o2ol-unified-20261030-one2onelove-launch.hwy99signs.workers.dev'){
     if(!['GET','HEAD'].includes(request.method))return new Response('Method not allowed.',{status:405});
-    const assetUrl=new URL(GAME_FILES[game].replace(/\\.html$/,''),url);
+    const assetUrl=new URL(GAME_FILES[game].replace(/\.html$/,''),url);
     let asset=await env.ASSETS.fetch(new Request(assetUrl.toString(),{method:'GET',headers:{accept:'text/html'}}));
     for(let hop=0;hop<3&&asset.status>=300&&asset.status<400&&asset.headers.get('location');hop++){
       asset=await env.ASSETS.fetch(new Request(new URL(asset.headers.get('location'),url).toString(),{method:'GET',headers:{accept:'text/html'}}));
