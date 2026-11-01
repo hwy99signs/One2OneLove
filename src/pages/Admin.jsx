@@ -9,6 +9,7 @@ import {
 import { getAdminAnalytics, getAdminDashboard, getAdminPresence, getMemberActivity, grantVerificationGameCredit, manageMemberAccount, manageMemberAccountsBulk, grantMemberGameCredit } from '../lib/adminService';
 import { touchAdminMfa } from '../lib/adminMfaService';
 import GameEconomyPanel from '../components/admin/GameEconomyPanel';
+import InvitesPanel from '../components/admin/InvitesPanel';
 import MessageFeatureIntelligence from '../components/admin/MessageFeatureIntelligence';
 import {
   ADMIN_AUTH_REDIRECT,
@@ -25,6 +26,7 @@ const sections = [
   { id: 'chat-room', label: 'Chat Room', icon: MessageSquareText },
   { id: 'members', label: 'Members', icon: Users },
   { id: 'games', label: 'Games & Promotions', icon: Gauge },
+  { id: 'growth', label: 'Growth & Invites', icon: TrendingUp },
   { id: 'plans', label: 'Credit & Billing', icon: CreditCard },
   { id: 'love-notes', label: 'Love Notes', icon: Heart },
   { id: 'applications', label: 'Applications', icon: FileCheck2 },
@@ -1061,6 +1063,7 @@ export default function Admin() {
           </div>}
 
           {section==='games' && <GameEconomyPanel />}
+          {section==='growth' && <InvitesPanel />}
 
           {section==='plans' && <div><Heading title="Credit & Billing" subtitle="Credit sales, member balances and payment records. Stripe remains the source of truth for payment records."/><div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5"><Metric icon={TrendingUp} label="Credit Sold · 30 Days" value={money(Number(credit.sold_cents_30d||0)/100)} note="purchases and auto-replenish" tone="green"/><Metric icon={CreditCard} label="Credit Sold · All Time" value={money(Number(credit.sold_cents_total||0)/100)} note="total Credit purchased" tone="violet"/><Metric icon={Coins} label="Outstanding Balances" value={money(Number(credit.outstanding_cents||0)/100)} note="Credit held in member wallets" tone="amber"/><Metric icon={Users} label="Credit Buyers" value={number(credit.buyers)} note="members with a completed purchase" tone="blue"/><Metric icon={Activity} label="Credit Spent on Features · 30 Days" value={money(Number(credit.spent_cents_30d||0)/100)} note="unlocks and paid features" tone="rose"/></div><div className="grid gap-6 xl:grid-cols-2"><Panel title="Credit Activity">{creditActivity.length?<div className="space-y-2">{creditActivity.slice(0,25).map(item=><div key={item.id} className="rounded-xl bg-slate-50 p-3 text-sm"><div className="flex items-center justify-between gap-3"><div><div className="font-semibold">{item.username?('@'+item.username):(item.email||item.user_id)}</div>{item.username&&item.email&&<div className="text-xs text-slate-400">{item.email}</div>}</div><div className={cx('font-bold',Number(item.wallet_delta)<0?'text-slate-900':'text-emerald-700')}>{Number(item.wallet_delta)<0?'-':'+'}{money(Math.abs(Number(item.wallet_delta||0))/100)}</div></div><div className="mt-1 text-slate-600">{creditActivityLabel(item)}</div><div className="mt-1 text-xs text-slate-400">{date(item.created_at)}</div></div>)}</div>:<Empty>No credit activity recorded yet.</Empty>}</Panel><Panel title="Recent Payments">{payments.length?<div className="space-y-2">{payments.slice(0,25).map(item=><div key={item.id} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 p-3 text-sm"><div><div className="font-semibold">{item.username?('@'+item.username):(item.email||item.user_id)}</div>{item.username&&item.email&&<div className="text-xs text-slate-400">{item.email}</div>}<div className="text-xs text-slate-400">{date(item.created_at)}</div></div><div className="text-right"><div className="font-bold">{money(item.amount,item.currency)}</div><Pill tone={statusTone(item.status)}>{item.status||'unknown'}</Pill></div></div>)}</div>:<Empty>No payment records yet.</Empty>}</Panel></div></div>}
 
