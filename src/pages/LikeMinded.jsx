@@ -8,6 +8,8 @@ import {
 import { useLanguage } from './Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { createPageUrl } from '@/utils';
+import InviteButton from '@/components/invites/InviteButton';
+import {getMyInvite,logInviteEvent,saveAttribution} from '@/lib/inviteService';
 
 
 import GameLeaderboard from '@/components/activities/GameLeaderboard';
@@ -380,7 +382,10 @@ export default function LikeMinded() {
   const withPremiumDialog=(content)=>content;
 
   useEffect(() => {
-    const pending=new URLSearchParams(window.location.search).get('room');
+    const query=new URLSearchParams(window.location.search);
+    const ref=query.get('ref');
+    if(ref)saveAttribution({code:ref,game:'like_minded',source:'like_minded_room'});
+    const pending=query.get('room');
     if(!pending)return;
     const normalized=pending.toUpperCase();
     setRoomCode(normalized);
@@ -548,8 +553,11 @@ export default function LikeMinded() {
   };
 
   const copyInvite = async () => {
-    const link = window.location.origin + createPageUrl('LikeMinded') + '?room=' + encodeURIComponent(room?.code || '');
+    let personalCode=null;
+    try{personalCode=(await getMyInvite()).code}catch(_){/* no code available */}
+    const link = window.location.origin + createPageUrl('LikeMinded') + '?room=' + encodeURIComponent(room?.code || '')+(personalCode?'&ref='+encodeURIComponent(personalCode):'');
     await navigator.clipboard?.writeText(link);
+    if(personalCode)logInviteEvent({code:personalCode,game:'like_minded',surface:'like_minded_room',event:'share_channel',channel:'copy'}).catch(()=>{});
     setCopied(true); setTimeout(() => setCopied(false), 1500);
   };
 
@@ -773,7 +781,8 @@ export default function LikeMinded() {
             {!current.guest_user_id && (
               <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4">
                 <div className="font-black text-amber-900">{t.player2}</div>
-                <button onClick={copyInvite} className="mt-3 inline-flex items-center gap-2 rounded-xl bg-amber-950 px-4 py-2 text-sm font-black text-white"><Copy className="h-4 w-4"/>{copied?t.copied:t.copyInvite}</button>
+                <InviteButton game="like_minded" surface="like_minded_room"/>
+                <button data-analytics-id="invite-room-copy" onClick={copyInvite} className="mt-3 inline-flex items-center gap-2 rounded-xl bg-amber-950 px-4 py-2 text-sm font-black text-white"><Copy className="h-4 w-4"/>{copied?t.copied:t.copyInvite}</button>
               </div>
             )}
 
