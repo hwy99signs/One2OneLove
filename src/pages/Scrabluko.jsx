@@ -7,6 +7,7 @@ import { apiRequest } from "@/lib/apiClient";
 import GameLeaderboard from "@/components/activities/GameLeaderboard";
 import { applyGameInstructionLocale } from '@/lib/gameInstructionLocale';
 import { useQueryClient } from "@tanstack/react-query";
+import { trackFeatureActionEvent } from '@/lib/interactionAnalytics';
 
 const copy = {
   en: { back: "Back to Games" },
@@ -37,7 +38,7 @@ export default function Scrabluko({gameSessionRef}) {
       if(!Number.isFinite(score)||score<0)return;
       runRef.current=null;
       apiRequest('/api/games/scores',{method:'POST',body:{game:'scrabluko',score,sessionRef}})
-        .then(()=>queryClient.invalidateQueries({queryKey:['gameLeaderboard','scrabluko']})).catch(()=>{});
+        .then(()=>{trackFeatureActionEvent('Relationship Games','game:score_saved:scrabluko');queryClient.invalidateQueries({queryKey:['gameLeaderboard','scrabluko']});}).catch(()=>{});
     };
     const bind=()=>{
       try{
