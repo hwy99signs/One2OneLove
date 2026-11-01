@@ -10,8 +10,12 @@ export function registerSaveConsentHandler(fn) {
 }
 
 // Resolves true once the member accepts, false if they decline or no dialog is mounted.
-export function requestSaveConsent() {
-  if (!handler) return Promise.resolve(false);
-  if (!pending) pending = Promise.resolve(handler()).then(Boolean).catch(() => false).finally(() => { pending = null; });
+async function runSaveConsentHandler(fn) {
+  try { return Boolean(await fn()); } catch { return false; } finally { pending = null; }
+}
+
+export async function requestSaveConsent() {
+  if (!handler) return false;
+  if (!pending) pending = runSaveConsentHandler(handler);
   return pending;
 }

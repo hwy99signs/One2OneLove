@@ -150,7 +150,8 @@ jobs:
           grep -F "INSERT INTO public.o2ol_token_wallets" worker/launch-auth.ts >/dev/null
           grep -F "visitor_identity_links" worker/launch-auth.ts >/dev/null
           grep -F "marketingEmailOptIn" worker/launch-auth.ts >/dev/null
-          grep -F "username_taken" worker/launch-auth.ts >/dev/null
+          grep -F "USERNAME_TAKEN_CODE" worker/launch-auth.ts >/dev/null
+          grep -F "'username_taken'" worker/username-rules.js >/dev/null
           grep -F "QuickAccountGate" src/components/launch/LaunchAccessGate.jsx >/dev/null
           grep -F "Registered Free is the site access identity." src/components/launch/LaunchAccessGate.jsx >/dev/null
 
@@ -161,7 +162,8 @@ jobs:
           grep -F "termsFr from '@/content/terms/fr'" src/pages/TermsOfService.jsx >/dev/null
           grep -F "termsIt from '@/content/terms/it'" src/pages/TermsOfService.jsx >/dev/null
           grep -F "termsDe from '@/content/terms/de'" src/pages/TermsOfService.jsx >/dev/null
-          grep -F "Last Updated: October 9, 2026" src/pages/TermsOfService.jsx src/pages/PrivacyPolicy.jsx >/dev/null
+          grep -F "Last Updated: October 10, 2026" src/pages/TermsOfService.jsx >/dev/null
+          grep -F "Last Updated: November 1, 2026" src/pages/PrivacyPolicy.jsx >/dev/null
           grep -F "1. Eligibility — Adults 18 and Older" src/content/terms/en.js >/dev/null
           grep -F "1. Elegibilidad — Adultos de 18 años o más" src/content/terms/es.js >/dev/null
           grep -F "1. Admissibilité — Adultes de 18 ans et plus" src/content/terms/fr.js >/dev/null

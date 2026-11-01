@@ -2,3 +2,6 @@ O2OL_PRODUCTION_DEPLOY_TRIGGER
 promotion=all_games_free_through_2026_10_11_2359_CT
 source_pr=117
 requested_by_owner=2026-10-10
+promotion=prelaunch_o2ol_unified_20261030_to_master
+source_commit=7c0609f
+requested_by_owner=2026-11-01
