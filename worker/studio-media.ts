@@ -124,7 +124,7 @@ async function accessState(request,env,episode){
     unlocked,
     promoAccess,
     isAdmin,
-    unlockPriceCents:promoAccess?0:(episode.unlockPriceCents||null),
+    unlockPriceCents:(promoAccess||publicPromo)?0:(episode.unlockPriceCents||null),
     publicAvailableAt:availableAt.toISOString(),
     releasedAt:episode.releasedAt,
   };
