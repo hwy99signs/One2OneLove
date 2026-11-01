@@ -1,4 +1,5 @@
 import { apiRequest } from './apiClient';
+import { chooseInviteAttribution } from './inviteRules';
 const KEY='o2ol_invite_attr',TTL=30*86400*1000;
 export const INVITE_GAMES=[
  {key:'pests',label:"PEST'S",route:'/Pests',image:'/game-cards/card-pests.jpg'},
@@ -55,6 +56,8 @@ export function saveAttribution(value){
  const existing=readAttribution();
  // First touch wins, except a personal code supersedes an un-attributed game-site link.
  if(existing&& (existing.code||!next.code))return existing;
+ const chosen=chooseInviteAttribution(existing,next);
+ if(chosen!==next)return chosen;
  try{localStorage.setItem(KEY,JSON.stringify(next))}catch{}
  if(typeof document!=='undefined'){
   document.cookie=KEY+'='+encodeURIComponent(JSON.stringify(next))+'; Max-Age=2592000; Path=/; SameSite=Lax'+(location.protocol==='https:'?'; Secure':'');
