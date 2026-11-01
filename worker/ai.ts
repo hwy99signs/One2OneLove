@@ -3,6 +3,7 @@ import { Client } from 'pg';
 import { reserveTokenCharge, consumeTokenReservation, releaseTokenReservation, maybeAutoReplenish } from './o2ol-tokens';
 import { recordOpenAICostEvent } from './o2ol-cost-ledger';
 import { retrieveCoachingKnowledge, formatCoachingGrounding, O2OL_COACHING_KB_VERSION } from './coaching-knowledge';
+import { contentLengthPrompt, fitContentLength } from './content-length-rules.js';
 import { requireCurrentCoachingConsent } from './consents';
 
 const HEADERS = {
@@ -259,10 +260,12 @@ async function createContent(db, env, auth, input) {
   });
 
   const lengthGuide = { short: '50-100 words', medium: '150-250 words', long: '300-400 words' }[length] || '150-250 words';
+  // Content Creator uses the owner's character template; text love notes keep their 171-character rule.
+  const lengthLine = isLoveNote ? `Length: ${lengthGuide}.` : contentLengthPrompt(length);
   const prompt = [
     `Create a ${tone} ${contentType} for a romantic partner.`,
     partnerName ? `Partner name: ${partnerName}.` : '',
-    `Length: ${lengthGuide}.`,
+    lengthLine,
     `Language code: ${language}.`,
     details ? `Context: ${details}` : '',
     'Make it heartfelt, natural, respectful, and ready for the member to personalize. Return only the requested content.',
@@ -299,7 +302,7 @@ async function createContent(db, env, auth, input) {
     maybeAutoReplenish(db,env,auth.user.id).catch(error=>console.error('AI content Auto-Replenish check failed',error));
     return json({
       ok:true,
-      content:generated.text,
+      content:isLoveNote?generated.text:fitContentLength(generated.text,length),
       model:generated.model,
       tokens:{charged:Number(reservation.tokens||0),balance:Number(reservation.balance_after??0)},
     });

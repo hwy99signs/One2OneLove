@@ -14,10 +14,11 @@ import { createPageUrl } from "@/utils";
 import { generateRelationshipContent } from "@/lib/aiService";
 import { shareVia, getMyInvite, buildInviteLink, logInviteEvent } from "@/lib/inviteService";
 
-import { CONTENT_FOOTER, withContentFooter, fitForX } from "@/lib/contentShare";
+import { CONTENT_FOOTER, CONTENT_LENGTH_LIMITS, withContentFooter, fitForX } from "@/lib/contentShare";
 
 const translations = {
   en: {
+    upTo: (n) => `up to ${n.toLocaleString("en-US")} characters`,
     shareBy: "Share by", shareText: "Text", shareEmail: "Email", shareSocial: "Social media", shareMore: "More apps", shareOpened: "Share option opened", shareError: "Sharing is unavailable right now", pasteHint: "Note copied. Paste it into your post.",
     title: "AI Content Creator",
     subtitle: "Let AI help you create personalized content for your relationship",
@@ -54,6 +55,7 @@ const translations = {
     createTitle: "Generate Content", empty: "Fill in the form and click generate to create AI-powered content.", selectRequired: "Please select content type and tone.", downloaded: "Downloaded!", generateFailed: "Failed to generate content. Please try again."
   },
   es: {
+    upTo: (n) => `hasta ${n.toLocaleString("es-ES")} caracteres`,
     shareBy: "Compartir por", shareText: "Mensaje", shareEmail: "Correo", shareSocial: "Redes sociales", shareMore: "Más apps", shareOpened: "Opción de compartir abierta", shareError: "No se puede compartir ahora", pasteHint: "Nota copiada. Pégala en tu publicación.",
     title: "Creador de Contenido IA",
     subtitle: "Deja que la IA te ayude a crear contenido personalizado para tu relación",
@@ -90,6 +92,7 @@ const translations = {
     createTitle: "Generar contenido", empty: "Completa el formulario y pulsa generar para crear contenido con IA.", selectRequired: "Selecciona un tipo de contenido y un tono.", downloaded: "¡Descargado!", generateFailed: "No se pudo generar contenido. Inténtalo de nuevo."
   },
   fr: {
+    upTo: (n) => `jusqu'à ${n.toLocaleString("fr-FR")} caractères`,
     shareBy: "Partager par", shareText: "SMS", shareEmail: "E-mail", shareSocial: "Réseaux sociaux", shareMore: "Autres apps", shareOpened: "Partage ouvert", shareError: "Partage indisponible pour le moment", pasteHint: "Note copiée. Collez-la dans votre publication.",
     title: "Créateur de Contenu IA",
     subtitle: "Laissez l'IA vous aider à créer du contenu personnalisé pour votre relation",
@@ -126,6 +129,7 @@ const translations = {
     createTitle: "Créer du contenu", empty: "Remplissez le formulaire, puis lancez la génération pour créer du contenu avec l’IA.", selectRequired: "Choisissez un type de contenu et un ton.", downloaded: "Téléchargé !", generateFailed: "La création du contenu a échoué. Réessayez."
   },
   it: {
+    upTo: (n) => `fino a ${n.toLocaleString("it-IT")} caratteri`,
     shareBy: "Condividi tramite", shareText: "SMS", shareEmail: "Email", shareSocial: "Social media", shareMore: "Altre app", shareOpened: "Condivisione aperta", shareError: "Condivisione non disponibile al momento", pasteHint: "Nota copiata. Incollala nel tuo post.",
     title: "Creatore di Contenuti IA",
     subtitle: "Lascia che l'IA ti aiuti a creare contenuti personalizzati per la tua relazione",
@@ -162,6 +166,7 @@ const translations = {
     createTitle: "Genera contenuti", empty: "Compila il modulo e premi genera per creare contenuti con l’IA.", selectRequired: "Seleziona il tipo di contenuto e il tono.", downloaded: "Scaricato!", generateFailed: "Impossibile generare il contenuto. Riprova."
   },
   de: {
+    upTo: (n) => `bis zu ${n.toLocaleString("de-DE")} Zeichen`,
     shareBy: "Teilen per", shareText: "SMS", shareEmail: "E-Mail", shareSocial: "Soziale Medien", shareMore: "Weitere Apps", shareOpened: "Teilen geöffnet", shareError: "Teilen ist gerade nicht verfügbar", pasteHint: "Notiz kopiert. Füge sie in deinen Beitrag ein.",
     title: "KI-Content-Ersteller",
     subtitle: "Lassen Sie KI Ihnen helfen, personalisierten Inhalt für Ihre Beziehung zu erstellen",
@@ -435,7 +440,7 @@ export default function AIContentCreator() {
                   <SelectContent>
                     {Object.entries(t.tones).map(([key, label]) => (
                       <SelectItem key={key} value={key}>
-                        {label}
+                        {label} · {t.upTo(CONTENT_LENGTH_LIMITS[key])}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -453,7 +458,7 @@ export default function AIContentCreator() {
                   <SelectContent>
                     {Object.entries(t.lengths).map(([key, label]) => (
                       <SelectItem key={key} value={key}>
-                        {label}
+                        {label} · {t.upTo(CONTENT_LENGTH_LIMITS[key])}
                       </SelectItem>
                     ))}
                   </SelectContent>

@@ -10,3 +10,6 @@ export function fitForX(content, link) {
   const cut = body.length > room ? body.slice(0, room - 1).trimEnd() + "…" : body;
   return `${cut}\n\n${CONTENT_FOOTER} ${link}`;
 }
+
+// Mirrors worker/content-length-rules.js (owner's Amora reference note, rounded up to the nearest 10).
+export const CONTENT_LENGTH_LIMITS = Object.freeze({ short: 380, medium: 700, long: 1070 });
