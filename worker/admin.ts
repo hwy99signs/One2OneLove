@@ -1257,6 +1257,106 @@ async function loveNotes(db) {
   return { statusCounts: statusCounts.rows, recent: recent.rows, sent: sent.rows[0] || {}, schedulers: schedulers.rows[0] || {} };
 }
 
+
+/**
+ * Anonymous-free message intelligence. Aggregate PRIVATE contents in SQL;
+ * never select, serialize, log or render any message body or recipient.
+ * Repeated text is grouped by an internal fingerprint used only within
+ * each query; the fingerprint itself is not returned to clients.
+ */
+async function messageIntelligence(db) {
+  const sentCte = `WITH sent AS (
+    SELECT 'Direct Chat'::text AS feature,m.sender_id AS user_id,NULL::text AS anonymous_id,
+           m.created_at AS sent_at,char_length(coalesce(m.content,'')) AS chars,
+           md5(btrim(coalesce(m.content,''))) AS signature
+    FROM public.messages m WHERE COALESCE(m.is_deleted,false)=false
+    UNION ALL
+    SELECT 'Chat Rooms',m.user_id,NULL::text,m.created_at,char_length(coalesce(m.content,'')),
+           md5(btrim(coalesce(m.content,'')))
+    FROM public.chat_room_messages m WHERE COALESCE(m.is_deleted,false)=false
+    UNION ALL
+    SELECT 'Love Notes',n.user_id,NULL::text,coalesce(n.sent_date,n.created_at),
+           char_length(coalesce(n.note_content,'')),md5(btrim(coalesce(n.note_content,'')))
+    FROM public.sent_love_notes n
+    UNION ALL
+    SELECT CASE lower(coalesce(c.product,'')) WHEN 'bianca' THEN 'Bianca AI'
+           WHEN 'amora' THEN 'Amora AI' ELSE 'AI Coach' END,
+           m.user_id,NULL::text,m.created_at,char_length(coalesce(m.content,'')),
+           md5(btrim(coalesce(m.content,'')))
+    FROM public.ai_coach_messages m
+    LEFT JOIN public.ai_coach_conversations c ON c.id=m.conversation_id
+    WHERE m.role='user'
+    UNION ALL
+    SELECT 'Support Chat',c.user_id,c.visitor_id,m.created_at,
+           char_length(coalesce(m.content,'')),md5(btrim(coalesce(m.content,'')))
+    FROM public.support_chat_messages m
+    LEFT JOIN public.support_chat_conversations c ON c.id=m.conversation_id
+    WHERE m.role='user'
+  )`;
+  const [channels, totals, commonMessages, memberFrequency] = await Promise.all([
+    db.query(`${sentCte}
+      SELECT s.feature,count(*)::int AS messages_30d,
+             count(*) FILTER (WHERE s.sent_at>=now()-interval '7 days')::int AS messages_7d,
+             count(DISTINCT s.user_id)::int AS members,
+             count(DISTINCT s.anonymous_id) FILTER (WHERE s.user_id IS NULL)::int AS anonymous_sessions,
+             coalesce(round(avg(s.chars)::numeric,1),0) AS avg_characters,
+             coalesce(round(avg(s.chars/5.0)::numeric,1),0) AS estimated_words
+      FROM sent s LEFT JOIN neon_auth."user" au ON au.id=s.user_id
+      WHERE s.sent_at>=now()-interval '30 days' AND coalesce(au.role,'user')<>'admin'
+      GROUP BY s.feature ORDER BY messages_30d DESC,s.feature ASC`),
+    db.query(`${sentCte}
+      SELECT count(*)::int AS sent_30d,
+             count(*) FILTER (WHERE s.sent_at>=now()-interval '7 days')::int AS sent_7d,
+             count(DISTINCT s.user_id)::int AS members,
+             coalesce(round(avg(s.chars)::numeric,1),0) AS avg_characters,
+             (SELECT count(*)::int FROM public.scheduled_love_notes
+               WHERE created_at>=now()-interval '30 days') AS queued_love_notes_30d
+      FROM sent s LEFT JOIN neon_auth."user" au ON au.id=s.user_id
+      WHERE s.sent_at>=now()-interval '30 days' AND coalesce(au.role,'user')<>'admin'`),
+    db.query(`${sentCte}, repeated AS (
+      SELECT s.feature,s.signature,count(*)::int AS sends,
+             count(DISTINCT s.user_id)::int AS members,
+             round(avg(s.chars)::numeric,1) AS avg_characters
+      FROM sent s LEFT JOIN neon_auth."user" au ON au.id=s.user_id
+      WHERE s.sent_at>=now()-interval '30 days' AND s.chars>0
+        AND coalesce(au.role,'user')<>'admin'
+      GROUP BY s.feature,s.signature HAVING count(*)>=2
+    )
+    SELECT row_number() OVER (ORDER BY sends DESC,feature ASC)::int AS frequency_rank,
+           feature,sends,members,avg_characters
+    FROM repeated ORDER BY frequency_rank LIMIT 10`),
+    db.query(`${sentCte}, member_usage AS (
+      SELECT e.user_id,e.feature,e.event_type,e.created_at AS at
+      FROM public.interaction_events e
+      WHERE e.user_id IS NOT NULL AND e.created_at>=now()-interval '30 days'
+        AND e.feature IS NOT NULL AND e.event_type IN ('click','page_view','action')
+      UNION ALL
+      SELECT s.user_id,s.feature,'message_sent'::text,s.sent_at
+      FROM sent s WHERE s.user_id IS NOT NULL AND s.sent_at>=now()-interval '30 days'
+    )
+    SELECT m.user_id::text AS member_id,
+           coalesce(nullif(u.username,''),'Member '||left(m.user_id::text,8)) AS member,
+           m.feature,
+           count(*) FILTER (WHERE m.event_type='page_view')::int AS opens,
+           count(*) FILTER (WHERE m.event_type='click')::int AS clicks,
+           count(*) FILTER (WHERE m.event_type='action')::int AS actions,
+           count(*) FILTER (WHERE m.event_type='message_sent')::int AS messages,
+           count(DISTINCT (m.at AT TIME ZONE 'America/Chicago')::date)::int AS active_days,
+           count(*)::int AS events_30d
+    FROM member_usage m
+    LEFT JOIN public.users u ON u.id=m.user_id
+    LEFT JOIN neon_auth."user" a ON a.id=m.user_id
+    WHERE coalesce(a.role,'user')<>'admin'
+    GROUP BY m.user_id,u.username,m.feature
+    ORDER BY events_30d DESC,m.feature ASC
+    LIMIT 100`),
+  ]);
+  return { windowDays:30, totals:totals.rows[0]||{},
+           channels:channels.rows, repeatedMessages:commonMessages.rows,
+           memberFrequency:memberFrequency.rows,
+           privacy:'Content, message titles, contact identifiers, recipients and text fingerprints never leave the database.' };
+}
+
 async function clickAnalytics(db, env) {
   const tableCheck = await db.query(`SELECT to_regclass('public.interaction_events') IS NOT NULL AS ready`);
   const liveTracking = Boolean(tableCheck.rows[0]?.ready);
@@ -1651,10 +1751,10 @@ async function ageRanges(db) {
 async function dashboard(db, env, registryRangeDays = 30) {
   await ensureChatModerationSchema(db);
   await ensureO2OLShowVotingSchema(db);
-  const [summary,userRows,applicationRows,moderationRows,billingData,loveNoteData,featureData,clickData,topFeatureData,chatRoomData,systemData,visitorData,supportData,ageRangeData] = await Promise.all([
-    overview(db),members(db),applications(db),moderation(db),billing(db),loveNotes(db),featureUsage(db,env),clickAnalytics(db,env),topFeatureActivity(db,env),chatRoomAnalytics(db),system(db),visitorRegistry(db,registryRangeDays,env),supportFeedback(db),ageRanges(db),
+  const [summary,userRows,applicationRows,moderationRows,billingData,loveNoteData,featureData,clickData,topFeatureData,chatRoomData,systemData,visitorData,supportData,ageRangeData,messageStats] = await Promise.all([
+    overview(db),members(db),applications(db),moderation(db),billing(db),loveNotes(db),featureUsage(db,env),clickAnalytics(db,env),topFeatureActivity(db,env),chatRoomAnalytics(db),system(db),visitorRegistry(db,registryRangeDays,env),supportFeedback(db),ageRanges(db),messageIntelligence(db),
   ]);
-  return { summary,members:userRows,applications:applicationRows,moderation:moderationRows,billing:billingData,loveNotes:loveNoteData,featureUsage:featureData,clickAnalytics:clickData,topFeatureActivity:topFeatureData,chatRoom:chatRoomData,system:systemData,visitorRegistry:visitorData,supportFeedback:supportData,ageRanges:ageRangeData };
+  return { summary,members:userRows,applications:applicationRows,moderation:moderationRows,billing:billingData,loveNotes:loveNoteData,featureUsage:featureData,clickAnalytics:clickData,topFeatureActivity:topFeatureData,chatRoom:chatRoomData,system:systemData,visitorRegistry:visitorData,supportFeedback:supportData,ageRanges:ageRangeData,messageIntelligence:messageStats };
 }
 
 function reportKeyMatches(provided, expected) {
