@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { parseLocalDate } from '@/utils/localDate';
 import {
   ArrowLeft, BarChart3, CreditCard, Heart, Loader2, LockKeyhole,
   RefreshCw, TrendingUp, Users,
@@ -17,7 +18,7 @@ const AUTO_REFRESH_MS = 15 * 60 * 1000;
 function number(value) { return Number(value || 0).toLocaleString(); }
 function shortDate(value) {
   if (!value) return '';
-  const d = new Date(`${value}T00:00:00`);
+  const d = parseLocalDate(value) || new Date(NaN);
   return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 function shortDateTime(value) {

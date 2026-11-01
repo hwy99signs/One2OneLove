@@ -242,7 +242,7 @@ export default function RelationshipMilestones() {
 
   const getNextAnniversary = (originalDate) => {
     const today = new Date();
-    const original = new Date(`${originalDate}T00:00:00`);
+    const original = parseLocalDate(originalDate) || new Date();
     const thisYear = new Date(today.getFullYear(), original.getMonth(), original.getDate());
     
     if (thisYear < today) {

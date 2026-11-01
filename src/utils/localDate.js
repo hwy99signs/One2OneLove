@@ -4,8 +4,12 @@ export function parseLocalDate(value) {
     return Number.isNaN(value.getTime()) ? null : new Date(value.getTime());
   }
   const raw = String(value).trim();
-  const parsed = /^\d{4}-\d{2}-\d{2}$/.test(raw)
-    ? new Date(`${raw}T00:00:00`)
+  // Postgres DATE columns arrive as "YYYY-MM-DD" or as UTC-midnight ISO
+  // ("YYYY-MM-DDT00:00:00.000Z"). Both are calendar days: build them in local
+  // time so US members never see the previous day or an invalid date.
+  const dayOnly = /^(\d{4}-\d{2}-\d{2})(?:T00:00:00(?:\.000)?Z)?$/.exec(raw);
+  const parsed = dayOnly
+    ? new Date(`${dayOnly[1]}T00:00:00`)
     : new Date(raw);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }

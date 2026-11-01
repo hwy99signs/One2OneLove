@@ -107,7 +107,7 @@ export async function updateMilestoneMedia(milestoneId, mediaUrls) {
 
 function getNextAnniversary(originalDate) {
   const today = new Date();
-  const original = new Date(`${originalDate}T00:00:00`);
+  const original = parseLocalDate(originalDate) || new Date();
   let next = new Date(today.getFullYear(), original.getMonth(), original.getDate());
   if (next < new Date(today.getFullYear(), today.getMonth(), today.getDate())) {
     next = new Date(today.getFullYear() + 1, original.getMonth(), original.getDate());

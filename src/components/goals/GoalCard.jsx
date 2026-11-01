@@ -1,4 +1,5 @@
 import React from "react";
+import { parseLocalDate } from '@/utils/localDate';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -103,7 +104,7 @@ export default function GoalCard({ goal, onEdit, onDelete, onUpdateProgress }) {
 
   const getDaysRemaining = () => {
     const today = new Date();
-    const target = new Date(`${goal.target_date}T00:00:00`);
+    const target = parseLocalDate(goal.target_date) || new Date(NaN);
     const diffTime = target - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;

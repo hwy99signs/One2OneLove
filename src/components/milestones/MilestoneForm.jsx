@@ -338,7 +338,7 @@ export default function MilestoneForm({ milestone, onSubmit, onCancel, isLoading
                   <PopoverTrigger asChild>
                     <Button id="milestone-date" type="button" variant="outline" aria-label={t.date} className="w-full justify-start text-left">
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.date ? format(new Date(`${formData.date}T00:00:00`), 'PPP', { locale: dateLocale }) : t.selectDate}
+                      {parseLocalDate(formData.date) ? format(parseLocalDate(formData.date), 'PPP', { locale: dateLocale }) : t.selectDate}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">

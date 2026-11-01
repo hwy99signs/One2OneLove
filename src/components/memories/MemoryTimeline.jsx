@@ -1,4 +1,5 @@
 import React from "react";
+import { parseLocalDate } from '@/utils/localDate';
 import { motion } from "framer-motion";
 import { Heart, Calendar, MapPin, Edit, Trash2, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -48,7 +49,7 @@ export default function MemoryTimeline({ memories, onEdit, onDelete, onToggleFav
                     </div>
 
                     <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-                      {memory.memory_date && <div className="flex items-center"><Calendar className="w-4 h-4 mr-2 text-pink-500" />{format(new Date(`${memory.memory_date}T00:00:00`), 'PPP', { locale: dateLocale })}</div>}
+                      {parseLocalDate(memory.memory_date) && <div className="flex items-center"><Calendar className="w-4 h-4 mr-2 text-pink-500" />{format(parseLocalDate(memory.memory_date), 'PPP', { locale: dateLocale })}</div>}
                       {memory.location && <div className="flex items-center"><MapPin className="w-4 h-4 mr-2 text-purple-500" />{memory.location}</div>}
                     </div>
                   </div>

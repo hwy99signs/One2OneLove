@@ -1,4 +1,5 @@
 import React from "react";
+import { parseLocalDate } from '@/utils/localDate';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar, MapPin, Pencil, Trash2, Sparkles } from "lucide-react";
@@ -48,7 +49,7 @@ const LOCALES = { en: "en-US", es: "es-ES", fr: "fr-FR", it: "it-IT", de: "de-DE
 export default function MilestoneCard({ milestone, onEdit, onDelete, onCelebrate }) {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
-  const dateLabel = new Intl.DateTimeFormat(LOCALES[currentLanguage] || LOCALES.en, { year: "numeric", month: "long", day: "numeric" }).format(new Date(`${milestone.date}T00:00:00`));
+  const dateLabel = new Intl.DateTimeFormat(LOCALES[currentLanguage] || LOCALES.en, { year: "numeric", month: "long", day: "numeric" }).format(parseLocalDate(milestone.date) || new Date());
 
   return (
     <motion.div

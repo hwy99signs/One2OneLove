@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { parseLocalDate } from '@/utils/localDate';
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -67,7 +68,7 @@ export default function MemoryCard({ memory, onEdit, onDelete, onToggleFavorite 
             </div>
 
             <div className="space-y-2 mb-4">
-              {memory.memory_date && <div className="flex items-center text-sm text-gray-600"><Calendar className="w-4 h-4 mr-2 text-pink-500" />{format(new Date(`${memory.memory_date}T00:00:00`), 'PPP', { locale: dateLocale })}</div>}
+              {parseLocalDate(memory.memory_date) && <div className="flex items-center text-sm text-gray-600"><Calendar className="w-4 h-4 mr-2 text-pink-500" />{format(parseLocalDate(memory.memory_date), 'PPP', { locale: dateLocale })}</div>}
               {memory.location && <div className="flex items-center text-sm text-gray-600"><MapPin className="w-4 h-4 mr-2 text-purple-500" />{memory.location}</div>}
             </div>
 
