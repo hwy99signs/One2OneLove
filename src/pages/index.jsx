@@ -17,6 +17,7 @@ import LoveLanguageQuiz from './LoveLanguageQuiz';
 import DateIdeas from './DateIdeas';
 import Profile from './Profile';
 import Invite from './Invite';
+import InviteLanding from './InviteLanding';
 import PodcastsSupport from './PodcastsSupport';
 import ArticlesSupport from './ArticlesSupport';
 import RelationshipQuizzes from './RelationshipQuizzes';
@@ -137,6 +138,7 @@ function PagesContent() {
           <Route path="/DateIdeas" element={<DateIdeas />} />
           <Route path="/Profile" element={<Profile />} />
           <Route path="/Invite" element={<Invite />} />
+          <Route path="/i/:code" element={<InviteLanding />} />
           <Route path="/PodcastsSupport" element={<PodcastsSupport />} />
           <Route path="/Podcasts" element={<PodcastsSupport />} />
           <Route path="/Podcast" element={<PodcastsSupport />} />
