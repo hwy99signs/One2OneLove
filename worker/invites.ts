@@ -4,6 +4,7 @@ import { Client } from 'pg';
 import { enforceAdminMfa } from './admin-mfa';
 import { isExcludedAccountIdentity, accountCountableSql, isUncountableRequest } from './tracking-exclusion.js';
 import { INVITE_REWARD_CONFIG, grantInviteReward } from './invite-config.js';
+import { generateInviteCode, reasonForRejectedInvite } from '../src/lib/inviteRules.js';
 
 const HEADERS={'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'};
 const json=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:HEADERS});
@@ -54,10 +55,7 @@ export async function ensureInviteSchema(db){
   key_hash text NOT NULL,endpoint text NOT NULL,window_start timestamptz NOT NULL,
   count int NOT NULL DEFAULT 0,PRIMARY KEY(key_hash,endpoint,window_start))`);
 }
-function generateCode(){
- const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',bytes=new Uint8Array(7);crypto.getRandomValues(bytes);
- return Array.from(bytes,b=>alphabet[b%alphabet.length]).join('');
-}
+function generateCode(){const bytes=new Uint8Array(7);crypto.getRandomValues(bytes);return generateInviteCode(bytes)}
 async function rateLimit(db,request,endpoint,max,visitorId=''){
  const ip=request.headers.get('cf-connecting-ip')||'0.0.0.0';
  const day=new Date().toISOString().slice(0,10);
@@ -112,7 +110,7 @@ export async function saveInviteReferral(db,user,raw){
   const row=await codeRow(db,a.code);
   if(!row||row.disabled_at)reason='disabled_code';
   else if(isExcludedAccountIdentity({id:row.user_id,email:row.auth_email||row.email,role:row.role}))reason='excluded_identity';
-  else if(row.user_id===user.id||String(row.auth_email||row.email).toLowerCase()===String(user.email).toLowerCase())reason='self_invite';
+  else if(reasonForRejectedInvite({inviterId:row.user_id,inviteeId:user.id,inviterEmail:row.auth_email||row.email,inviteeEmail:user.email}))reason='self_invite';
   else {
    const samePhone=(await db.query(`SELECT EXISTS(
     SELECT 1 FROM public.users inviter JOIN public.users invitee ON invitee.id=$2::uuid
