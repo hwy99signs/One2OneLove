@@ -570,12 +570,20 @@ export function installClickAnalytics() {
   const wireFrames = () => document.querySelectorAll('iframe[src^="/games-src/"]').forEach(frame => {
     if (frame.dataset.o2olAnalyticsFrameLoad !== 'on') {
       frame.dataset.o2olAnalyticsFrameLoad = 'on';
-      frame.addEventListener('load',() => attachGameFrame(frame));
+      frame.addEventListener('load',() => {
+        attachGameFrame(frame);
+        // An embedded HTML document may replace about:blank after the first
+        // load notification. Reattach to the final document if it changed.
+        window.setTimeout(() => attachGameFrame(frame), 200);
+      });
     }
     attachGameFrame(frame);
   });
   const frameObserver = new MutationObserver(wireFrames);
   frameObserver.observe(document.documentElement,{childList:true,subtree:true});
+  // Frame document swaps do not mutate the parent DOM, so a bounded
+  // periodic check is necessary for single-origin game frames.
+  window.setInterval(wireFrames, 1500);
   wireFrames();
 
   // Scroll milestones reflect meaningful navigation without recording a
