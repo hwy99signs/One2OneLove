@@ -731,6 +731,38 @@ export default function Admin() {
               <Metric icon={CreditCard} label="Subscribed Clicks" value={number(clickSummary.subscribed_30d)} note={`${number(clickSummary.unique_subscribed_30d)} unique subscribed users · 30 days`} tone="green"/>
             </div>
             <div className={cx('mb-5 rounded-xl border p-4 text-sm',clickAnalytics.liveTracking?'border-emerald-200 bg-emerald-50 text-emerald-800':'border-amber-200 bg-amber-50 text-amber-800')}>{clickAnalytics.trackingMessage || 'All-visitor click tracking has not produced data yet.'}</div>
+            <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-black text-slate-900">Recent Visitor Activity — Click, Page & Game Audit</h3>
+                  <p className="mt-1 text-sm text-slate-600">Latest 100 stored events across guests and members, in time order. This shows recorded events, not a guarantee that all browser interactions were delivered. Admin/test traffic and private field values are excluded.</p>
+                </div>
+                <button type="button" onClick={()=>load(true)} disabled={refreshing} className="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-2 text-sm font-black text-white hover:bg-blue-800 disabled:opacity-60">
+                  <RefreshCw className={cx('h-4 w-4',refreshing&&'animate-spin')}/> {refreshing?'Refreshing…':'Refresh Activity'}
+                </button>
+              </div>
+              <p className="mt-2 text-xs font-semibold text-slate-500">Last updated: {lastUpdatedAt ? lastUpdatedAt.toLocaleTimeString() : 'Not loaded'} · No text typed into forms or messages is collected in this view.</p>
+              <div className="mt-4 max-h-[540px] overflow-auto rounded-xl border border-slate-200">
+                <table className="min-w-[860px] w-full text-left text-xs">
+                  <thead className="sticky top-0 z-10 bg-slate-100 font-black uppercase tracking-wide text-slate-600"><tr>
+                    <th className="px-3 py-3">When</th><th className="px-3 py-3">Event</th><th className="px-3 py-3">Guest / Member</th>
+                    <th className="px-3 py-3">Page</th><th className="px-3 py-3">Feature</th><th className="px-3 py-3">Interaction</th><th className="px-3 py-3">Source</th>
+                  </tr></thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {(clickAnalytics.recentEvents||[]).map((event,index)=><tr key={String(event.created_at)+'-'+index} className="hover:bg-blue-50">
+                      <td className="whitespace-nowrap px-3 py-3 text-slate-600">{event.created_at ? new Date(event.created_at).toLocaleString() : '—'}</td>
+                      <td className="px-3 py-3 font-black text-slate-800">{event.event_type==='page_view'?'Page view':event.event_type==='action'?'Feature action':'Click'}</td>
+                      <td className="px-3 py-3 text-slate-600">{event.actor_type==='anonymous'?'Guest':'Member'} <span className="block font-mono text-[10px] text-slate-400">{event.visitor_hint||''}</span></td>
+                      <td className="px-3 py-3 font-semibold text-slate-800">{event.route||'—'}</td>
+                      <td className="px-3 py-3">{event.feature||'—'}</td>
+                      <td className="px-3 py-3 font-medium">{event.control_key||event.destination||'Page opened'}</td>
+                      <td className="px-3 py-3 text-slate-600">{event.traffic_source||'—'}</td>
+                    </tr>)}
+                    {!(clickAnalytics.recentEvents||[]).length&&<tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">No recorded visitor activity in this 30-day window. Use the test checklist to verify event delivery; a green dashboard status alone is not proof.</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+            </div>
             <div className="mb-6 grid gap-6 xl:grid-cols-2">
               <Panel title="Top Clicked Pages — 30 Days">
                 {(clickAnalytics.topRoutes||[]).length?<div className="space-y-2">{clickAnalytics.topRoutes.map(item=><div key={item.route} className="rounded-xl bg-slate-50 p-3 text-sm"><div className="flex items-center justify-between gap-3"><span className="min-w-0 truncate font-semibold">{item.route}</span><strong>{number(item.clicks)}</strong></div><div className="mt-1 text-xs text-slate-500">Anonymous {number(item.anonymous)} · Registered free {number(item.registered_free)} · Subscribed {number(item.subscribed)}</div></div>)}</div>:<Empty>No public clicks recorded yet.</Empty>}
