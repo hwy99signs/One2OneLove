@@ -4,6 +4,7 @@ import { ArrowLeft, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createPageUrl } from "@/utils";
 import { useLanguage } from "@/Layout";
+import InviteButton from "@/components/invites/InviteButton";
 import { apiRequest } from "@/lib/apiClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { hasFullMemberAccess } from "@/lib/openHouseAccess";
@@ -40,6 +41,7 @@ export default function ScratchGame(){
     <div className="max-w-[1500px] mx-auto px-3 md:px-5 py-4">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <Link to={createPageUrl('CooperativeGames')} className="inline-flex items-center font-semibold text-white/85 hover:text-white"><ArrowLeft className="mr-2 h-4 w-4"/>{t.back}</Link>
+        <InviteButton game="scratch"/>
         {gameUrl&&<a href={gameUrl} target="_blank" rel="noopener noreferrer"><Button variant="outline" className="gap-2"><ExternalLink className="h-4 w-4"/>{t.full}</Button></a>}
       </div>
       {!fullMemberAccess&&<div className="mb-4"><OpenHouseBrowseNotice/></div>}
