@@ -65,12 +65,12 @@ export default function Pests({gameSessionRef}) {
   return (
     <div className="min-h-screen" style={{backgroundColor:'#0b2e1d'}}>
       <div className="max-w-[1500px] mx-auto px-3 md:px-5 py-4">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <Link to={createPageUrl("CooperativeGames")} className="inline-flex items-center font-semibold text-white/85 hover:text-white">
+        <div className="mb-4 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <Link to={createPageUrl("CooperativeGames")} className="inline-flex min-h-11 items-center self-start font-semibold text-white/85 hover:text-white">
             <ArrowLeft className="w-4 h-4 mr-2" />
             {t.back}
           </Link>
-          <InviteButton game="pests"/>
+          <InviteButton game="pests" className="w-full sm:w-auto"/>
         </div>
         <img src="/game-cards/card-pests.jpg" alt="game card" className="mx-auto mb-6 block w-full max-w-3xl rounded-[24px] shadow-2xl ring-1 ring-white/15" />
         <GameLeaderboard game="pests" className="mb-4"/>
