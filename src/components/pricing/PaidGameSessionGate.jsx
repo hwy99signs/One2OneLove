@@ -4,6 +4,7 @@ import { isPhoneVerificationError } from '@/lib/tokenService';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/Layout';
 import { isUnifiedPrelaunchGuestAccessEnabled } from '@/lib/prelaunchGuestAccess';
+import { trackFeatureActionEvent } from '@/lib/interactionAnalytics';
 
 const COPY = {
   en: {loading:'Checking game access…', verify:'Verify your phone number', verifyText:'A verified account is required to play. Every game is permanently FREE — no Credit is charged.', verifyButton:'Verify My Phone', badge:'FREE FOREVER', text:'All current and future One2OneLove games are free forever. No Credit needed.', start:'Play FREE', opening:'Opening…', error:'Unable to start this game.', signIn:'Create your free account to play' },
@@ -37,6 +38,7 @@ export default function PaidGameSessionGate({game,title,image,backdrop,children}
       const requestId=globalThis.crypto?.randomUUID?.()||'game-'+Date.now();
       const result=await apiRequest('/api/games/standard/access',{method:'POST',body:{game,requestId}});
       if(!result?.pass?.id)throw new Error(t.error);
+      trackFeatureActionEvent('Relationship Games','game:session_open:'+game);
       setSessionRef(result.pass.id);setActive(true);
     }catch(err){
       if(isPhoneVerificationError(err))setPhoneGate(true);
