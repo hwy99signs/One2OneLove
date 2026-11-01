@@ -836,16 +836,16 @@ export default function LikeMinded() {
             </div>
           ) : (
             <>
-              <div className="mb-5 flex items-center justify-between gap-3"><div><h1 className="text-3xl font-black">{t.available}</h1><p className="text-sm text-slate-500">{lobbyUsers.length} online</p></div><button onClick={leaveLobby} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-black">{t.leaveLobby}</button></div>
+              <div className="mb-5 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><h1 className="break-words text-2xl font-black text-slate-950 sm:text-3xl">{t.available}</h1><p className="text-sm text-slate-500">{lobbyUsers.length} online</p></div><button onClick={leaveLobby} className="min-h-11 w-full shrink-0 rounded-xl border border-slate-200 bg-white px-4 py-3 text-center text-sm font-black sm:w-auto">{t.leaveLobby}</button></div>
               {lobbyInvites.length > 0 && <div className="mb-5 rounded-[28px] border border-fuchsia-200 bg-fuchsia-50 p-5 text-slate-950">
                 <div className="text-sm font-black uppercase tracking-[.16em] text-fuchsia-700">Game invitations</div>
-                <div className="mt-3 grid gap-2">{lobbyInvites.map(inv => <button key={inv.code} onClick={()=>joinInvite(inv.code)} className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-left shadow-sm"><span><strong>{inv.host_first_name}</strong><span className="ml-2 text-sm text-slate-500">{inv.category} · {inv.depth}</span></span><span className="rounded-xl bg-slate-950 px-3 py-2 text-xs font-black text-white">{t.join}</span></button>)}</div>
+                <div className="mt-3 grid gap-2">{lobbyInvites.map(inv => <button key={inv.code} onClick={()=>joinInvite(inv.code)} className="flex min-h-12 min-w-0 flex-col items-stretch gap-2 rounded-2xl bg-white px-4 py-3 text-left shadow-sm sm:flex-row sm:items-center sm:justify-between"><span className="min-w-0 break-words"><strong className="block break-words">{inv.host_first_name}</strong><span className="mt-1 block text-sm text-slate-500">{inv.category} · {inv.depth}</span></span><span className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-xs font-black text-white">{t.join}</span></button>)}</div>
               </div>}
               <div className="grid gap-4 md:grid-cols-2">
                 {lobbyUsers.length===0 ? <div className="rounded-[28px] bg-white p-8 text-center text-slate-500 shadow">{t.lobbyEmpty}</div> : lobbyUsers.map((p)=>(
                   <div key={p.user_id} className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-lg">
-                    <div className="flex items-center gap-4"><div className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-xl font-black text-white">{(p.first_name||'?').slice(0,1).toUpperCase()}</div><div><div className="font-black text-slate-950">{p.first_name}</div><div className="text-sm text-slate-500">{[p.city,p.state_region,p.country].filter(Boolean).join(', ')}</div></div></div>
-                    <div className="mt-5 grid grid-cols-4 gap-2"><button onClick={()=>invitePlayer(p.user_id)} className="col-span-2 rounded-xl bg-slate-950 px-3 py-3 text-sm font-black text-white">{t.inviteToPlay}</button><button onClick={()=>blockPlayer(p.user_id)} className="rounded-xl border border-slate-200 px-2 text-xs font-black">{t.block}</button><button onClick={()=>reportPlayer(p.user_id)} className="rounded-xl border border-slate-200 px-2 text-xs font-black">{t.report}</button></div>
+                    <div className="flex min-w-0 items-start gap-3 sm:gap-4"><div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-xl font-black text-white">{(p.first_name||'?').slice(0,1).toUpperCase()}</div><div className="min-w-0 flex-1 break-words"><div className="break-words font-black text-slate-950">{p.first_name}</div><div className="mt-1 break-words text-sm text-slate-500">{[p.city,p.state_region,p.country].filter(Boolean).join(', ')}</div></div></div>
+                    <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4"><button onClick={()=>invitePlayer(p.user_id)} className="col-span-2 min-h-11 min-w-0 break-words rounded-xl bg-slate-950 px-3 py-3 text-sm font-black text-white">{t.inviteToPlay}</button><button onClick={()=>blockPlayer(p.user_id)} className="min-h-11 min-w-0 break-words rounded-xl border border-slate-200 px-3 py-3 text-xs font-black">{t.block}</button><button onClick={()=>reportPlayer(p.user_id)} className="min-h-11 min-w-0 break-words rounded-xl border border-slate-200 px-3 py-3 text-xs font-black">{t.report}</button></div>
                   </div>
                 ))}
               </div>
@@ -904,7 +904,7 @@ export default function LikeMinded() {
             </div>
           </div>
 
-          <div className="mx-auto mt-4 grid w-full max-w-5xl grid-cols-3 gap-2.5 sm:mt-6 sm:gap-4">
+          <div className="mx-auto mt-4 grid w-full max-w-5xl grid-cols-1 gap-3 min-[560px]:grid-cols-3 sm:mt-6 sm:gap-4">
             <ModeCard
               icon={UserRound}
               title={t.solo}
