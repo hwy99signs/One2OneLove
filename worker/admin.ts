@@ -1272,11 +1272,12 @@ async function clickAnalytics(db, env) {
       summary:empty,
       topRoutes:[],
       topFeatures:[],
+      recentEvents:[],
     };
   }
 
   const baseline = analyticsBaselineDate(env);
-  const [summary, routes, features] = await Promise.all([
+  const [summary, routes, features, recentEvents] = await Promise.all([
     db.query(`
       WITH ${SWEEP_CTES}
       SELECT
@@ -1330,14 +1331,28 @@ async function clickAnalytics(db, env) {
        ORDER BY clicks DESC,feature ASC
        LIMIT 15
     `,[baseline]),
+    db.query(`
+      WITH ${SWEEP_CTES}
+      SELECT e.created_at,e.event_type,e.route,e.feature,e.actor_type,e.access_type,
+             e.control_type,e.control_key,e.destination,e.language,e.traffic_source,
+             left(e.visitor_id,12) AS visitor_hint
+        FROM public.interaction_events e
+        LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+        ${VISITOR_LINK_JOINS_SQL}
+       WHERE e.created_at>=GREATEST($1::timestamptz,now()-interval '30 days')
+         AND ${EVENT_ACTOR_COUNTABLE_SQL} ${VISITOR_LINK_COUNTABLE_SQL}${SWEEP_EVENT_FILTER}
+       ORDER BY e.created_at DESC
+       LIMIT 100
+    `,[baseline]),
   ]);
 
   return {
     liveTracking:true,
-    trackingMessage:'All normal UI clicks are recorded for anonymous Open House visitors, registered users without a paid subscription, and subscribed members. Administrator activity is excluded.',
+    trackingMessage:'Clicks, page views, navigation and meaningful game actions are tracked when delivered. Privacy tools and connectivity may prevent some events; admin and test traffic is excluded.',
     summary:{ ...empty,...(summary.rows[0] || {}) },
     topRoutes:routes.rows,
     topFeatures:features.rows,
+    recentEvents:recentEvents.rows,
   };
 }
 
