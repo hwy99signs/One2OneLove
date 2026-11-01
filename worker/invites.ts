@@ -185,9 +185,11 @@ async function eventPublic(request,env,auth){
  if(!b||typeof b!=='object')return fail('invalid_body');
  const event=clean(b.event,28),surface=clean(b.surface,40),channel=clean(b.channel,28);
  const code=normalCode(b.code),game=gameKey(clean(b.game,35)),visitor=clean(b.visitorId,120);
+ if(typeof b.visitorId==='string'&&b.visitorId.length>120)return fail('invalid_event');
  if(!EVENTS.has(event)||!SURFACES.has(surface)||channel&&!CHANNELS.has(channel)||
   b.game&&!game||code&&!CODE.test(code)|| (b.visitorId&&visitor.length>120))return fail('invalid_event');
  if(event==='share_channel'&&!channel)return fail('channel_required');
+ if(code&&['share_opened','share_channel'].includes(event)&&!auth?.user?.id)return fail('login_required',401);
  return withDb(env,async db=>{
   await ensureInviteSchema(db);
   if(!await rateLimit(db,request,'events',30,visitor))return fail('rate_limited',429);
@@ -195,6 +197,7 @@ async function eventPublic(request,env,auth){
   if(code&&(!row||row.disabled_at))return fail('invalid_code',400);
   let inviter=row?.user_id||null;
   if(auth?.user?.id && row && auth.user.id!==row.user_id && ['share_opened','share_channel'].includes(event))return fail('not_your_code',403);
+  if(auth?.user?.id&&row&&auth.user.id===row.user_id&&['landing_view','signup_click','play_click'].includes(event))return json({ok:true,tracked:false});
   if(auth?.user?.id&&isExcludedAccountIdentity(auth.user))return json({ok:true,tracked:false});
   if(row&&isExcludedAccountIdentity({id:row.user_id,email:row.auth_email||row.email,role:row.role}))
    return json({ok:true,tracked:false});
