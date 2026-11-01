@@ -2,7 +2,7 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import QuickAccountGate from '@/components/launch/QuickAccountGate.jsx';
-import GuestFeaturePreview from '@/components/launch/GuestFeaturePreview.jsx';
+import PrivateSpaceNotice from '@/components/launch/PrivateSpaceNotice.jsx';
 import { isUnifiedPrelaunchGuestAccessEnabled } from '@/lib/prelaunchGuestAccess';
 
 // Site locked behind sign-up (owner decision, 2026-10-11): guests may open
@@ -164,12 +164,23 @@ export default function LaunchAccessGate({ pathname, children }) {
     '/analytics', '/tokensystemdashboard', '/dashboard', '/profile',
     '/verifyphone', '/credit', '/sendcredits', '/payment-success', '/paymentsuccess',
   ]).has(route);
-  const previewFeature = isUnifiedPrelaunchGuestAccessEnabled() && CATALOG_FEATURE_ROUTES.has(route);
+  const openAccess = isUnifiedPrelaunchGuestAccessEnabled();
+  const paidRoute = new Set(['/credit','/sendcredits','/aicontentcreator','/amora','/relationshipcoach','/mymatchiq/credits']).has(route);
+  // Private member-owned records and person-to-person interactions require a verified identity.
+  // This is an account privacy boundary, never a public signup marketing gate.
+  const privateRoute = new Set([
+    '/chat','/chatrooms','/chatroom','/community','/communities','/findfriends','/friendrequests',
+    '/memorylane','/sharedjournals','/relationshipmilestones','/relationshipgoals',
+    '/anniversarytracker','/couplescalendar','/couplesdashboard','/couplesprofile',
+    '/profile','/dashboard','/analytics','/admin','/tokensystemdashboard',
+    '/credit','/sendcredits','/payment-success','/paymentsuccess','/verifyphone',
+  ]).has(route) || route.startsWith('/admin/');
+  const previewFeature = false;
   // Retire the earlier all-features-open prelaunch exception: guests now
   // see metadata in /Catalog, never the actual component for these paths.
-  const previewGuestBrowse = isUnifiedPrelaunchGuestAccessEnabled() && !protectedAccountRoute && !previewFeature;
+  const previewGuestBrowse = openAccess && !privateRoute && !paidRoute;
 
-  if(isLoading && (previewFeature || (!isPublic && !previewGuestBrowse))){
+  if(isLoading && (!isPublic && !previewGuestBrowse)){
     const language=preferredLanguage();
     return <div className="flex min-h-[55vh] items-center justify-center bg-white">
       <div className="text-center">
@@ -180,8 +191,10 @@ export default function LaunchAccessGate({ pathname, children }) {
   }
 
   if(!isAuthenticated || !user){
-    if(previewFeature){
-      return <GuestFeaturePreview pathname={pathname||'/'} />;
+    if(openAccess){
+      if(privateRoute && !paidRoute) return <PrivateSpaceNotice path={pathname||'/'} />;
+      if(paidRoute) return <QuickAccountGate intendedPath={pathname||'/'} />;
+      return children;
     }
     return (isPublic || isViewOnly || previewGuestBrowse) ? children : <QuickAccountGate intendedPath={pathname||'/'} />;
   }
