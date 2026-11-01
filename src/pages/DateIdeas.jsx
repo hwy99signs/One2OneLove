@@ -250,7 +250,7 @@ export default function DateIdeas() {
   const dateIdeaTokenCost = Number(tokenWalletData?.featurePrices?.find(item => item.feature_code === 'date_idea_unlock')?.token_cost || 49);
   const hasDateIdeaAccess = (idea) => {
     if (!idea?.week) return hasMemberAccess;
-    return dateIdeasPromoAccess || unlockedDateKeys.has(String(idea.id));
+    return (isUnifiedPrelaunchGuestAccessEnabled()&&promoDateIdeasFree) || dateIdeasPromoAccess || unlockedDateKeys.has(String(idea.id));
   };
 
   const { data: customDates = [] } = useQuery({
