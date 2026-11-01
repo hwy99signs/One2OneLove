@@ -1,8 +1,10 @@
-import React,{useEffect,useRef} from "react";
+import React,{useEffect,useRef,useState} from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import { useLanguage } from "@/Layout";
+import InviteButton from "@/components/invites/InviteButton";
+import EndOfRoundInvite from "@/components/invites/EndOfRoundInvite";
 import { apiRequest, beaconJson } from "@/lib/apiClient";
 import GameLeaderboard from "@/components/activities/GameLeaderboard";
 import { applyGameInstructionLocale } from '@/lib/gameInstructionLocale';
@@ -21,6 +23,7 @@ export default function PoolPingPong({gameSessionRef}) {
   const { currentLanguage } = useLanguage();
   const t = copy[currentLanguage] || copy.en;
   const iframeRef=useRef(null);
+  const [roundFinished,setRoundFinished]=useState(false);
   const runRef=useRef(null);
   const queryClient=useQueryClient();
 
@@ -31,6 +34,7 @@ export default function PoolPingPong({gameSessionRef}) {
     const newRun=()=>{runRef.current=gameSessionRef+':'+(globalThis.crypto?.randomUUID?.()||String(Date.now()));};
     const readScore=()=>Number(String(doc?.getElementById('hudScore')?.textContent||'').replace(/[^0-9]/g,'')||0);
     const submit=(beacon=false)=>{
+      // Existing end-of-round score capture; no game HTML modification.
       const score=readScore(),sessionRef=runRef.current;
       if(!sessionRef||score<=0)return;
       runRef.current=null;
@@ -49,7 +53,7 @@ export default function PoolPingPong({gameSessionRef}) {
         const starts=['swipeStartBtn','motionStartBtn'].map(id=>doc.getElementById(id)).filter(Boolean);
         const again=doc.getElementById('againBtn');
         const onPlay=()=>newRun();
-        const onAgain=()=>{if(String(again?.textContent||'').trim().toLowerCase()==='play again'){submit(false);newRun();}};
+        const onAgain=()=>{if(String(again?.textContent||'').trim().toLowerCase()==='play again'){setRoundFinished(true);submit(false);newRun();}};
         starts.forEach(b=>b.addEventListener('click',onPlay,true));
         again?.addEventListener('click',onAgain,true);
         cleanup.push(()=>starts.forEach(b=>b.removeEventListener('click',onPlay,true)),()=>again?.removeEventListener('click',onAgain,true));
@@ -70,12 +74,14 @@ export default function PoolPingPong({gameSessionRef}) {
             <ArrowLeft className="w-4 h-4 mr-2" />
             {t.back}
           </Link>
+          <InviteButton game="pool_ping_pong"/>
         </div>
         <img src="/game-cards/card-pool-ping-pong.jpg" alt="game card" className="mx-auto mb-6 block w-full max-w-3xl rounded-[24px] shadow-2xl ring-1 ring-white/15" />
         <GameLeaderboard game="pool_ping_pong" className="mb-4"/>
         <div className="overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/15">
           <iframe ref={iframeRef} title="Pool Ping Pong" src={`/games-src/pool-ping-pong.html?lang=${encodeURIComponent(currentLanguage || 'en')}`} className="w-full border-0" style={{ height: "min(62vh, 760px)", minHeight: "520px" }} allow="fullscreen; accelerometer; gyroscope" />
         </div>
+        <EndOfRoundInvite game="pool_ping_pong" finished={roundFinished}/>
         <p className="mt-4 text-center text-xs text-white/50">Copyright © 2026 EPS Venture Group. All rights reserved.</p>
       </div>
     </div>
