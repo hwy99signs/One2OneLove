@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { hasFullMemberAccess } from "@/lib/openHouseAccess";
 import OpenHouseBrowseNotice from "@/components/launch/OpenHouseBrowseNotice";
 import { trackFeatureActionEvent } from '@/lib/interactionAnalytics';
+import { isUnifiedPrelaunchGuestAccessEnabled } from '@/lib/prelaunchGuestAccess';
 
 const GAME_URL = "https://play.one2onelove.com/";
 const copy = {
@@ -24,7 +25,11 @@ export default function ScratchGame(){
   const t=copy[currentLanguage]||copy.en;
   const {user}=useAuth();
   const fullMemberAccess=hasFullMemberAccess(user);
+  const anonymousFreePlay=!fullMemberAccess&&isUnifiedPrelaunchGuestAccessEnabled();
   const [gameUrl,setGameUrl]=useState(null),[error,setError]=useState(''),[busy,setBusy]=useState(false);
+  // Public Scratch origin currently serves its own playable game without a ticket.
+  // Member launch tickets and scoring remain protected by the existing service.
+  const displayedGameUrl=gameUrl||(anonymousFreePlay?GAME_URL:null);
   const launchGame=async()=>{
     if(!fullMemberAccess||busy)return;
     setBusy(true);setError('');
@@ -42,20 +47,20 @@ export default function ScratchGame(){
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <Link to={createPageUrl('CooperativeGames')} className="inline-flex items-center font-semibold text-white/85 hover:text-white"><ArrowLeft className="mr-2 h-4 w-4"/>{t.back}</Link>
         <InviteButton game="scratch"/>
-        {gameUrl&&<a href={gameUrl} target="_blank" rel="noopener noreferrer"><Button variant="outline" className="gap-2"><ExternalLink className="h-4 w-4"/>{t.full}</Button></a>}
+        {displayedGameUrl&&<a href={displayedGameUrl} target="_blank" rel="noopener noreferrer"><Button variant="outline" className="gap-2"><ExternalLink className="h-4 w-4"/>{t.full}</Button></a>}
       </div>
       {!fullMemberAccess&&<div className="mb-4"><OpenHouseBrowseNotice/></div>}
       <img src="/game-cards/card-love-scratch.jpg" alt="LOVE SCRATCH GAME" className="mx-auto mb-6 block w-full max-w-3xl rounded-[24px] shadow-2xl ring-1 ring-white/15"/>
       <section aria-label={t.howTitle} className="mx-auto mb-5 max-w-3xl rounded-2xl border border-pink-300/30 bg-white/10 px-6 py-4 text-white">
         <h2 className="mb-2 text-xl font-black">{t.howTitle}</h2><p className="text-sm leading-7 text-white/90">{t.howTo}</p>
       </section>
-      {gameUrl
-        ? <div className="overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/15"><iframe title="LOVE SCRATCH GAME" src={gameUrl} className="w-full border-0" style={{height:'min(60vh, 720px)',minHeight:'520px'}} allow="fullscreen"/></div>
+      {displayedGameUrl
+        ? <div className="overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/15"><iframe title="LOVE SCRATCH GAME" src={displayedGameUrl} className="w-full border-0" style={{height:'min(60vh, 720px)',minHeight:'520px'}} allow="fullscreen"/></div>
         : <div className="p-8 text-center text-white sm:p-12">
             <div className="mx-auto w-fit rounded-full bg-emerald-100 px-4 py-2 text-sm font-black text-emerald-800">{t.forever}</div>
             <h1 className="mt-4 text-3xl font-black">{t.title}</h1>
             <p className="mx-auto mt-3 max-w-xl text-white/80">{t.free}</p>
-            {!fullMemberAccess&&<p className="mx-auto mt-3 text-white/70">{t.signUp}</p>}
+            {!fullMemberAccess&&!anonymousFreePlay&&<p className="mx-auto mt-3 text-white/70">{t.signUp}</p>}
             {error&&<div className="mx-auto mt-4 max-w-xl rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-900">{error}</div>}
             {fullMemberAccess&&<Button onClick={launchGame} disabled={busy} className="mt-6 bg-emerald-600 font-black hover:bg-emerald-700">{busy?t.loading:t.play}</Button>}
           </div>}
