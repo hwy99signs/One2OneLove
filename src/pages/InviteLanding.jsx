@@ -1,4 +1,4 @@
-import React,{useEffect,useState} from 'react';
+import {useEffect,useState} from 'react';
 import {Link,useNavigate,useParams,useSearchParams} from 'react-router-dom';
 import {ArrowLeft,Gamepad2,Heart,UserPlus} from 'lucide-react';
 import {useLanguage} from '@/Layout';

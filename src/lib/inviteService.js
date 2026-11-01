@@ -58,14 +58,14 @@ export function saveAttribution(value){
  if(existing&& (existing.code||!next.code))return existing;
  const chosen=chooseInviteAttribution(existing,next);
  if(chosen!==next)return chosen;
- try{localStorage.setItem(KEY,JSON.stringify(next))}catch{}
+ try{localStorage.setItem(KEY,JSON.stringify(next))}catch{/* storage unavailable (private mode); cookie fallback still applies */}
  if(typeof document!=='undefined'){
   document.cookie=KEY+'='+encodeURIComponent(JSON.stringify(next))+'; Max-Age=2592000; Path=/; SameSite=Lax'+(location.protocol==='https:'?'; Secure':'');
  }
  return next;
 }
 export function clearAttribution(){
- try{localStorage.removeItem(KEY)}catch{}
+ try{localStorage.removeItem(KEY)}catch{/* storage unavailable (private mode); cookie fallback still applies */}
  if(typeof document!=='undefined')document.cookie=KEY+'=; Max-Age=0; Path=/; SameSite=Lax'+(location.protocol==='https:'?'; Secure':'');
 }
 export async function shareVia(channel,{link,text,subject='One2OneLove'}){

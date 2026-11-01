@@ -1,4 +1,4 @@
-import React,{useEffect,useState} from 'react';
+import {useEffect,useState} from 'react';
 import {useLanguage} from '@/Layout';
 import {readAttribution,resolveInvite} from '@/lib/inviteService';
 const copy={

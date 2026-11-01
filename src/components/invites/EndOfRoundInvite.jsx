@@ -1,4 +1,5 @@
-import React,{useEffect,useState} from 'react';
+import {useEffect,useState} from 'react';
+import PropTypes from 'prop-types';
 import { X } from 'lucide-react';
 import { useLanguage } from '@/Layout';
 import InviteButton from './InviteButton';
@@ -12,3 +13,4 @@ export default function EndOfRoundInvite({game,finished=false}){
    <div className="flex items-center gap-2"><InviteButton game={game} surface="game_end"/><button data-analytics-id={'invite-end-dismiss-'+game} type="button" aria-label="Dismiss" onClick={()=>setDismissed(true)} className="rounded-full p-2 hover:bg-amber-100"><X size={18}/></button></div>
   </div>;
 }
+EndOfRoundInvite.propTypes={game:PropTypes.string.isRequired,finished:PropTypes.bool};

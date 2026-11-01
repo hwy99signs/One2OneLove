@@ -1,4 +1,5 @@
-import React,{useState} from 'react';
+import {useState} from 'react';
+import PropTypes from 'prop-types';
 import { UserPlus } from 'lucide-react';
 import { useLanguage } from '@/Layout';
 import InviteSheet from './InviteSheet';
@@ -10,3 +11,4 @@ export default function InviteButton({game,surface='game_button',className=''}) 
   <InviteSheet open={open} onClose={()=>setOpen(false)} game={game} surface={surface}/>
  </>;
 }
+InviteButton.propTypes={game:PropTypes.string,surface:PropTypes.string,className:PropTypes.string};

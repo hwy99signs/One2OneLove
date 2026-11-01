@@ -1,4 +1,5 @@
-import React,{useEffect,useRef,useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
+import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import { X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -29,6 +30,7 @@ export default function InviteSheet({open,onClose,game=null,surface='game_button
    getMyInvite().then(data=>{if(alive)setCode(data?.code||null)}).catch(()=>{if(alive)setCode(null)}).finally(()=>{if(alive)setBusy(false)});
   }
   return()=>{alive=false};
+ // eslint-disable-next-line react-hooks/exhaustive-deps -- link changes are handled by the next effect
  },[open,game,isAuthenticated,codeProp,currentLanguage]);
  useEffect(()=>{if(open)setText(buildShareText({language:currentLanguage,game,link}))},[link,open,game,currentLanguage]);
  useEffect(()=>{
@@ -61,3 +63,4 @@ export default function InviteSheet({open,onClose,game=null,surface='game_button
   </div>
  </div>;
 }
+InviteSheet.propTypes={open:PropTypes.bool.isRequired,onClose:PropTypes.func.isRequired,game:PropTypes.string,surface:PropTypes.string,code:PropTypes.string};

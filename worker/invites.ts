@@ -260,7 +260,7 @@ async function adminRoutes(request,env,url){
   const sums=events.rows.reduce((acc,r)=>(acc[r.event]=(acc[r.event]||0)+Number(r.total),acc),{});
   const byStatus=refs.rows.reduce((acc,r)=>(acc[r.status]=(acc[r.status]||0)+Number(r.total),acc),{});
   return json({ok:true,from,to,events:events.rows,referrals:refs.rows,top:top.rows,
-    totals:{sharesOpened:sums.share_opened||0,landings:sums.landing_view||0,signups:Object.values(byStatus).reduce((a,b)=>a+b,0),
+    totals:{sharesOpened:sums.share_opened||0,landings:sums.landing_view||0,signups:(byStatus.pending||0)+(byStatus.qualified||0),
       qualified:byStatus.qualified||0,rejected:byStatus.rejected||0},
     verifiedMembers:Number(verified.rows[0]?.verified_members||0),target:5000});
  });
