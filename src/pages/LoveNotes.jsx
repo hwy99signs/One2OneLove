@@ -881,7 +881,7 @@ export default function LoveNotes() {
     return personalizeNote(result.note);
   };
   const openLibraryNote = async (note, send=false) => {
-    if(!notePromoAccess&&!purchasedNoteKeys.has(String(note.id))){
+    if(!(isUnifiedPrelaunchGuestAccessEnabled()&&promoNoteLibraryFree)&&!notePromoAccess&&!purchasedNoteKeys.has(String(note.id))){
       setNoteToUnlock(note);setNoteUnlockError('');return;
     }
     try{
