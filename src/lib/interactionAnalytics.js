@@ -544,7 +544,7 @@ export function installClickAnalytics() {
   const gameStartIds = new Set(['playBtn','startBtn','swipeStartBtn','motionStartBtn','againBtn','newBtn','overNewBtn','restartBtn']);
   const attachGameFrame = frame => {
     if (!(frame instanceof HTMLIFrameElement)) return;
-    if (!/^\\/games-src\\//.test(frame.getAttribute('src') || '')) return;
+    if (!String(frame.getAttribute('src') || '').startsWith('/games-src/')) return;
     let doc;
     try { doc = frame.contentDocument; } catch { return; }
     if (!doc || trackedFrames.get(frame) === doc) return;
