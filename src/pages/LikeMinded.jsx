@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { createPageUrl } from '@/utils';
 import InviteButton from '@/components/invites/InviteButton';
 import {getMyInvite,logInviteEvent,saveAttribution} from '@/lib/inviteService';
+import { isUnifiedPrelaunchGuestAccessEnabled } from '@/lib/prelaunchGuestAccess';
 
 
 import GameLeaderboard from '@/components/activities/GameLeaderboard';
@@ -481,7 +482,9 @@ export default function LikeMinded() {
   };
 
   const startSolo = async () => {
-    if(!(await ensurePremiumAccess()))return;
+    // Solo self-check is a permanently free game; keep multiplayer
+    // verification and pre-chat Credit entitlements unchanged.
+    if(!isUnifiedPrelaunchGuestAccessEnabled() && !(await ensurePremiumAccess()))return;
     setScreen('solo'); setQuestionNo(1); setSetNo(1); setSelected(null); setLocked(false); setCheckpoint(false);
   };
 
@@ -897,7 +900,7 @@ export default function LikeMinded() {
           <div className="mx-auto mt-4 w-full max-w-5xl rounded-2xl border border-amber-300/30 bg-amber-300/10 p-4 text-left text-amber-50">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div><div className="inline-flex items-center gap-2 font-black"><Sparkles className="h-5 w-5"/>{t.premium}</div><p className="mt-1 text-xs leading-5 text-amber-50/80">{t.premiumBody}</p></div>
-              {!isAuthenticated && <Link to="/SignUp?source=like-minded&type=individual" className="rounded-xl bg-amber-300 px-4 py-2 text-sm font-black text-amber-950">{t.signin}</Link>}
+              {!isAuthenticated && !isUnifiedPrelaunchGuestAccessEnabled() && <Link to="/SignUp?source=like-minded&type=individual" className="rounded-xl bg-amber-300 px-4 py-2 text-sm font-black text-amber-950">{t.signin}</Link>}
             </div>
           </div>
 
