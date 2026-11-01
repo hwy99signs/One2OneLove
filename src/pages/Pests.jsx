@@ -7,6 +7,7 @@ import { apiRequest, beaconJson } from "@/lib/apiClient";
 import GameLeaderboard from "@/components/activities/GameLeaderboard";
 import { applyGameInstructionLocale } from '@/lib/gameInstructionLocale';
 import { useQueryClient } from "@tanstack/react-query";
+import { trackFeatureActionEvent } from '@/lib/interactionAnalytics';
 
 const copy = {
   en: { back: "Back to Games" },
@@ -35,7 +36,7 @@ export default function Pests({gameSessionRef}) {
       runRef.current=null;
       const body={game:'pests',score,sessionRef};
       if(beacon){beaconJson('/api/games/scores',body);return;}
-      apiRequest('/api/games/scores',{method:'POST',body}).then(()=>queryClient.invalidateQueries({queryKey:['gameLeaderboard','pests']})).catch(()=>{});
+      apiRequest('/api/games/scores',{method:'POST',body}).then(()=>{trackFeatureActionEvent('Relationship Games','game:score_saved:pests');queryClient.invalidateQueries({queryKey:['gameLeaderboard','pests']});}).catch(()=>{});
     };
     const bind=()=>{
       try{
