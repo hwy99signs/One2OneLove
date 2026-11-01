@@ -17,7 +17,7 @@ export const freePromoMessage = (language = 'en') => O2OL_FREE_PROMO_MESSAGES[la
 
 export const O2OL_FREE_PROMO_FEATURES = Object.freeze([
   'memories_unlock', 'journals_unlock', 'milestones_unlock', 'goals_unlock', 'calendar_unlock',
-  'studio_episode_unlock', 'podcast_episode_unlock', 'date_idea_unlock',
+  'date_idea_unlock',
   'love_note_template_unlock', 'love_language_report', 'compatibility_report',
   'relationship_pattern_report',
 ]);
@@ -31,4 +31,12 @@ export function isO2OLFreePromoActive(now = new Date()) {
 }
 export function isO2OLPromoFreeFeature(featureCode, now = new Date()) {
   return isO2OLFreePromoActive(now) && freeFeatureSet.has(String(featureCode || ''));
+}
+
+// Permanently free media stays free after the Dec 31, 2026 promotion.
+// All current/future One2OneLove games have their separate permanent-free rule.
+export const O2OL_PERMANENT_FREE_MEDIA_FEATURES = Object.freeze(['studio_episode_unlock','podcast_episode_unlock']);
+const permanentFreeMediaSet = new Set(O2OL_PERMANENT_FREE_MEDIA_FEATURES);
+export function isO2OLPermanentlyFreeMediaFeature(featureCode) {
+  return permanentFreeMediaSet.has(String(featureCode||''));
 }
