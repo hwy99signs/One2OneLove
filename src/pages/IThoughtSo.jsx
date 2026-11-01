@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import { useLanguage } from "@/Layout";
+import InviteButton from "@/components/invites/InviteButton";
 
 const copy = {
   en: { back: "Back to Games" },
@@ -26,6 +27,7 @@ export default function IThoughtSo() {
             <ArrowLeft className="w-4 h-4 mr-2" />
             {t.back}
           </Link>
+          <InviteButton game="i_thought_so"/>
         </div>
         <img src="/game-cards/card-i-thought-so.jpg" alt="I Thought So! game card" className="mx-auto mb-6 block w-full max-w-3xl rounded-[24px] shadow-2xl ring-1 ring-white/15" />
         <div className="overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/15">
