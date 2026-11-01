@@ -1,4 +1,5 @@
 import { apiRequest } from './apiClient';
+import { readAttribution, clearAttribution } from './inviteService';
 
 export async function getLaunchSignupReadiness() {
   try {
@@ -54,6 +55,7 @@ export async function registerLaunchUser({
         marketingEmailOptIn,
         visitorId,
         ageRange,
+        inviteAttribution:readAttribution(),
       },
     });
 
@@ -95,8 +97,9 @@ export async function verifyLaunchEmail(email, otp, signupContext = null) {
   try {
     const payload = await apiRequest('/api/launch-signup/verify', {
       method: 'POST',
-      body: { email, otp, ...(signupContext ? { signupContext } : {}) },
+      body: { email, otp, ...(signupContext ? { signupContext:{...signupContext,inviteAttribution:readAttribution()} } : {}) },
     });
+    if(payload?.verified === true)clearAttribution();
     return {
       success: payload?.verified === true,
       profileReady: payload?.profileReady !== false,
