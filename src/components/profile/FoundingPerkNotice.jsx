@@ -25,7 +25,8 @@ const COPY = {
     monthlyLine: 'Plus, once you claim: $10 in Game Credit every month for 6 months.',
     futureLine: 'Future perks will also be awarded to these Founding Members.',
     needEmail: 'Update your profile with an email account to get the {amount} GAME CREDIT AND {sends}.',
-    checklistTitle: 'To claim your perks, you need:',
+    checklistTitle: 'To claim your Game Credit perks, you need:',
+    sendsReady: 'Your free Love Note sends are ready now: {remaining} of {total}. No Credit needed — they can only be used to send a Love Note.',
     reqCredential: 'Username & password account',
     reqEmail: 'Email account on your profile',
     reqPhone: 'Phone number verified',
@@ -35,7 +36,7 @@ const COPY = {
     addCreditCta: 'Add Credit',
     claimCta: 'Claim My Perks', claiming: 'Claiming…',
     claimedTitle: 'Founding Perks Claimed',
-    claimedBody: '{amount} Game Credit is in your game wallet. Free Love Note sends ready: {remaining} of {total} — they never expire.',
+    claimedBody: '{amount} Game Credit is in your game wallet. Free Love Note sends ready: {remaining} of {total} — they never expire and can only be used to send a Love Note.',
     monthlyProgress: 'Monthly Game Credit: {made} of 6 received ($10/month).',
     claimedFuture: "Future perks will also be awarded to Founding Members — you're on the list.",
   },
@@ -48,7 +49,8 @@ const COPY = {
     monthlyLine: 'Además, al reclamar: $10 en Crédito de Juego cada mes durante 6 meses.',
     futureLine: 'También se otorgarán beneficios futuros a estos Miembros Fundadores.',
     needEmail: 'Actualiza tu perfil con una cuenta de correo para recibir los {amount} de CRÉDITO DE JUEGO Y {sends}.',
-    checklistTitle: 'Para reclamar tus beneficios, necesitas:',
+    checklistTitle: 'Para reclamar tus beneficios de Crédito de Juego, necesitas:',
+    sendsReady: 'Tus envíos de Notas de Amor gratis ya están listos: {remaining} de {total}. No necesitas Crédito; solo se pueden usar para enviar una Nota de Amor.',
     reqCredential: 'Cuenta con usuario y contraseña',
     reqEmail: 'Cuenta de correo en tu perfil',
     reqPhone: 'Número de teléfono verificado',
@@ -58,7 +60,7 @@ const COPY = {
     addCreditCta: 'Agregar Crédito',
     claimCta: 'Reclamar Mis Beneficios', claiming: 'Reclamando…',
     claimedTitle: 'Beneficios Fundadores Reclamados',
-    claimedBody: '{amount} de Crédito de Juego están en tu billetera de juego. Envíos de Notas de Amor gratis listos: {remaining} de {total} — nunca vencen.',
+    claimedBody: '{amount} de Crédito de Juego están en tu billetera de juego. Envíos de Notas de Amor gratis listos: {remaining} de {total} — nunca vencen y solo se pueden usar para enviar una Nota de Amor.',
     monthlyProgress: 'Crédito de Juego mensual: {made} de 6 recibidos ($10/mes).',
     claimedFuture: 'También se otorgarán beneficios futuros a los Miembros Fundadores — estás en la lista.',
   },
@@ -71,7 +73,8 @@ const COPY = {
     monthlyLine: 'De plus, après réclamation : 10 $ en Crédit de Jeu chaque mois pendant 6 mois.',
     futureLine: 'Des avantages futurs seront également accordés à ces Membres Fondateurs.',
     needEmail: 'Mettez à jour votre profil avec un compte e-mail pour recevoir les {amount} de CRÉDIT DE JEU ET {sends}.',
-    checklistTitle: 'Pour réclamer vos avantages, il vous faut :',
+    checklistTitle: 'Pour réclamer vos avantages en Crédit de Jeu, il vous faut :',
+    sendsReady: 'Vos envois de Notes d’Amour gratuits sont prêts : {remaining} sur {total}. Aucun Crédit requis — ils servent uniquement à envoyer une Note d’Amour.',
     reqCredential: 'Compte avec nom d’utilisateur et mot de passe',
     reqEmail: 'Compte e-mail dans votre profil',
     reqPhone: 'Numéro de téléphone vérifié',
@@ -81,7 +84,7 @@ const COPY = {
     addCreditCta: 'Ajouter du Crédit',
     claimCta: 'Réclamer Mes Avantages', claiming: 'Réclamation…',
     claimedTitle: 'Avantages Fondateurs Réclamés',
-    claimedBody: '{amount} de Crédit de Jeu sont dans votre portefeuille de jeu. Envois de Notes d’Amour gratuits prêts : {remaining} sur {total} — ils n’expirent jamais.',
+    claimedBody: '{amount} de Crédit de Jeu sont dans votre portefeuille de jeu. Envois de Notes d’Amour gratuits prêts : {remaining} sur {total} — ils n’expirent jamais et servent uniquement à envoyer une Note d’Amour.',
     monthlyProgress: 'Crédit de Jeu mensuel : {made} sur 6 reçus (10 $/mois).',
     claimedFuture: 'Des avantages futurs seront également accordés aux Membres Fondateurs — vous êtes sur la liste.',
   },
@@ -94,7 +97,8 @@ const COPY = {
     monthlyLine: 'Inoltre, dopo la richiesta: $10 in Credito di Gioco ogni mese per 6 mesi.',
     futureLine: 'Vantaggi futuri saranno assegnati anche a questi Membri Fondatori.',
     needEmail: 'Aggiorna il tuo profilo con un account email per ricevere i {amount} di CREDITO DI GIOCO E {sends}.',
-    checklistTitle: 'Per richiedere i tuoi vantaggi, ti serve:',
+    checklistTitle: 'Per richiedere i vantaggi in Credito di Gioco, ti serve:',
+    sendsReady: 'I tuoi invii gratuiti di Note d’Amore sono pronti: {remaining} di {total}. Nessun Credito necessario — si possono usare solo per inviare una Nota d’Amore.',
     reqCredential: 'Account con nome utente e password',
     reqEmail: 'Account email nel tuo profilo',
     reqPhone: 'Numero di telefono verificato',
@@ -104,7 +108,7 @@ const COPY = {
     addCreditCta: 'Aggiungi Credito',
     claimCta: 'Richiedi i Miei Vantaggi', claiming: 'Richiesta…',
     claimedTitle: 'Vantaggi Fondatori Richiesti',
-    claimedBody: '{amount} di Credito di Gioco sono nel tuo portafoglio di gioco. Invii di Note d’Amore gratuiti pronti: {remaining} di {total} — non scadono mai.',
+    claimedBody: '{amount} di Credito di Gioco sono nel tuo portafoglio di gioco. Invii di Note d’Amore gratuiti pronti: {remaining} di {total} — non scadono mai e si possono usare solo per inviare una Nota d’Amore.',
     monthlyProgress: 'Credito di Gioco mensile: {made} di 6 ricevuti ($10/mese).',
     claimedFuture: 'Vantaggi futuri saranno assegnati anche ai Membri Fondatori — sei nella lista.',
   },
@@ -117,7 +121,8 @@ const COPY = {
     monthlyLine: 'Plus, nach dem Einlösen: $10 Spiel-Credit jeden Monat für 6 Monate.',
     futureLine: 'Zukünftige Vorteile werden auch an diese Gründungsmitglieder vergeben.',
     needEmail: 'Aktualisiere dein Profil mit einem E-Mail-Konto, um die {amount} SPIEL-CREDIT UND {sends} zu erhalten.',
-    checklistTitle: 'Zum Einlösen brauchst du:',
+    checklistTitle: 'Zum Einlösen deiner Spiel-Credit-Vorteile brauchst du:',
+    sendsReady: 'Deine kostenlosen Liebesbotschaft-Sendungen sind bereit: {remaining} von {total}. Kein Credit nötig — sie können nur zum Senden einer Liebesbotschaft genutzt werden.',
     reqCredential: 'Konto mit Benutzername & Passwort',
     reqEmail: 'E-Mail-Konto in deinem Profil',
     reqPhone: 'Telefonnummer verifiziert',
@@ -127,7 +132,7 @@ const COPY = {
     addCreditCta: 'Credit Hinzufügen',
     claimCta: 'Meine Vorteile Einlösen', claiming: 'Wird eingelöst…',
     claimedTitle: 'Gründer-Vorteile Eingelöst',
-    claimedBody: '{amount} Spiel-Credit sind in deiner Spiel-Wallet. Kostenlose Liebesbotschaft-Sendungen bereit: {remaining} von {total} — sie verfallen nie.',
+    claimedBody: '{amount} Spiel-Credit sind in deiner Spiel-Wallet. Kostenlose Liebesbotschaft-Sendungen bereit: {remaining} von {total} — sie verfallen nie und können nur zum Senden einer Liebesbotschaft genutzt werden.',
     monthlyProgress: 'Monatlicher Spiel-Credit: {made} von 6 erhalten ($10/Monat).',
     claimedFuture: 'Zukünftige Vorteile werden auch an Gründungsmitglieder vergeben — du bist auf der Liste.',
   },
@@ -235,6 +240,12 @@ export default function FoundingPerkNotice({ currentLanguage = 'en' }) {
               <p className="text-sm font-semibold leading-6 text-gray-800">
                 {fill(t.grantLine, { amount, sends })}
               </p>
+              {status.freeLoveNoteSends > 0 && (
+                <p data-founding-sends-ready className="rounded-xl bg-emerald-50 p-3 text-sm font-semibold leading-6 text-emerald-800">
+                  {fill(t.sendsReady, { remaining: status.freeSendsRemaining, total: status.freeLoveNoteSends })}{' '}
+                  <Link to="/LoveNotes" className="font-bold underline">Love Notes</Link>
+                </p>
+              )}
               {status.monthly?.receives && (
                 <p className="text-sm leading-6 text-gray-700">{t.monthlyLine}</p>
               )}

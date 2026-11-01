@@ -6,7 +6,9 @@
 //   - 2nd 100 qualifying signups: $5.00 GAME Credit + 1 FREE Love Note send.
 //   - Qualifying = account holds username + email + password credential;
 //     cohort position is creation order among qualifying accounts.
-//   - CLAIM requires ALL of: credential account, email on the profile,
+//   - Free Love Note sends: automatic, account only, no Credit, no claim;
+//     usable ONLY for sending a Love Note (owner, 2026-11-01).
+//   - CLAIM (Game Credit perks) requires ALL of: credential account, email on the profile,
 //     PHONE VERIFIED (either-source: profile row or Neon Auth record),
 //     and >= $5.00 in the regular Credit wallet.
 //   - Claimed FIRST-100 members also receive +$10.00 Game Credit monthly
@@ -252,7 +254,7 @@ function statusPayload(perk, facts) {
   const claimed = perk.status === 'claimed';
   const sendsTotal = Number(perk.free_sends_total || 0);
   const sendsUsed = Number(perk.free_sends_used || 0);
-  const sendsLapsed = claimed && foundingPerkLapsed(perk.free_sends_expire_at);
+  const sendsLapsed = foundingPerkLapsed(perk.free_sends_expire_at);
   const monthly = tierReceivesMonthlyPerk(tier)
     ? {
         receives: true,
@@ -272,7 +274,8 @@ function statusPayload(perk, facts) {
     gameCreditCents: Number(perk.game_credit_cents || 0),
     freeLoveNoteSends: sendsTotal,
     freeSendsUsed: sendsUsed,
-    freeSendsRemaining: claimed && !sendsLapsed ? Math.max(0, sendsTotal - sendsUsed) : 0,
+    // Free sends are usable without claiming (owner, 2026-11-01).
+    freeSendsRemaining: !sendsLapsed ? Math.max(0, sendsTotal - sendsUsed) : 0,
     freeSendsExpireAt: perk.free_sends_expire_at || null,
     futurePerks: Boolean(tier?.futurePerks),
     monthly,
@@ -447,8 +450,13 @@ export async function tryConsumeFoundingFreeSend(db, userId, requestKey) {
       await db.query('COMMIT');
       return existing.restored_at ? null : { reused: true, use: existing };
     }
+    // Owner rule (2026-11-01): founding free sends are assigned automatically
+    // to qualifying accounts and need an account but NO Credit and NO claim.
+    // They only ever pay for a Love Note send (immediate or scheduled) and
+    // are never converted to Credit or usable anywhere else on the site.
+    await resolveFoundingPerk(db, userId);
     const perk = (await db.query(
-      `SELECT * FROM public.o2ol_founding_perks WHERE user_id=$1::uuid AND status='claimed' FOR UPDATE`,
+      `SELECT * FROM public.o2ol_founding_perks WHERE user_id=$1::uuid FOR UPDATE`,
       [userId],
     )).rows[0];
     if (
@@ -549,9 +557,10 @@ export async function createFoundingFreeReservation(db, userId, featureCode, { i
 export async function foundingFreeSendsRemaining(db, userId) {
   await ensureFoundingSchema(db);
   await grantDueFoundingMonthlyCredits(db, userId).catch(() => 0);
+  await resolveFoundingPerk(db, userId).catch(() => null);
   const perk = (await db.query(
     `SELECT free_sends_total,free_sends_used,free_sends_expire_at
-       FROM public.o2ol_founding_perks WHERE user_id=$1::uuid AND status='claimed' LIMIT 1`,
+       FROM public.o2ol_founding_perks WHERE user_id=$1::uuid LIMIT 1`,
     [userId],
   )).rows[0];
   if (!perk || foundingPerkLapsed(perk.free_sends_expire_at)) return 0;
