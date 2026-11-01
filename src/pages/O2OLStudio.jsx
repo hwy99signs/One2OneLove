@@ -9,25 +9,25 @@ import { isO2OLFreePromoActive, isO2OLPromoFreeFeature } from '@/lib/o2olFreePro
 import { isUnifiedPrelaunchGuestAccessEnabled } from '@/lib/prelaunchGuestAccess';
 
 const freeStudioAccessCopy = {
-  en:{title:'FREE for everyone',body:'Episode 2 is free until December 31. Watch without signing up or using Credit.',retry:'Check free access',join:'Create free account'},
-  es:{title:'GRATIS para todos',body:'El Episodio 2 es gratis hasta el 31 de diciembre. Míralo sin registrarte ni pagar Crédito.',retry:'Comprobar acceso gratis',join:'Crear cuenta gratis'},
-  fr:{title:'GRATUIT pour tous',body:'L’Épisode 2 est gratuit jusqu’au 31 décembre. Regardez sans inscription ni Crédit.',retry:'Vérifier l’accès gratuit',join:'Créer un compte gratuit'},
-  it:{title:'GRATIS per tutti',body:'L’Episodio 2 è gratis fino al 31 dicembre. Guardalo senza registrarti né pagare Credito.',retry:'Controlla accesso gratuito',join:'Crea account gratis'},
-  de:{title:'KOSTENLOS für alle',body:'Folge 2 ist bis zum 31. Dezember kostenlos. Schau ohne Anmeldung und ohne Credit.',retry:'Gratis-Zugang prüfen',join:'Kostenloses Konto erstellen'},
+  en:{title:'FREE for everyone',body:'Both Studio episodes are FREE FOREVER. Watch without signing up or using Credit.',retry:'Check free access',join:'Create free account'},
+  es:{title:'GRATIS para todos',body:'Ambos episodios de Studio son GRATIS PARA SIEMPRE. Míralos sin registrarte ni pagar Crédito.',retry:'Comprobar acceso gratis',join:'Crear cuenta gratis'},
+  fr:{title:'GRATUIT pour tous',body:'Les deux épisodes de Studio sont GRATUITS POUR TOUJOURS. Regardez sans inscription ni Crédit.',retry:'Vérifier l’accès gratuit',join:'Créer un compte gratuit'},
+  it:{title:'GRATIS per tutti',body:'Entrambi gli episodi di Studio sono GRATIS PER SEMPRE. Guardali senza registrarti né pagare Credito.',retry:'Controlla accesso gratuito',join:'Crea account gratis'},
+  de:{title:'KOSTENLOS für alle',body:'Beide Studio-Folgen sind FÜR IMMER KOSTENLOS. Ohne Anmeldung und Credit ansehen.',retry:'Gratis-Zugang prüfen',join:'Kostenloses Konto erstellen'},
 };
 const studioGuestPreviewCopy = {
-  en:'Watch currently free Studio episodes without registering. Paid episodes will require Credit after the promotion.',
-  es:'Mira los episodios gratuitos de Studio sin registrarte. Los episodios de pago volverán a necesitar Crédito después de la promoción.',
-  fr:'Regardez les épisodes Studio gratuits sans inscription. Les épisodes payants nécessiteront des Crédits après l’offre.',
-  it:'Guarda gli episodi gratuiti di Studio senza registrarti. Gli episodi a pagamento richiederanno Credito dopo la promozione.',
-  de:'Sieh dir kostenlose Studio-Folgen ohne Anmeldung an. Kostenpflichtige Folgen benötigen nach der Aktion Credit.',
+  en:'Both published Studio episodes are permanently free. Watch without creating an account.',
+  es:'Los dos episodios publicados de Studio son gratis para siempre. Míralos sin crear una cuenta.',
+  fr:'Les deux épisodes Studio publiés sont gratuits pour toujours. Regardez sans compte.',
+  it:'Entrambi gli episodi pubblicati di Studio sono gratis per sempre. Nessun account richiesto.',
+  de:'Beide veröffentlichten Studio-Folgen sind dauerhaft kostenlos. Kein Konto nötig.',
 };
 const studioPromoNote = {
-  en: 'Episode 1 is free. Episode 2 is also FREE for everyone through Dec 31, 2026. From Jan 1, standard Credit prices return; previously paid permanent unlocks remain. Bianca and other paid AI actions still use Credit.',
-  es: 'El Episodio 1 es gratis. El Episodio 2 también es GRATIS para todos hasta el 31 de diciembre de 2026. Desde el 1 de enero vuelven los precios en Crédito; se conservan las compras permanentes. Las funciones de IA de pago siguen usando Crédito.',
-  fr: 'L’épisode 1 est gratuit. L’épisode 2 est également GRATUIT pour tous jusqu’au 31 décembre 2026. Dès le 1er janvier, les tarifs habituels en Crédit reviennent ; les achats définitifs restent acquis. Les services IA payants restent facturés en Crédit.',
-  it: 'L’episodio 1 è gratuito. Anche l’episodio 2 è GRATIS per tutti fino al 31 dicembre 2026. Dal 1° gennaio tornano i prezzi normali in Credito; gli sblocchi già acquistati restano. Le funzioni IA a pagamento usano ancora Credito.',
-  de: 'Folge 1 ist kostenlos. Auch Folge 2 ist bis zum 31. Dezember 2026 für alle KOSTENLOS. Ab 1. Januar gelten wieder die regulären Credit-Preise; dauerhaft gekaufte Freischaltungen bleiben. Kostenpflichtige KI-Funktionen kosten weiterhin Credit.',
+  en: 'Both O2OL Studio episodes are FREE FOREVER without signup. Bianca and other paid AI actions still use Credit.',
+  es: 'Los dos episodios de O2OL Studio son GRATIS PARA SIEMPRE y no requieren registro. Las funciones de IA de pago siguen usando Crédito.',
+  fr: 'Les deux épisodes O2OL Studio sont GRATUITS POUR TOUJOURS et accessibles sans inscription. Les fonctions IA payantes utilisent toujours des Crédits.',
+  it: 'Entrambi gli episodi O2OL Studio sono GRATIS PER SEMPRE, senza registrazione. Le funzioni IA a pagamento usano ancora Credito.',
+  de: 'Beide O2OL-Studio-Folgen sind FÜR IMMER KOSTENLOS und ohne Anmeldung verfügbar. Kostenpflichtige KI-Funktionen benötigen weiterhin Credit.',
 };
 const COPY={
   en:{
@@ -37,7 +37,7 @@ const COPY={
     unavailable:'This episode is temporarily unavailable. Please try again shortly.',
     test:'Take the MyMatchIQ Compatibility Test',talk:'Talk with Bianca',chat:'Enter Chat Room to Comment',
     explore:'Explore MyMatchIQ',episodes:'Previous Episodes',
-    note:'Episode 1 is free for everyone. Episode 2 is a one-time $1 Credit unlock — yours to keep once unlocked. Bianca and other metered premium actions use Credit.',
+    note:'Both O2OL Studio episodes are FREE FOREVER. Bianca and other metered premium actions still use Credit.',
     replay:'Public replay opens',freeNow:'Create a FREE account to watch now',signIn:'Sign In',
     unlockTitle:'Unlock this episode',unlockNote:'One-time $1.00 in Credit — unlock once, watch anytime, yours to keep.',unlockBtn:'Unlock for $1 Credit',unlocking:'Unlocking…',joinToUnlock:'Create a FREE account to unlock',needCredit:'You need {required} Credit to unlock this episode. Your balance: {balance}.',addCredit:'Add Credit',unlockFailed:'Unable to unlock this episode. Please try again.'
   },
@@ -48,7 +48,7 @@ const COPY={
     unavailable:'Este episodio no está disponible temporalmente. Inténtalo de nuevo en unos momentos.',
     test:'Hacer la Prueba de Compatibilidad MyMatchIQ',talk:'Hablar con Bianca',chat:'Entrar al Chat para Comentar',
     explore:'Explorar MyMatchIQ',episodes:'Episodios Anteriores',
-    note:'El Episodio 1 es gratis para todos. El Episodio 2 se desbloquea una sola vez con $1 de Crédito — tuyo para siempre una vez desbloqueado. Bianca y otras funciones premium a consumo usan Crédito.',
+    note:'Los dos episodios de O2OL Studio son GRATIS PARA SIEMPRE. Bianca y otras funciones premium todavía usan Crédito.',
     replay:'La repetición pública abre',freeNow:'Crea una cuenta GRATIS para verlo ahora',signIn:'Iniciar Sesión',
     unlockTitle:'Desbloquea este episodio',unlockNote:'Un solo pago de $1.00 en Crédito — desbloquea una vez y míralo cuando quieras, tuyo para siempre.',unlockBtn:'Desbloquear por $1 de Crédito',unlocking:'Desbloqueando…',joinToUnlock:'Crea una cuenta GRATIS para desbloquear',needCredit:'Necesitas {required} de Crédito para desbloquear este episodio. Tu saldo: {balance}.',addCredit:'Añadir Crédito',unlockFailed:'No se pudo desbloquear este episodio. Inténtalo de nuevo.'
   },
@@ -59,7 +59,7 @@ const COPY={
     unavailable:'Cet épisode est temporairement indisponible. Veuillez réessayer dans quelques instants.',
     test:'Faire le Test de Compatibilité MyMatchIQ',talk:'Parler avec Bianca',chat:'Entrer dans le Chat pour Commenter',
     explore:'Explorer MyMatchIQ',episodes:'Épisodes Précédents',
-    note:'L’Épisode 1 est gratuit pour tout le monde. L’Épisode 2 se débloque une fois pour 1 $ de Crédit — à vous pour toujours une fois débloqué. Bianca et les autres fonctions premium mesurées utilisent du Crédit.',
+    note:'Les deux épisodes O2OL Studio sont GRATUITS POUR TOUJOURS. Bianca et les autres fonctions premium utilisent toujours des Crédits.',
     replay:'La rediffusion publique ouvre',freeNow:'Créez un compte GRATUIT pour regarder maintenant',signIn:'Se Connecter',
     unlockTitle:'Débloquez cet épisode',unlockNote:'Un seul paiement de 1,00 $ en Crédit — débloquez une fois, regardez quand vous voulez, à vous pour toujours.',unlockBtn:'Débloquer pour 1 $ de Crédit',unlocking:'Déblocage…',joinToUnlock:'Créez un compte GRATUIT pour débloquer',needCredit:'Il vous faut {required} de Crédit pour débloquer cet épisode. Votre solde : {balance}.',addCredit:'Ajouter du Crédit',unlockFailed:'Impossible de débloquer cet épisode. Veuillez réessayer.'
   },
@@ -70,7 +70,7 @@ const COPY={
     unavailable:'Questo episodio non è temporaneamente disponibile. Riprova tra poco.',
     test:'Fai il Test di Compatibilità MyMatchIQ',talk:'Parla con Bianca',chat:'Entra nella Chat per Commentare',
     explore:'Esplora MyMatchIQ',episodes:'Episodi Precedenti',
-    note:'L’Episodio 1 è gratuito per tutti. L’Episodio 2 si sblocca una sola volta con $1 di Credito — tuo per sempre una volta sbloccato. Bianca e le altre funzioni premium a consumo usano Credito.',
+    note:'Entrambi gli episodi O2OL Studio sono GRATIS PER SEMPRE. Bianca e altre funzioni premium usano ancora Credito.',
     replay:'La replica pubblica apre',freeNow:'Crea un account GRATUITO per guardare ora',signIn:'Accedi',
     unlockTitle:'Sblocca questo episodio',unlockNote:'Un solo pagamento di $1,00 in Credito — sblocca una volta e guardalo quando vuoi, tuo per sempre.',unlockBtn:'Sblocca con $1 di Credito',unlocking:'Sblocco in corso…',joinToUnlock:'Crea un account GRATUITO per sbloccare',needCredit:'Ti servono {required} di Credito per sbloccare questo episodio. Il tuo saldo: {balance}.',addCredit:'Aggiungi Credito',unlockFailed:'Impossibile sbloccare questo episodio. Riprova.'
   },
@@ -81,7 +81,7 @@ const COPY={
     unavailable:'Diese Folge ist vorübergehend nicht verfügbar. Bitte versuche es in Kürze erneut.',
     test:'MyMatchIQ-Kompatibilitätstest Starten',talk:'Mit Bianca Sprechen',chat:'Chatraum Betreten und Kommentieren',
     explore:'MyMatchIQ Entdecken',episodes:'Frühere Folgen',
-    note:'Folge 1 ist für alle kostenlos. Folge 2 wird einmalig für 1 $ Credit freigeschaltet — nach der Freischaltung für immer deine. Bianca und andere Premium-Aktionen verwenden Credit.',
+    note:'Beide O2OL-Studio-Folgen sind FÜR IMMER KOSTENLOS. Bianca und andere Premium-Aktionen nutzen weiterhin Credit.',
     replay:'Öffentliche Wiederholung ab',freeNow:'KOSTENLOSES Konto erstellen und jetzt ansehen',signIn:'Anmelden',
     unlockTitle:'Diese Folge freischalten',unlockNote:'Einmalig 1,00 $ in Credit — einmal freischalten, jederzeit ansehen, für immer deine.',unlockBtn:'Für 1 $ Credit freischalten',unlocking:'Wird freigeschaltet…',joinToUnlock:'KOSTENLOSES Konto erstellen zum Freischalten',needCredit:'Du brauchst {required} Credit, um diese Folge freizuschalten. Dein Guthaben: {balance}.',addCredit:'Credit hinzufügen',unlockFailed:'Diese Folge konnte nicht freigeschaltet werden. Bitte versuche es erneut.'
   }
@@ -249,11 +249,16 @@ export default function O2OLStudio(){
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Keep video controls and the full frame unobstructed on phones and desktop. */}
+          <div className="mx-auto mt-4 flex max-w-5xl justify-center sm:justify-end">
             <Link
+              data-studio-comment-link
               to={`/Chat?room=${encodeURIComponent(chatRoom)}&from=studio`}
-              className="absolute right-3 top-3 z-10 inline-flex items-center gap-2 rounded-full border border-white/30 bg-slate-950/80 px-4 py-2.5 text-xs font-black text-white shadow-xl backdrop-blur-md transition hover:bg-fuchsia-600/90 sm:right-4 sm:top-4 sm:px-5 sm:text-sm"
+              className="inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-full border border-white/30 bg-slate-900 px-5 py-3 text-center text-sm font-black text-white shadow-lg transition hover:bg-fuchsia-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-300"
             >
-              <MessageCircle className="h-4 w-4" aria-hidden="true"/>{t.chat}
+              <MessageCircle className="h-5 w-5 shrink-0" aria-hidden="true"/>{t.chat}
             </Link>
           </div>
 
