@@ -29,22 +29,6 @@ export const VIEW_ONLY_ROUTES = new Set(['/', '/home']);
 // Each guest feature route stays at its ORIGINAL page URL. While signed out,
 // only a safe, title-only view of that specific feature is mounted.
 // Members keep their original feature components and navigation.
-const CATALOG_FEATURE_ROUTES = new Set([
-  '/lovenotes','/dateideas','/podcastssupport','/podcasts','/podcast',
-  '/o2olstudio','/onair','/o2olstudio/episodes',
-  '/cooperativegames','/games','/pests','/poolpingpong','/ithoughtso',
-  '/scrabluko','/whatshouldtheydo','/whatshouldtheydoglobalpreview',
-  '/scratchgame','/likeminded',
-  '/articlessupport','/blog','/relationshipquizzes','/lovelanguagequiz',
-  '/couplesupport','/lgbtqsupport','/communicationpractice','/counselingsupport',
-  '/meditation','/influencerssupport','/chat','/chatrooms','/chatroom',
-  '/community','/communities','/findfriends','/friendrequests','/invite',
-  '/memorylane','/sharedjournals','/relationshipmilestones','/relationshipgoals',
-  '/anniversarytracker','/coupleactivities','/couplesdashboard','/couplesprofile',
-  '/couplescalendar','/achievements','/leaderboard','/aicontentcreator',
-  '/tiktokpost',
-]);
-
 const KNOWN_APP_ROUTES = new Set([
   '/',
   '/aboutus',
@@ -160,10 +144,6 @@ export default function LaunchAccessGate({ pathname, children }) {
   const isViewOnly=VIEW_ONLY_ROUTES.has(route);
   // Temporary PRELAUNCH browsing only. Never expose admin/account/payment routes
   // or relax server-side ownership, verification, entitlement or Credit rules.
-  const protectedAccountRoute = route.startsWith('/admin') || new Set([
-    '/analytics', '/tokensystemdashboard', '/dashboard', '/profile',
-    '/verifyphone', '/credit', '/sendcredits', '/payment-success', '/paymentsuccess',
-  ]).has(route);
   const openAccess = isUnifiedPrelaunchGuestAccessEnabled();
   const paidRoute = new Set(['/credit','/sendcredits','/aicontentcreator','/amora','/relationshipcoach','/mymatchiq/credits']).has(route);
   // Private member-owned records and person-to-person interactions require a verified identity.
@@ -175,9 +155,7 @@ export default function LaunchAccessGate({ pathname, children }) {
     '/profile','/dashboard','/analytics','/admin','/tokensystemdashboard',
     '/credit','/sendcredits','/payment-success','/paymentsuccess','/verifyphone',
   ]).has(route) || route.startsWith('/admin/');
-  const previewFeature = false;
-  // Retire the earlier all-features-open prelaunch exception: guests now
-  // see metadata in /Catalog, never the actual component for these paths.
+  // Owner-approved open access: free components render directly in prelaunch.
   const previewGuestBrowse = openAccess && !privateRoute && !paidRoute;
 
   if(isLoading && (!isPublic && !previewGuestBrowse)){
