@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useLanguage } from "@/Layout";
+import InviteSignupBanner from "@/components/invites/InviteSignupBanner";
 import LaunchRegularUserForm from "@/components/signup/LaunchRegularUserForm";
 
 const COPY = {
@@ -67,6 +68,7 @@ export default function SignUp() {
   if (signupType === "individual") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 px-4 py-12">
+        <InviteSignupBanner/>
         <LaunchRegularUserForm
           selectedPlan="Free"
           freeAccount
@@ -83,6 +85,7 @@ export default function SignUp() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 px-4 py-12">
+      <InviteSignupBanner/>
       <div className="mx-auto max-w-5xl">
         <Button variant="ghost" onClick={() => navigate("/Home")} className="mb-8 text-gray-600">
           <ArrowLeft className="mr-2 h-5 w-5" />{t.back}
