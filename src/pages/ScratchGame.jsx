@@ -8,6 +8,7 @@ import { apiRequest } from "@/lib/apiClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { hasFullMemberAccess } from "@/lib/openHouseAccess";
 import OpenHouseBrowseNotice from "@/components/launch/OpenHouseBrowseNotice";
+import { trackFeatureActionEvent } from '@/lib/interactionAnalytics';
 
 const GAME_URL = "https://play.one2onelove.com/";
 const copy = {
@@ -30,6 +31,7 @@ export default function ScratchGame(){
       const requestId=globalThis.crypto?.randomUUID?.()||`scratch-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const payload=await apiRequest('/api/games/scratch/launch',{method:'POST',body:{requestId}});
       if(!payload?.token)throw new Error(t.error);
+      trackFeatureActionEvent('Relationship Games','game:launch:scratch');
       setGameUrl(`${GAME_URL}?lang=${encodeURIComponent(currentLanguage||'en')}&ticket=${encodeURIComponent(payload.token)}`);
     }catch(err){setError(err?.message||t.error);}
     finally{setBusy(false);}
