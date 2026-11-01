@@ -1239,11 +1239,9 @@ async function loveNotes(db) {
   const [statusCounts, recent, sent, schedulers] = await Promise.all([
     db.query(`SELECT COALESCE(status,'unknown') AS status,count(*)::int AS count FROM public.scheduled_love_notes GROUP BY 1 ORDER BY count DESC,status ASC`),
     db.query(`
-      SELECT n.id,n.user_id,u.email,u.username,n.note_title,n.scheduled_date,n.scheduled_time,n.scheduled_timezone,
-             n.delivery_method,n.note_language,n.status,n.attempts,n.last_attempt_at,n.sent_at,n.failure_reason,
-             CASE WHEN n.recipient_phone IS NULL THEN NULL WHEN length(n.recipient_phone)<=4 THEN '••••' ELSE '••••'||right(n.recipient_phone,4) END AS recipient_phone_masked,
-             n.created_at,n.updated_at
-        FROM public.scheduled_love_notes n LEFT JOIN public.users u ON u.id=n.user_id
+      SELECT n.id,n.scheduled_date,n.scheduled_time,n.delivery_method,
+             n.note_language,n.status,n.sent_at,n.created_at
+        FROM public.scheduled_love_notes n
        ORDER BY n.created_at DESC LIMIT 100`),
     db.query(`SELECT count(*)::int AS total,count(*) FILTER (WHERE sent_date>=now()-interval '7 days')::int AS sent_7d,count(*) FILTER (WHERE sent_date>=now()-interval '30 days')::int AS sent_30d FROM public.sent_love_notes`),
     db.query(`
