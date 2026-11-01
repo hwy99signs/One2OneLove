@@ -1,5 +1,5 @@
 import React,{useCallback,useEffect,useState} from 'react';
-import {BarChart3,RefreshCw,ShieldAlert} from 'lucide-react';
+import {RefreshCw,ShieldAlert} from 'lucide-react';
 import {apiRequest} from '@/lib/apiClient';
 import {useLanguage} from '@/Layout';
 const copy={
