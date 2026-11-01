@@ -42,27 +42,13 @@ const STUDIO_COPY = {
   de:{eyebrow:'O2OL STUDIO SHOW',season:'Staffel 1 • Folge 1',title:'Wer sollte sich zuerst entschuldigen?',body:'Sieh dir Folge 1 KOSTENLOS an — das O2OL-Studio-Gespräch, das die Staffel eröffnete — und betrachte eine echte Beziehungsfrage aus mehreren Perspektiven.',watch:'Folge 1 Ansehen'}
 };
 
-// Homepage Studio feature (owner directive, 2026-10-10): the homepage
-// leads with the NEWEST episode. Season 1 Episode 2 is the feature; its
-// playback stays behind the $1 Credit unlock in the Studio (the homepage
-// never streams it). Episode 1 moves under the Past Episodes tab and
-// stays free.
+// Both published O2OL Studio episodes are FREE FOREVER, with no account required.
 const STUDIO_E2_COPY = {
-  en:{eyebrow:'O2OL STUDIO SHOW',badge:'NEW EPISODE',season:'Season 1 • Episode 2',title:'Who Pays for the First Date?',body:'The newest O2OL Studio conversation is here. Unlock Episode 2 once with $1 Credit and watch it anytime — no subscription, ever.',watch:'Unlock Episode 2 — $1',lockNote:'$1 Credit unlock • Watch anytime'},
-  es:{eyebrow:'O2OL STUDIO SHOW',badge:'NUEVO EPISODIO',season:'Temporada 1 • Episodio 2',title:'¿Quién paga en la primera cita?',body:'La conversación más nueva de O2OL Studio ya está aquí. Desbloquea el Episodio 2 una vez con $1 de Crédito y míralo cuando quieras — sin suscripción, nunca.',watch:'Desbloquear Episodio 2 — $1',lockNote:'Desbloqueo con $1 de Crédito • Míralo cuando quieras'},
-  fr:{eyebrow:'O2OL STUDIO SHOW',badge:'NOUVEL ÉPISODE',season:'Saison 1 • Épisode 2',title:'Qui paie au premier rendez-vous ?',body:'La toute nouvelle conversation O2OL Studio est arrivée. Débloquez l’Épisode 2 une fois avec 1 $ de Crédit et regardez-le quand vous voulez — sans abonnement, jamais.',watch:'Débloquer l’Épisode 2 — $1',lockNote:'Déblocage avec 1 $ de Crédit • À regarder à tout moment'},
-  it:{eyebrow:'O2OL STUDIO SHOW',badge:'NUOVO EPISODIO',season:'Stagione 1 • Episodio 2',title:'Chi paga al primo appuntamento?',body:'La conversazione più nuova di O2OL Studio è qui. Sblocca l’Episodio 2 una volta con $1 di Credito e guardalo quando vuoi — senza abbonamento, mai.',watch:'Sblocca Episodio 2 — $1',lockNote:'Sblocco con $1 di Credito • Guardalo quando vuoi'},
-  de:{eyebrow:'O2OL STUDIO SHOW',badge:'NEUE FOLGE',season:'Staffel 1 • Folge 2',title:'Wer zahlt beim ersten Date?',body:'Das neueste O2OL-Studio-Gespräch ist da. Schalte Folge 2 einmal mit $1 Credit frei und sieh sie dir jederzeit an — kein Abo, niemals.',watch:'Folge 2 Freischalten — $1',lockNote:'$1 Credit Freischaltung • Jederzeit ansehen'}
-};
-
-// Episode 2 is open to everyone during the free promotion on unified prelaunch.
-// Its original paid messaging automatically returns after the promotion ends.
-const STUDIO_E2_PROMO_COPY = {
-  en:{body:'Episode 2 is FREE for everyone through Dec 31, 2026. Enjoy the latest O2OL Studio conversation without a Credit charge.',watch:'Watch Episode 2'},
-  es:{body:'El Episodio 2 es GRATIS para todos hasta el 31 de diciembre de 2026, sin cobrar Crédito.',watch:'Ver Episodio 2'},
-  fr:{body:'L’Épisode 2 est GRATUIT pour tous jusqu’au 31 décembre 2026, sans débit de Crédit.',watch:'Voir l’Épisode 2'},
-  it:{body:'L’Episodio 2 è GRATIS per tutti fino al 31 dicembre 2026, senza addebiti di Credito.',watch:'Guarda Episodio 2'},
-  de:{body:'Folge 2 ist für alle bis zum 31. Dezember 2026 KOSTENLOS, ohne Credit-Abzug.',watch:'Folge 2 Ansehen'},
+  en:{eyebrow:'O2OL STUDIO SHOW',badge:'NEW EPISODE',season:'Season 1 • Episode 2',title:'Who Pays for the First Date?',body:'Watch the latest O2OL Studio conversation FREE FOREVER. No signup or Credit required.',watch:'Watch Episode 2 FREE',lockNote:'FREE FOREVER • Watch anytime'},
+  es:{eyebrow:'O2OL STUDIO SHOW',badge:'NUEVO EPISODIO',season:'Temporada 1 • Episodio 2',title:'¿Quién paga en la primera cita?',body:'Mira la última conversación de O2OL Studio GRATIS PARA SIEMPRE. Sin registro ni Crédito.',watch:'Ver Episodio 2 GRATIS',lockNote:'GRATIS PARA SIEMPRE • Míralo cuando quieras'},
+  fr:{eyebrow:'O2OL STUDIO SHOW',badge:'NOUVEL ÉPISODE',season:'Saison 1 • Épisode 2',title:'Qui paie au premier rendez-vous ?',body:'Regardez le dernier épisode O2OL Studio GRATUITEMENT POUR TOUJOURS, sans inscription ni Crédit.',watch:'Voir l’Épisode 2 GRATUITEMENT',lockNote:'GRATUIT POUR TOUJOURS • À voir à tout moment'},
+  it:{eyebrow:'O2OL STUDIO SHOW',badge:'NUOVO EPISODIO',season:'Stagione 1 • Episodio 2',title:'Chi paga al primo appuntamento?',body:'Guarda l’ultimo episodio O2OL Studio GRATIS PER SEMPRE, senza registrazione né Credito.',watch:'Guarda Episodio 2 GRATIS',lockNote:'GRATIS PER SEMPRE • Guarda quando vuoi'},
+  de:{eyebrow:'O2OL STUDIO SHOW',badge:'NEUE FOLGE',season:'Staffel 1 • Folge 2',title:'Wer zahlt beim ersten Date?',body:'Sieh die neueste O2OL-Studio-Folge FÜR IMMER KOSTENLOS – ohne Anmeldung oder Credit.',watch:'Folge 2 GRATIS ansehen',lockNote:'FÜR IMMER KOSTENLOS • Jederzeit ansehen'}
 };
 const HOME_PROMO_TOOL_CODES = {
   MemoryLane:'memories_unlock',
@@ -124,8 +110,7 @@ export default function Home() {
   const t = COPY[currentLanguage] || COPY.en;
   const matchIQLabel = MYMATCHIQ_LABELS[currentLanguage] || MYMATCHIQ_LABELS.en;
   const studio = STUDIO_COPY[currentLanguage] || STUDIO_COPY.en;
-  const studioEpisodeFree = isO2OLPromoFreeFeature('studio_episode_unlock');
-  const studioE2 = { ...(STUDIO_E2_COPY[currentLanguage] || STUDIO_E2_COPY.en), ...(studioEpisodeFree ? (STUDIO_E2_PROMO_COPY[currentLanguage] || STUDIO_E2_PROMO_COPY.en) : {}) };
+  const studioE2 = STUDIO_E2_COPY[currentLanguage] || STUDIO_E2_COPY.en;
   const studioTabs = STUDIO_TABS_COPY[currentLanguage] || STUDIO_TABS_COPY.en;
   const [studioTab, setStudioTab] = useState('new');
   const amora = AMORA_COPY[currentLanguage] || AMORA_COPY.en;
@@ -276,7 +261,7 @@ export default function Home() {
               <span className="rounded-full bg-gradient-to-r from-fuchsia-500 to-blue-600 px-3.5 py-1.5 text-[0.68rem] font-black uppercase tracking-[0.18em] text-white shadow-lg sm:text-xs">{studioE2.badge}</span>
               <div className="mt-4 text-[0.7rem] font-black uppercase tracking-[0.22em] text-cyan-200 sm:text-sm">{studioE2.season}</div>
               <div className="mt-3 max-w-4xl text-3xl font-black leading-tight sm:text-5xl lg:text-6xl">{studioE2.title}</div>
-              <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-wide text-white/90 sm:text-sm">{!studioEpisodeFree && <span aria-hidden="true">🔒</span>}{studioE2.lockNote}</div>
+              <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-wide text-white/90 sm:text-sm">{studioE2.lockNote}</div>
             </div>
             <div className="bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-950 px-5 py-4 sm:px-7 sm:py-5 lg:px-9 lg:py-6">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
