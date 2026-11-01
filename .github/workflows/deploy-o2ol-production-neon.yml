@@ -335,7 +335,8 @@ jobs:
             BASE="$1"
             OK=no
             for attempt in $(seq 1 24); do
-              HTML=$(curl -fsS --max-time 20 "$BASE/" 2>/dev/null || true)
+              # -L: www.one2onelove.com intentionally 308-redirects to the apex (index-v2.ts), so follow it.
+              HTML=$(curl -fsSL --max-time 20 "$BASE/" 2>/dev/null || true)
               REMOTE_JS=$(printf '%s' "$HTML" | grep -oE 'src="[^"]+\.js"' | head -1 | sed 's/src="//;s/"//' || true)
               echo "$BASE attempt $attempt remote=$REMOTE_JS"
               if [ "$REMOTE_JS" = "$LOCAL_JS" ]; then
@@ -345,9 +346,9 @@ jobs:
               sleep 5
             done
             test "$OK" = yes
-            curl -fsS --max-time 20 "$BASE/VerifyPhone" -o /tmp/verify-phone.html
+            curl -fsSL --max-time 20 "$BASE/VerifyPhone" -o /tmp/verify-phone.html
             grep -F "$LOCAL_JS" /tmp/verify-phone.html >/dev/null
-            curl -fsS --max-time 20 "$BASE$LOCAL_JS" -o /tmp/app.js
+            curl -fsSL --max-time 20 "$BASE$LOCAL_JS" -o /tmp/app.js
             test -s /tmp/app.js
             if grep -Fi 'supabase' /tmp/app.js; then
               echo 'Legacy Supabase marker found in deployed bundle.' >&2
@@ -356,6 +357,12 @@ jobs:
           }
           verify_frontend "$APEX_URL"
           verify_frontend "$WWW_URL"
+          # www front door must canonicalize to the apex (session cookies are host-only).
+          WWW_CODE=$(curl -sS --max-time 20 -o /dev/null -w '%{http_code}' "$WWW_URL/")
+          WWW_LOC=$(curl -sS --max-time 20 -o /dev/null -w '%{redirect_url}' "$WWW_URL/")
+          echo "$WWW_URL/ -> HTTP $WWW_CODE location=$WWW_LOC"
+          test "$WWW_CODE" = "308"
+          test "$WWW_LOC" = "$APEX_URL/"
 
       - name: Verify production Neon API routing
         shell: bash
@@ -363,7 +370,8 @@ jobs:
           set -euo pipefail
           check_json() {
             URL="$1"; EXPECT="$2"; OUT="$3"
-            CODE=$(curl -sS --max-time 20 -o "$OUT" -w '%{http_code}' "$URL")
+            # -L follows the www -> apex 308 so both hosts are checked end to end.
+            CODE=$(curl -sSL --max-time 20 -o "$OUT" -w '%{http_code}' "$URL")
             echo "$URL -> HTTP $CODE"
             cat "$OUT"
             test "$CODE" = "$EXPECT"
@@ -373,7 +381,7 @@ jobs:
           for BASE in "$APEX_URL" "$WWW_URL"; do
             PASS=no
             for attempt in $(seq 1 24); do
-              CODE=$(curl -sS --max-time 20 -o /tmp/health.json -w '%{http_code}' "$BASE/api/health" || true)
+              CODE=$(curl -sSL --max-time 20 -o /tmp/health.json -w '%{http_code}' "$BASE/api/health" || true)
               echo "$BASE/api/health attempt $attempt -> $CODE"
               if [ "$CODE" = "200" ] && jq -e '.ok == true and .app == "one2onelove" and .environment == "production" and .production == true and .database_ready == true' /tmp/health.json >/dev/null 2>&1; then
                 PASS=yes
@@ -392,7 +400,7 @@ jobs:
             check_json "$BASE/api/consents/adult-sensitive" 401 /tmp/consent.json
             check_json "$BASE/api/phone-verification/send" 401 /tmp/phone-send.json
             check_json "$BASE/api/phone-verification/verify" 401 /tmp/phone-verify.json
-            ANALYTICS_CODE=$(curl -sS --max-time 20 -o /tmp/analytics-smoke.json -w '%{http_code}' \
+            ANALYTICS_CODE=$(curl -sSL --post301 --post302 --post303 --max-time 20 -o /tmp/analytics-smoke.json -w '%{http_code}' \
               -H 'Content-Type: application/json' \
               -H 'x-o2ol-analytics-smoke: schema' \
               -X POST "$BASE/api/interaction-events" \
