@@ -24,11 +24,11 @@ export const subscriptionPlanCopy = {
   fr: {
     subtitle:'Les comptes One2OneLove sont gratuits. Utilisez des Crédit One2OneLove uniquement lorsque vous choisissez un service premium mesuré.',
     terms:{
-      loveNotes:'Parcourir et partager des Notes d’Amour via vos propres applications est gratuit. Les SMS envoyés par One2OneLove et la personnalisation IA affichent leur coût en Jetons avant utilisation.',
+      loveNotes:'Parcourir et partager des Notes d’Amour via vos propres applications est gratuit. Les SMS envoyés par One2OneLove et la personnalisation IA affichent leur coût en Crédit avant utilisation.',
       cancel:'Il n’existe aucun abonnement d’accès récurrent à annuler. La Recharge Automatique facultative peut être désactivée à tout moment.'
     },
     plans:{
-      Free:{displayName:'Compte GRATUIT',description:'Adhésion One2OneLove vérifiée avec communauté et outils relationnels.',features:['Aucune carte requise','E-mail + téléphone vérifiés','Participation communautaire','Accès actuel à Studio','Outils relationnels gratuits','Portefeuille de Jetons disponible']},
+      Free:{displayName:'Compte GRATUIT',description:'Adhésion One2OneLove vérifiée avec communauté et outils relationnels.',features:['Aucune carte requise','E-mail + téléphone vérifiés','Participation communautaire','Accès actuel à Studio','Outils relationnels gratuits','Portefeuille de Crédit disponible']},
       Tokens:{displayName:'Crédit One2OneLove',description:'Crédits prépayés facultatifs pour des actions premium mesurées.',features:['Réponses IA','Livraison SMS One2OneLove','Jeux premium sélectionnés','Génération de contenu IA','Recharge Automatique facultative']}
     }
   },
