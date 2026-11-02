@@ -245,7 +245,7 @@ export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Free', f
               </Button>
             </>
           ) : (
-            <Button type="button" onClick={() => navigate(returnTo ? '/SignIn?redirect=' + encodeURIComponent(returnTo) : foundingIntent ? '/SignIn?redirect=%2FTokens' : createPageUrl('SignIn'))} className="w-full bg-gradient-to-r from-pink-500 to-purple-600 py-6 text-white">{t.signIn}</Button>
+            <Button type="button" onClick={() => navigate(returnTo ? '/SignIn?redirect=' + encodeURIComponent(returnTo) : foundingIntent ? '/SignIn?redirect=%2FCredit' : createPageUrl('SignIn'))} className="w-full bg-gradient-to-r from-pink-500 to-purple-600 py-6 text-white">{t.signIn}</Button>
           )}
         </CardContent>
       </Card>
