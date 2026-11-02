@@ -4,6 +4,7 @@ import { reserveTokenCharge, consumeTokenReservation, releaseTokenReservation, m
 import { recordOpenAICostEvent } from './o2ol-cost-ledger';
 import { retrieveCoachingKnowledge, formatCoachingGrounding, O2OL_COACHING_KB_VERSION } from './coaching-knowledge';
 import { requireCurrentCoachingConsent } from './consents';
+import { requestProviderText, COACH_OUTPUT_TOKEN_BUDGETS } from './ai-provider-response.js';
 
 const HEADERS={ 'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff' };
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -17,20 +18,8 @@ function clean(value,max=6000,required=false){ const text=String(value??'').trim
 async function readJson(request){ if(!(request.headers.get('content-type')||'').includes('application/json')) throw new Error('Expected application/json body.'); return request.json(); }
 async function session(request,env){ const cookie=request.headers.get('cookie'); if(!cookie)return null; const response=await fetch(env.NEON_AUTH_BASE_URL.replace(/\/$/,'')+'/get-session',{headers:{cookie,accept:'application/json'}}); if(!response.ok)return null; const payload=await response.json().catch(()=>null); const user=payload?.user??payload?.data?.user??null; const active=payload?.session??payload?.data?.session??null; return user?.id&&user?.emailVerified===true&&active?{user,session:active}:null; }
 async function withDb(env,fn){ const db=new Client({connectionString:env.HYPERDRIVE.connectionString}); await db.connect(); try{return await fn(db);}finally{await db.end();} }
-function outputText(payload){ if(typeof payload?.output_text==='string'&&payload.output_text.trim())return payload.output_text.trim(); const pieces=[]; for(const item of payload?.output||[])for(const c of item?.content||[])if((c?.type==='output_text'||c?.type==='text')&&c?.text)pieces.push(c.text); return pieces.join('\n').trim(); }
-async function openAiText(env,{instructions,input,maxOutputTokens=1000}){
-  if(!env.OPENAI_API_KEY)throw Object.assign(new Error('Bianca AI is not configured yet.'),{status:503,code:'ai_not_configured'});
-  const model=env.OPENAI_MODEL||'gpt-5-mini';
-  const response=await fetch('https://api.openai.com/v1/responses',{
-    method:'POST',
-    headers:{authorization:`Bearer ${env.OPENAI_API_KEY}`,'content-type':'application/json'},
-    body:JSON.stringify({model,instructions,input,max_output_tokens:maxOutputTokens,store:false}),
-  });
-  const payload=await response.json().catch(()=>null);
-  if(!response.ok)throw Object.assign(new Error(payload?.error?.message||'AI provider request failed.'),{status:502,code:'ai_provider_error'});
-  const text=outputText(payload);
-  if(!text)throw Object.assign(new Error('AI provider returned no text.'),{status:502,code:'empty_ai_response'});
-  return {text,model:payload?.model||model,payload};
+async function openAiText(env,options) {
+  return requestProviderText(env,options,'Bianca AI is not configured yet.');
 }
 function contextDepth(interactions,conversations){ return Math.min(95,Math.max(10,18+Math.min(60,Number(interactions||0)*3)+Math.min(17,Number(conversations||0)*3))); }
 function learnPhrases(text,current={}){ const counts={...(current||{})}; const words=(String(text||'').toLowerCase().match(/[\p{L}\p{N}'’-]+/gu)||[]).map(w=>w.replace(/^['’-]+|['’-]+$/g,'')).filter(w=>w.length>1); for(let n=2;n<=3;n++){ for(let i=0;i<=words.length-n;i++){ const slice=words.slice(i,i+n); if(slice.every(w=>STOP.has(w))||slice.some(w=>w.includes('@')||w.includes('http')))continue; const phrase=slice.join(' '); if(phrase.length<6||phrase.length>54)continue; counts[phrase]=(Number(counts[phrase])||0)+1; } } const trimmed=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,80); const compact=Object.fromEntries(trimmed); const common=trimmed.filter(([,count])=>count>=2).slice(0,8).map(([phrase])=>phrase); return {counts:compact,common}; }
@@ -40,9 +29,9 @@ async function requireConversation(db,id,userId){ if(!UUID.test(String(id||'')))
 async function listConversations(db,userId){ const r=await db.query(`SELECT c.id,c.title,c.created_at,c.updated_at,(SELECT content FROM public.ai_coach_messages m WHERE m.conversation_id=c.id ORDER BY m.created_at DESC LIMIT 1) AS last_message FROM public.ai_coach_conversations c WHERE c.user_id=$1::uuid AND c.product='mymatchiq' AND c.mode='bianca_casual' ORDER BY c.updated_at DESC,c.created_at DESC`,[userId]); return r.rows; }
 async function listMessages(db,id,userId){ await requireConversation(db,id,userId); const r=await db.query(`SELECT id,role,content,model,created_at FROM public.ai_coach_messages WHERE conversation_id=$1::uuid AND user_id=$2::uuid ORDER BY created_at ASC,id ASC`,[id,userId]); return r.rows.map(row=>({...row,text:row.content,is_user:row.role==='user'})); }
 const RESPONSE_LEVELS={
-  short:{words:'50-100',maxOutputTokens:180},
-  medium:{words:'150-250',maxOutputTokens:420},
-  long:{words:'300-400',maxOutputTokens:650},
+  short:{words:'50-100',maxOutputTokens:COACH_OUTPUT_TOKEN_BUDGETS.short},
+  medium:{words:'150-250',maxOutputTokens:COACH_OUTPUT_TOKEN_BUDGETS.medium},
+  long:{words:'300-400',maxOutputTokens:COACH_OUTPUT_TOKEN_BUDGETS.long},
 };
 function instructions(name,phrases,language,responseLength='medium'){ const lang=LANGUAGE_NAMES[language]||'English'; const level=RESPONSE_LEVELS[responseLength]||RESPONSE_LEVELS.medium; return `You are Bianca, the friendly MyMatchIQ relationship guide for ${name||'this member'}. Speak naturally in ${lang}. You are warm, perceptive, conversational and grounded—not clinical. The member selected a ${responseLength} response. Keep this reply within ${level.words} words. Stay focused, contextual, and useful; do not pad the answer just to reach the word range. Prefer clear conversational paragraphs over essays, reports, numbered analyses, or drawn-out explanations. Formal/deeper analysis belongs in the separate report feature. You may laugh naturally when something is genuinely funny, apologize when appropriate, acknowledge uncertainty, and empathize without pretending to know feelings the member has not expressed. Ask useful follow-up questions and offer practical relationship coaching and self-reflection, but do not diagnose, provide therapy, or guarantee compatibility. Never manipulate, shame, pressure, or encourage surveillance. When there is abuse, coercion, self-harm, immediate danger, or an emergency, prioritize immediate safety and appropriate local professional help even if safety requires departing from the selected word range. The member commonly uses these phrases: ${phrases?.length?phrases.join(' | '):'none learned yet'}. Reuse at most one familiar phrase occasionally when it genuinely fits; never mimic excessively and never tell the member you are tracking their wording. More conversation history may improve personalization, but never claim certainty beyond the evidence.`; }
 async function sendMessage(db,env,auth,id,input){
