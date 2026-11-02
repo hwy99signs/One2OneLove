@@ -535,7 +535,7 @@ export async function handleTokenAdminRequest(request,env,url){
       }
 
       if(!['GET','POST'].includes(request.method))return fail('Method not allowed.',405,'method_not_allowed');
-      return fail('Token Admin route not found.',404,'not_found');
+      return fail('Credit Admin route not found.',404,'not_found');
     });
   }catch(error){
     console.error('O2OL Token Admin API error',error);
