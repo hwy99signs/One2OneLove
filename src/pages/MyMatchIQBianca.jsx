@@ -36,7 +36,7 @@ export default function MyMatchIQBianca(){
   return()=>{cancelled=true};
  },[isAuthenticated,currentLanguage]);
  useEffect(()=>{ if(!activeId||!isAuthenticated)return; listBiancaMessages(activeId).then(setMessages).catch(e=>setError(e?.message||t.preview)); },[activeId,isAuthenticated]);
- useEffect(()=>bottomRef.current?.scrollIntoView({behavior:'smooth'}),[messages]);
+ useEffect(()=>{ bottomRef.current?.scrollIntoView({behavior:'smooth'}); },[messages]);
  async function newChat(){ setLoading(true); setError('');setTokenPrompt(null); try{ const conv=await createBiancaConversation(); setConversations(v=>[conv,...v]); setActiveId(conv.id); setMessages([]); setProfile(await getBiancaProfile()); }catch(e){setError(e?.message||t.preview);}finally{setLoading(false);} }
  async function send(){ const text=draft.trim(); if(!text||loading)return; setLoading(true); setDraft(''); setError('');setTokenPrompt(null); try{ let id=activeId; if(!id){const conv=await createBiancaConversation(); setConversations(v=>[conv,...v]); id=conv.id; setActiveId(id);} const result=await sendBiancaMessage(id,text,currentLanguage,responseLength); setMessages(v=>[...v,result.userMessage,result.message]); if(result.profile)setProfile(result.profile); if(result?.tokens?.balance!=null)setWalletBalance(Number(result.tokens.balance)); else await refreshWallet(); }catch(e){setDraft(text);premiumError(e,t.preview);}finally{setLoading(false);} }
  async function report(){ setLoading(true); setReportMessage(''); setError('');setTokenPrompt(null); try{ await generateBiancaReport(currentLanguage); setReportMessage(t.reportReady);await refreshWallet(); }catch(e){premiumError(e,t.preview);}finally{setLoading(false);} }
