@@ -31,7 +31,7 @@ export default function Amora(){
   let cancelled=false;(async()=>{try{const [list,wallet]=await Promise.all([listCoachConversations(),getTokenWallet()]);if(cancelled)return;setConversations(list);setBalance(Number(wallet?.wallet?.balance||0));if(list[0])setActiveId(v=>v||list[0].id);}catch(e){if(!cancelled)setError(e?.message||'Unable to load Amora.');}})();return()=>{cancelled=true};
  },[isAuthenticated]);
  useEffect(()=>{if(!activeId||!isAuthenticated)return;listCoachMessages(activeId).then(setMessages).catch(handleError);},[activeId,isAuthenticated]);
- useEffect(()=>bottomRef.current?.scrollIntoView({behavior:'smooth'}),[messages]);
+ useEffect(()=>{ bottomRef.current?.scrollIntoView({behavior:'smooth'}); },[messages]);
 
  async function newChat(){setLoading(true);setError('');setTokenPrompt(null);try{const c=await createCoachConversation();setConversations(v=>[c,...v]);setActiveId(c.id);setMessages([]);}catch(e){handleError(e);}finally{setLoading(false);}}
  async function send(){const text=draft.trim();if(!text||loading)return;setLoading(true);setDraft('');setError('');setTokenPrompt(null);try{let id=activeId;if(!id){const c=await createCoachConversation();setConversations(v=>[c,...v]);id=c.id;setActiveId(id);}const result=await sendCoachMessage(id,text,responseLength);setMessages(v=>[...v,result.userMessage,result.message]);if(result?.tokens?.balance!=null)setBalance(Number(result.tokens.balance));else await refreshWallet();}catch(e){setDraft(text);handleError(e);}finally{setLoading(false);}}
