@@ -32,7 +32,7 @@ export async function handleMyMatchIQCreditsRequest(_request,_env,url){
 }
 
 export async function consumeMyMatchIQCredits(){
-  const error=new Error('MyMatchIQ credits are retired. Use the O2OL Token engine.');
+  const error=new Error('MyMatchIQ credit balances are unified. Use your One2OneLove Credit wallet.');
   error.status=410;
   error.code='legacy_mymatchiq_credits_retired';
   throw error;
