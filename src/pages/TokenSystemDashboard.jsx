@@ -320,7 +320,7 @@ export default function TokenSystemDashboard(){
             </select>
             <select value={calPackage} onChange={e=>setCalPackage(e.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm">
               <option value="">Choose package…</option>
-              {(data?.packages||[]).filter(row=>row.active).map(row=><option key={row.code} value={row.code}>{row.label} · {money(Number(row.amount_cents)/100)} · {n(row.tokens)} Tokens</option>)}
+              {(data?.packages||[]).filter(row=>row.active).map(row=><option key={row.code} value={row.code}>{row.label} · {money(Number(row.amount_cents)/100)} · {money(Number(row.tokens||0)/100)} Credit</option>)}
             </select>
             <select value={calFeature} onChange={e=>setCalFeature(e.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm">
               <option value="all">All metered features</option>
@@ -351,7 +351,7 @@ export default function TokenSystemDashboard(){
             <div className="flex items-start justify-between gap-3"><div><div className="text-xl font-black">{pkg.label}</div><div className="mt-1 font-mono text-xs text-slate-400">{pkg.code}</div></div><div className="text-right"><div className="text-2xl font-black text-violet-700">{money(Number(pkg.amount_cents)/100)}</div><div className="text-xs font-bold text-amber-700">{money(Number(pkg.tokens||0)/100)} Credit</div></div></div>
             <div className="mt-4 space-y-2">{pkg.featureBurn.map(row=><div key={row.feature_code} className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-3">
               <div><div className="text-sm font-bold">{row.label}</div><div className="text-xs text-slate-400">{money(Number(row.token_cost||0)/100)} Credit / {row.pricing_unit}</div></div>
-              <div className="text-right"><div className="text-lg font-black">{n(row.full_uses)}</div><div className="text-[11px] text-slate-400">full uses{row.remainder?' + '+row.remainder+' Token'+(row.remainder===1?'':'s')+' left':''}</div></div>
+              <div className="text-right"><div className="text-lg font-black">{n(row.full_uses)}</div><div className="text-[11px] text-slate-400">full uses{row.remainder?' + '+money(Number(row.remainder||0)/100)+' Credit remaining':''}</div></div>
             </div>)}</div>
           </div>)}</div>:<Empty>No active Credit packages are configured.</Empty>}
         </Panel>
