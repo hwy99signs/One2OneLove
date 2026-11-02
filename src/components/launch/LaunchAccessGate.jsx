@@ -136,6 +136,8 @@ function preferredLanguage(){
 export default function LaunchAccessGate({ pathname, children }) {
   const { user,isAuthenticated,isLoading }=useAuth();
   const route=String(pathname||'/').toLowerCase().replace(/\/$/,'')||'/';
+  // Keep historical Admin bookmarks working without exposing the retired URL.
+  if(route==='/tokensystemdashboard')return <Navigate to="/CreditSystemDashboard" replace />;
   const isKnown=KNOWN_APP_ROUTES.has(route);
   // MyMatchIQ has its own production app, signup and verification.
   // Never require One2OneLove membership or phone verification just to
