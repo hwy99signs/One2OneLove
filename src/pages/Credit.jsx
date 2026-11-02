@@ -207,7 +207,7 @@ export default function Credit(){
     <h2 className="text-2xl font-black text-slate-950">{t.packages}</h2>
     <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
      {purchasePackages.map(pkg=><div key={pkg.code} className={'flex min-h-[210px] flex-col rounded-[22px] border bg-white p-4 shadow-sm '+(pkg.code==='credit_10'?'border-violet-300 ring-2 ring-violet-100':'border-slate-200')}>
-      <div className="text-xs font-black uppercase tracking-wide text-violet-600">{pkg.label}</div>
+      <div className="text-xs font-black uppercase tracking-wide text-violet-600">{String(pkg.label||'').replace(/tokens?/gi,'Credit')}</div>
       <div className="mt-2 text-3xl font-black">{money(pkg.tokens)}</div>
       <div className="text-sm font-bold text-slate-500">Credit</div>
       <button onClick={()=>buy(pkg.code)} disabled={!!busy} className="mt-auto w-full rounded-xl bg-slate-950 px-3 py-2.5 text-sm font-black text-white disabled:opacity-50">{busy===pkg.code?t.checkout:t.buy}</button>
