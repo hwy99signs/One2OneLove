@@ -113,6 +113,7 @@ const KNOWN_APP_ROUTES = new Set([
   '/tiktokpost',
   '/credit',
   '/tokensystemdashboard',
+  '/creditsystemdashboard',
   '/verifyphone',
   '/whatshouldtheydo',
 ]);
@@ -153,7 +154,7 @@ export default function LaunchAccessGate({ pathname, children }) {
     '/chat','/chatrooms','/chatroom','/community','/communities','/findfriends','/friendrequests',
     '/memorylane','/sharedjournals','/relationshipmilestones','/relationshipgoals',
     '/anniversarytracker','/couplescalendar','/couplesdashboard','/couplesprofile',
-    '/profile','/dashboard','/analytics','/admin','/tokensystemdashboard',
+    '/profile','/dashboard','/analytics','/admin','/tokensystemdashboard','/creditsystemdashboard',
     '/credit','/sendcredits','/payment-success','/paymentsuccess','/verifyphone',
   ]).has(route) || route.startsWith('/admin/');
   // Owner-approved open access: free components render directly in prelaunch.
