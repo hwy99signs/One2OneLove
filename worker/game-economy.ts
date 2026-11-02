@@ -230,6 +230,15 @@ export async function chargeGameAndCreatePass(db,userId,game,requestId){
       FROM public.o2ol_game_access_passes WHERE user_id=$1::uuid AND game=$2 AND metadata->>'charge_key'=$3 LIMIT 1`,
       [userId,game,key])).rows[0];
     if(replay){await db.query('COMMIT');return {pass:replay,reused:true,promotion:replay.promotion_id?{id:replay.promotion_id,free:replay.promo_free}:null,gameCreditCents:Number(replay.game_credit_cents||0),creditCents:Number(replay.credit_cents||0)};}
+    // The role lookup is advisory metadata only; games remain permanently free.
+    // A failed role lookup must not prevent a player from starting a game.
+    let isAdmin=false;
+    try {
+      const adminRole=(await db.query('SELECT role FROM neon_auth."user" WHERE id=$1::uuid LIMIT 1',[userId])).rows[0];
+      isAdmin=adminRole?.role==='admin';
+    } catch (_) {
+      isAdmin=false;
+    }
     const promo=await resolveGamePromotion(db,userId,game);
     // Never debit Game Credits or paid Credit for any game, regardless of date,
     // previous transactions, admin promotions or future game registry entries.
