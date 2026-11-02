@@ -1039,11 +1039,11 @@ export async function handleO2OLTokenRequest(request,env,url){
         )).rows;
         return json({ok:true,sessions:rows});
       }
-      return fail('Token route not found.',404,'not_found');
+      return fail('Credit route not found.',404,'not_found');
     });
   }catch(error){
     console.error('O2OL token API error',error);
-    return fail(error?.message||'Unable to process token request.',error?.status||500,error?.code||'token_error',{
+    return fail(error?.message||'Unable to process Credit request.',error?.status||500,error?.code||'token_error',{
       balance:error?.balance,required:error?.required,featureCode:error?.featureCode,featureLabel:error?.featureLabel,
     });
   }
