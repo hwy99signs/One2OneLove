@@ -30,7 +30,7 @@ async function session(request,env){
 }
 
 async function withDb(env,fn){
-  if(!env.HYPERDRIVE?.connectionString)throw Object.assign(new Error('Token dashboard database connection is not configured.'),{status:503,code:'database_not_configured'});
+  if(!env.HYPERDRIVE?.connectionString)throw Object.assign(new Error('Credit dashboard database connection is not configured.'),{status:503,code:'database_not_configured'});
   const db=new Client({connectionString:env.HYPERDRIVE.connectionString});
   await db.connect();
   try{return await fn(db);}finally{await db.end();}
@@ -242,10 +242,10 @@ async function tokenDashboard(db){
 async function adjustTokens(db,admin,userId,rawDelta,reason=''){
   const delta=Number.parseInt(String(rawDelta),10);
   if(!Number.isInteger(delta)||delta===0||Math.abs(delta)>1000000){
-    throw Object.assign(new Error('Token adjustment must be a non-zero whole number between -1,000,000 and 1,000,000.'),{status:400,code:'invalid_token_adjustment'});
+    throw Object.assign(new Error('Credit adjustment must be a non-zero whole number of cents between -1,000,000 and 1,000,000.'),{status:400,code:'invalid_token_adjustment'});
   }
   const safeReason=String(reason||'').trim().slice(0,500);
-  if(!safeReason)throw Object.assign(new Error('A reason is required for every Token adjustment.'),{status:400,code:'reason_required'});
+  if(!safeReason)throw Object.assign(new Error('A reason is required for every Credit adjustment.'),{status:400,code:'reason_required'});
 
   await db.query('BEGIN');
   try{
@@ -539,6 +539,6 @@ export async function handleTokenAdminRequest(request,env,url){
     });
   }catch(error){
     console.error('O2OL Token Admin API error',error);
-    return fail(error?.message||'Unable to process Token Admin request.',error?.status||500,error?.code||'token_admin_error');
+    return fail(error?.message||'Unable to process Credit Admin request.',error?.status||500,error?.code||'token_admin_error');
   }
 }
