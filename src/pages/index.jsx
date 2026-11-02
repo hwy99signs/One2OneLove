@@ -129,7 +129,8 @@ function PagesContent() {
           <Route path="/AdminAccess" element={<AdminAccess />} />
           <Route path="/Admin" element={<AdminMfaGate><Admin /></AdminMfaGate>} />
           <Route path="/Analytics" element={<AdminMfaGate><Analytics /></AdminMfaGate>} />
-          <Route path="/TokenSystemDashboard" element={<AdminMfaGate><TokenSystemDashboard /></AdminMfaGate>} />
+          <Route path="/CreditSystemDashboard" element={<AdminMfaGate><TokenSystemDashboard /></AdminMfaGate>} />
+          <Route path="/TokenSystemDashboard" element={<Navigate to="/CreditSystemDashboard" replace />} />
           <Route path="/MemoryLane" element={<PaidFeatureGate featureCode="memories_unlock"><MemoryLane /></PaidFeatureGate>} />
           <Route path="/LoveNotes" element={<LoveNotes />} />
           <Route path="/SendCredits" element={<SendCredits />} />
