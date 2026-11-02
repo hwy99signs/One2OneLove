@@ -4,6 +4,7 @@ import { reserveTokenCharge, consumeTokenReservation, releaseTokenReservation, m
 import { recordOpenAICostEvent } from './o2ol-cost-ledger';
 import { retrieveCoachingKnowledge, formatCoachingGrounding, O2OL_COACHING_KB_VERSION } from './coaching-knowledge';
 import { requireCurrentCoachingConsent } from './consents';
+import { requestProviderText, COACH_OUTPUT_TOKEN_BUDGETS } from './ai-provider-response.js';
 
 const HEADERS = {
   'content-type': 'application/json; charset=utf-8',
@@ -72,43 +73,8 @@ async function entitlement(db,userId,feature){
     limit:null,
   };
 }
-function outputText(payload) {
-  if (typeof payload?.output_text === 'string' && payload.output_text.trim()) return payload.output_text.trim();
-  const pieces = [];
-  for (const item of payload?.output || []) {
-    for (const content of item?.content || []) {
-      if ((content?.type === 'output_text' || content?.type === 'text') && content?.text) pieces.push(content.text);
-    }
-  }
-  return pieces.join('\n').trim();
-}
-async function openAiText(env, { instructions, input, maxOutputTokens = 900 }) {
-  if (!env.OPENAI_API_KEY) {
-    throw Object.assign(new Error('AI service is not configured yet.'), { status: 503, code: 'ai_not_configured' });
-  }
-  const model = env.OPENAI_MODEL || 'gpt-5-mini';
-  const response = await fetch('https://api.openai.com/v1/responses', {
-    method: 'POST',
-    headers: {
-      authorization: `Bearer ${env.OPENAI_API_KEY}`,
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      model,
-      instructions,
-      input,
-      max_output_tokens: maxOutputTokens,
-      store: false,
-    }),
-  });
-  const payload = await response.json().catch(() => null);
-  if (!response.ok) {
-    const message = payload?.error?.message || 'AI provider request failed.';
-    throw Object.assign(new Error(message), { status: 502, code: 'ai_provider_error' });
-  }
-  const text = outputText(payload);
-  if (!text) throw Object.assign(new Error('AI provider returned no text.'), { status: 502, code: 'empty_ai_response' });
-  return { text, model: payload?.model || model, payload };
+async function openAiText(env,options) {
+  return requestProviderText(env,options,'AI service is not configured yet.');
 }
 async function requireConversation(db, conversationId, userId) {
   if (!UUID.test(String(conversationId || ''))) throw Object.assign(new Error('Invalid conversation ID.'), { status: 400, code: 'bad_request' });
@@ -158,9 +124,9 @@ async function listMessages(db, conversationId, userId) {
   }));
 }
 const COACH_RESPONSE_LEVELS={
-  short:{words:'50-100',maxOutputTokens:180},
-  medium:{words:'150-250',maxOutputTokens:420},
-  long:{words:'300-400',maxOutputTokens:650},
+  short:{words:'50-100',maxOutputTokens:COACH_OUTPUT_TOKEN_BUDGETS.short},
+  medium:{words:'150-250',maxOutputTokens:COACH_OUTPUT_TOKEN_BUDGETS.medium},
+  long:{words:'300-400',maxOutputTokens:COACH_OUTPUT_TOKEN_BUDGETS.long},
 };
 async function sendCoachMessage(db, env, auth, conversationId, input) {
   const conversation = await requireConversation(db, conversationId, auth.user.id);
