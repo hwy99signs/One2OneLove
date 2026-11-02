@@ -256,18 +256,18 @@ export default function TokenSystemDashboard(){
       {tab==='overview'&&<div className="space-y-6 text-slate-900">
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           <Stat icon={Users} label="Member Wallets" value={n(summary.wallet_count)} note="Admin excluded" tone="blue"/>
-          <Stat icon={Coins} label="Outstanding Credit" value={n(summary.outstanding_tokens)} note={`${n(summary.lifetime_used)} lifetime used`} tone="amber"/>
+          <Stat icon={Coins} label="Outstanding Credit" value={money(Number(summary.outstanding_tokens||0)/100)} note={`${money(Number(summary.lifetime_used||0)/100)} lifetime used`} tone="amber"/>
           <Stat icon={CreditCard} label="Credit Revenue · 30d" value={money(Number(summary.token_revenue_cents_30d||0)/100)} note={`${n(summary.transactions_30d)} transactions`} tone="emerald"/>
-          <Stat icon={Activity} label="Provider Cost · 30d" value={money(Number(summary.provider_cost_micros_30d||0)/1000000)} note={`${n(summary.tokens_charged_30d)} Credit cents charged`} tone="rose"/>
+          <Stat icon={Activity} label="Provider Cost · 30d" value={money(Number(summary.provider_cost_micros_30d||0)/1000000)} note={`${money(Number(summary.tokens_charged_30d||0)/100)} Credit charged`} tone="rose"/>
           <Stat icon={Gift} label="Founders Reserved/Active" value={n(founderSummary.total)} note={`${Math.max(0,200-Number(founderSummary.total||0))} of 200 remaining`} tone="violet"/>
         </div>
 
         <div className="grid gap-6 xl:grid-cols-2">
           <Panel title="Credit Flow" subtitle="Cumulative non-admin wallet movement.">
             <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-xl bg-emerald-50 p-4"><div className="text-xs font-black uppercase text-emerald-700">Purchased</div><div className="mt-1 text-2xl font-black">{n(summary.lifetime_purchased)}</div></div>
-              <div className="rounded-xl bg-violet-50 p-4"><div className="text-xs font-black uppercase text-violet-700">Granted</div><div className="mt-1 text-2xl font-black">{n(summary.lifetime_granted)}</div></div>
-              <div className="rounded-xl bg-amber-50 p-4"><div className="text-xs font-black uppercase text-amber-700">Used</div><div className="mt-1 text-2xl font-black">{n(summary.lifetime_used)}</div></div>
+              <div className="rounded-xl bg-emerald-50 p-4"><div className="text-xs font-black uppercase text-emerald-700">Purchased</div><div className="mt-1 text-2xl font-black">{money(Number(summary.lifetime_purchased||0)/100)}</div></div>
+              <div className="rounded-xl bg-violet-50 p-4"><div className="text-xs font-black uppercase text-violet-700">Granted</div><div className="mt-1 text-2xl font-black">{money(Number(summary.lifetime_granted||0)/100)}</div></div>
+              <div className="rounded-xl bg-amber-50 p-4"><div className="text-xs font-black uppercase text-amber-700">Used</div><div className="mt-1 text-2xl font-black">{money(Number(summary.lifetime_used||0)/100)}</div></div>
             </div>
             <div className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-600"><strong>{n(summary.auto_replenish_enabled)}</strong> members currently have optional Auto-Replenish enabled.</div>
           </Panel>
@@ -318,7 +318,7 @@ export default function TokenSystemDashboard(){
           <div className="grid gap-3 lg:grid-cols-[1.4fr_1fr_1fr_auto]">
             <select value={calUser} onChange={e=>setCalUser(e.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm">
               <option value="">Choose test/member account…</option>
-              {(data?.wallets||[]).map(row=><option key={row.user_id} value={row.user_id} disabled={!calibrationReady(row)}>{row.email||row.name||row.user_id} · balance {n(row.balance)} · {calibrationReady(row)?'READY':'NOT VERIFIED/ACTIVE'}</option>)}
+              {(data?.wallets||[]).map(row=><option key={row.user_id} value={row.user_id} disabled={!calibrationReady(row)}>{row.email||row.name||row.user_id} · balance {money(Number(row.balance||0)/100)} · {calibrationReady(row)?'READY':'NOT VERIFIED/ACTIVE'}</option>)}
             </select>
             <select value={calPackage} onChange={e=>setCalPackage(e.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm">
               <option value="">Choose package…</option>
@@ -337,7 +337,7 @@ export default function TokenSystemDashboard(){
         </Panel>
         <Panel title="Projected Package Economics" subtitle="Uses the actual 30-day average provider cost per Credit cent. This is provider-cost contribution only—not net profit and not a final price recommendation.">
           {Number(summary.tokens_charged_30d)>0?<div className="grid gap-4 xl:grid-cols-3">{projectedPackageEconomics.map(pkg=><div key={creditDisplay(pkg.code)} className="rounded-2xl border border-slate-200 bg-white p-5">
-            <div className="flex items-start justify-between gap-3"><div><div className="font-black">{creditDisplay(pkg.label)}</div><div className="mt-1 text-xs text-slate-400">{n(pkg.tokens)} Credit</div></div><div className="text-xl font-black text-emerald-700">{money(pkg.revenue)}</div></div>
+            <div className="flex items-start justify-between gap-3"><div><div className="font-black">{creditDisplay(pkg.label)}</div><div className="mt-1 text-xs text-slate-400">{money(Number(pkg.tokens||0)/100)} Credit</div></div><div className="text-xl font-black text-emerald-700">{money(pkg.revenue)}</div></div>
             <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
               <div className="rounded-xl bg-slate-50 p-3">Avg provider cost / Credit cent<br/><strong>{money(pkg.avgProviderCostPerToken)}</strong></div>
               <div className="rounded-xl bg-slate-50 p-3">Est. provider cost<br/><strong>{money(pkg.estimatedProviderCost)}</strong></div>
