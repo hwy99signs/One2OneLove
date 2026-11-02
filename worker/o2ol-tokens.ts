@@ -159,13 +159,13 @@ export async function getTokenFeaturePrice(db,featureCode){
       WHERE feature_code=$1 LIMIT 1`,
     [String(featureCode||'')],
   )).rows[0];
-  if(!row||row.active!==true)throw Object.assign(new Error('This token feature is not available.'),{status:503,code:'token_feature_unavailable'});
+  if(!row||row.active!==true)throw Object.assign(new Error('This Credit feature is not available.'),{status:503,code:'token_feature_unavailable'});
   return {...row,token_cost:Number(row.token_cost||0)};
 }
 
 export async function reserveTokenCharge(db,userId,featureCode,{idempotencyKey,metadata={}}={}){
   const key=String(idempotencyKey||'').trim();
-  if(!key)throw Object.assign(new Error('A token idempotency key is required.'),{status:400,code:'idempotency_required'});
+  if(!key)throw Object.assign(new Error('A Credit request identifier is required.'),{status:400,code:'idempotency_required'});
   // The permanent games ruling takes precedence over old paid idempotency records
   // and requires no wallet, promo window or database write.
   if(isO2OLPermanentlyFreeMediaFeature(featureCode) || isO2OLPermanentFreeGameFeature(featureCode)){
