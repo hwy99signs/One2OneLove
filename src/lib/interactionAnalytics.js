@@ -46,16 +46,6 @@ const FEATURE_BY_ROUTE = {
   '/therapistsignup': 'Professional Onboarding',
   '/influencersignup': 'Professional Onboarding',
   '/o2olstudio': 'O2OL Studio',
-  '/mymatchiq': 'MyMatchIQ',
-  '/mymatchiq/meet': 'MyMatchIQ',
-  '/mymatchiq/assessment': 'MyMatchIQ',
-  '/mymatchiq/passport': 'MyMatchIQ',
-  '/mymatchiq/bianca': 'MyMatchIQ',
-  '/mymatchiq/credits': 'MyMatchIQ',
-  '/mymatchiq/actions': 'MyMatchIQ',
-  '/mymatchiq/dashboard': 'MyMatchIQ',
-  '/mymatchiq/invite': 'MyMatchIQ',
-  '/mymatchiq/subscription': 'MyMatchIQ',
   '/winacruise': 'Win A Cruise',
   '/counselingsupport': 'Relationship Support',
   '/influencerssupport': 'Professionals',
@@ -117,7 +107,6 @@ export function isAdminAnalyticsSurface(pathname = window.location.pathname) {
 export function featureForPath(pathname) {
   const clean = String(pathname || '').toLowerCase().replace(/\/$/, '') || '/';
   if (FEATURE_BY_ROUTE[clean]) return FEATURE_BY_ROUTE[clean];
-  if (clean.startsWith('/mymatchiq/')) return 'MyMatchIQ';
   return null;
 }
 

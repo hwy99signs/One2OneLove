@@ -37,7 +37,6 @@ const FEATURE_CATALOG = [
   ['Member Profile', 'Account'],
   ['Subscription / Billing', 'Account'],
   ['O2OL Studio', 'Media'],
-  ['MyMatchIQ', 'MyMatchIQ'],
   ['Reviews', 'Growth'],
   ['Suggestions', 'Growth'],
   ['Professionals', 'Professional'],

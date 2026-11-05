@@ -50,13 +50,6 @@ import Professionals from './Professionals';
 import ProfessionalSignup from './ProfessionalSignup';
 import TherapistSignup from './TherapistSignup';
 import InfluencerSignup from './InfluencerSignup';
-import MyMatchIQ from './MyMatchIQ';
-import MyMatchIQAssessment from './MyMatchIQAssessment';
-import MyMatchIQBianca from './MyMatchIQBianca';
-import MyMatchIQCredits from './MyMatchIQCredits';
-import MyMatchIQMeet from './MyMatchIQMeet';
-import MyMatchIQWorkspace from './MyMatchIQWorkspace';
-import MyMatchIQPassport from './MyMatchIQPassport';
 import O2OLStudio from './O2OLStudio';
 import LaunchAccessGate from '@/components/launch/LaunchAccessGate.jsx';
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
@@ -69,7 +62,7 @@ const PAGES = {
   CommunicationPractice, CouplesProfile, CoupleActivities, CooperativeGames, WhatShouldTheyDo, ScratchGame, LikeMinded, SharedJournals, CouplesDashboard,
   CouplesCalendar, LGBTQSupport, HelpCenter, ContactUs, PrivacyPolicy, TermsOfService, Reviews,
   LeaveReview, Suggestions, Chat, PaymentSuccess, Subscription, VerifyPhone,
-  Professionals, ProfessionalSignup, TherapistSignup, InfluencerSignup, MyMatchIQ, MyMatchIQAssessment, MyMatchIQBianca, MyMatchIQCredits, MyMatchIQMeet, MyMatchIQWorkspace, O2OLStudio,
+  Professionals, ProfessionalSignup, TherapistSignup, InfluencerSignup, O2OLStudio,
 };
 
 function _getCurrentPage(url) {
@@ -148,24 +141,12 @@ function PagesContent() {
           <Route path="/PaymentSuccess" element={<PaymentSuccess />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/Subscription" element={<Subscription />} />
-          <Route path="/MyMatchIQ/Subscription" element={<Navigate to="/Subscription?source=mymatchiq-feature" replace />} />
           <Route path="/VerifyPhone" element={<VerifyPhone />} />
           <Route path="/Professionals" element={<Professionals />} />
           <Route path="/ProfessionalSignup" element={<ProfessionalSignup />} />
           <Route path="/TherapistSignup" element={<TherapistSignup />} />
           <Route path="/InfluencerSignup" element={<InfluencerSignup />} />
           <Route path="/O2OLStudio" element={<O2OLStudio />} />
-          <Route path="/MyMatchIQ" element={<MyMatchIQ />} />
-          <Route path="/MyMatchIQ/Meet" element={<MyMatchIQMeet />} />
-          <Route path="/MyMatchIQ/Assessment" element={<MyMatchIQAssessment />} />
-          <Route path="/MyMatchIQ/Passport" element={<MyMatchIQPassport />} />
-          <Route path="/MyMatchIQ/Bianca" element={<MyMatchIQBianca />} />
-          <Route path="/MyMatchIQ/Credits" element={<MyMatchIQCredits />} />
-          <Route path="/MyMatchIQ/Actions" element={<MyMatchIQWorkspace page="actions" />} />
-          <Route path="/MyMatchIQ/Dashboard" element={<MyMatchIQWorkspace page="dashboard" />} />
-          <Route path="/MyMatchIQ/Invite" element={<MyMatchIQWorkspace page="invite" />} />
-          <Route path="/MyMatchIQ/SignIn" element={<Navigate to="/SignIn?source=mymatchiq-feature" replace />} />
-          <Route path="/MyMatchIQ/SignUp" element={<Navigate to="/SignUp?source=mymatchiq-feature" replace />} />
 
           {/* Launch-deferred surfaces stay preserved in source but are not customer-facing. */}
           <Route path="/WinACruise" element={<Navigate to="/Home" replace />} />

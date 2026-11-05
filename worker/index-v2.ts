@@ -29,11 +29,6 @@ import { handleReviewsRequest } from './reviews';
 import { handleConsentsRequest } from './consents';
 import { handleContestsRequest } from './contests';
 import { handleAiRequest } from './ai';
-import { handleMyMatchIQAiRequest } from './mymatchiq-ai';
-import { handleMyMatchIQCreditsRequest } from './mymatchiq-credits';
-import { handleMyMatchIQMembersRequest } from './mymatchiq-members';
-import { handleMyMatchIQLegacyRequest } from './mymatchiq-legacy';
-import { handleMyMatchIQCoreRequest } from './mymatchiq-core';
 import { enforceApiEntitlement } from './api-entitlements';
 import { enforceLaunchIdentity } from './identity-gate';
 import { handleLaunchReadinessRequest } from './launch-readiness';
@@ -233,31 +228,6 @@ export default {
 
     if (url.pathname === '/api/feature-usage' || url.pathname === '/api/interaction-events') {
       const response = await handleFeatureUsageRequest(request, env, url);
-      if (response) return response;
-    }
-
-    if (url.pathname.startsWith('/api/mymatchiq/credits')) {
-      const response = await handleMyMatchIQCreditsRequest(request, env, url);
-      if (response) return response;
-    }
-
-    if (url.pathname.startsWith('/api/mymatchiq/members')) {
-      const response = await handleMyMatchIQMembersRequest(request, env, url);
-      if (response) return response;
-    }
-
-    if (url.pathname.startsWith('/api/mymatchiq/legacy')) {
-      const response = await handleMyMatchIQLegacyRequest(request, env, url);
-      if (response) return response;
-    }
-
-    if (url.pathname === '/api/mymatchiq/access' || url.pathname.startsWith('/api/mymatchiq/bianca') || url.pathname.startsWith('/api/mymatchiq/assessment')) {
-      const response = await handleMyMatchIQAiRequest(request, env, url);
-      if (response) return response;
-    }
-
-    if (url.pathname.startsWith('/api/mymatchiq/')) {
-      const response = await handleMyMatchIQCoreRequest(request, env, url);
       if (response) return response;
     }
 

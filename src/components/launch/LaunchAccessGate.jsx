@@ -12,8 +12,6 @@ const PUBLIC_ROUTES = new Set([
   '/whatshouldtheydo', '/games', '/scratchgame', '/sharedjournals', '/couplescalendar',
   '/lgbtqsupport', '/o2olstudio', '/chat', '/community',
   '/professionals', '/professionalsignup', '/therapistsignup', '/influencersignup', '/likeminded',
-  '/mymatchiq', '/mymatchiq/meet', '/mymatchiq/assessment', '/mymatchiq/bianca', '/mymatchiq/credits', '/mymatchiq/actions', '/mymatchiq/dashboard',
-  '/mymatchiq/invite', '/mymatchiq/signin', '/mymatchiq/signup', '/mymatchiq/subscription',
 ]);
 
 const PLAN_LEVEL = {
