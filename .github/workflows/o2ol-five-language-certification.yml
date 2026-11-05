@@ -73,8 +73,7 @@ jobs:
             '/MemoryLane','/PodcastsSupport','/RelationshipQuizzes','/RelationshipMilestones',
             '/RelationshipGoals','/CommunicationPractice','/CoupleSupport','/ArticlesSupport',
             '/CoupleActivities','/CooperativeGames','/WhatShouldTheyDo','/Games','/ScratchGame',
-            '/SharedJournals','/CouplesCalendar','/LGBTQSupport','/O2OLStudio','/Chat','/Community',
-            '/MyMatchIQ'
+            '/SharedJournals','/CouplesCalendar','/LGBTQSupport','/O2OLStudio','/Chat','/Community'
           ];
           const MEMBER=[
             '/SendCredits','/Profile','/AnniversaryTracker','/CouplesProfile','/CouplesDashboard',

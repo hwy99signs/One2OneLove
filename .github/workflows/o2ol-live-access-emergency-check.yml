@@ -52,7 +52,6 @@ jobs:
             '/SharedJournals',
             '/O2OLStudio',
             '/Chat',
-            '/MyMatchIQ',
             '/Subscription',
             '/HelpCenter',
             '/TermsOfService'

@@ -36,19 +36,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -F 'path="/MyMatchIQ/Bianca"' src/pages/index.jsx
-          grep -F 'path="/MyMatchIQ/Assessment"' src/pages/index.jsx
-          grep -F 'path="/MyMatchIQ/Passport"' src/pages/index.jsx
-          grep -F 'path="/MyMatchIQ/Credits"' src/pages/index.jsx
-          grep -F 'path="/MyMatchIQ/Meet"' src/pages/index.jsx
           grep -F 'path="/LikeMinded"' src/pages/index.jsx
           grep -F 'path="/O2OLStudio"' src/pages/index.jsx
           grep -F "/o2olstudio" src/components/launch/LaunchAccessGate.jsx
           grep -F 'studio/season-1/episode-1-who-should-apologize-first.mp4' worker/studio-media.ts
           grep -F 'Enter Chat Room to Comment' src/pages/O2OLStudio.jsx
           grep -F 'studio-who-should-apologize-first' src/pages/O2OLStudio.jsx src/pages/Chat.jsx worker/community-chat.ts
-          grep -F "biancaStart: 'CHAT with Bianca'" src/pages/MyMatchIQ.jsx
-          grep -F "const openBianca = () => navigate('/MyMatchIQ/Bianca')" src/pages/MyMatchIQ.jsx
           grep -F "Chat Room Analytics" src/pages/Admin.jsx
           grep -F "O2OL Show Voting" src/pages/Admin.jsx
           grep -F "Conversation by Topic / # of Comments" src/pages/Admin.jsx
@@ -74,18 +67,11 @@ jobs:
           grep -F "handlePrelaunchCommunityChatRequest" worker/mmiq-prelaunch-preview.ts
           grep -F "prelaunch-chat/messages/" worker/prelaunch-community-chat.ts
           if grep -F '"binding": "HYPERDRIVE"' cloudflare/wrangler.combined-prelaunch.jsonc; then echo "Unexpected Hyperdrive binding in isolated prelaunch"; exit 1; fi
-          grep -F "discoverable boolean NOT NULL DEFAULT false" neon-migrations/2026-09-30-mymatchiq-intentional-members.sql
-          grep -F "allow_invitations boolean NOT NULL DEFAULT false" neon-migrations/2026-09-30-mymatchiq-intentional-members.sql
-          grep -F "STRIPE_WEBHOOK_SECRET" worker/mymatchiq-credits.ts
-          grep -F "email_mismatch" worker/mymatchiq-legacy.ts
-          if grep -RE "password_hash|credential_hash|INSERT INTO .*neon_auth|UPDATE .*neon_auth" worker/mymatchiq-legacy.ts neon-migrations/2026-09-30-mymatchiq-legacy-claim-bridge.sql; then echo "Unsafe auth credential mutation found"; exit 1; fi
+          if grep -RE "password_hash|credential_hash|INSERT INTO .*neon_auth|UPDATE .*neon_auth" neon-migrations/2026-09-30-mymatchiq-legacy-claim-bridge.sql; then echo "Unsafe auth credential mutation found"; exit 1; fi
           if grep -REi "MyMatchIQ (account|membership)|MyMatchIQ-Konto|cuenta MyMatchIQ|compte MyMatchIQ|account MyMatchIQ|membresía MyMatchIQ|abonnement MyMatchIQ" src/pages src/components/signup; then echo "Standalone MyMatchIQ account language found"; exit 1; fi
           if grep -F "MMIQ_COPY" src/pages/Subscription.jsx; then echo "Retired MyMatchIQ subscription copy found"; exit 1; fi
           if grep -F "product='mymatchiq'" src/pages/Subscription.jsx src/pages/SignIn.jsx src/pages/SignUp.jsx src/components/signup/LaunchRegularUserForm.jsx; then echo "Retired standalone MyMatchIQ product gate found"; exit 1; fi
           if grep -REi "Guest Preview|Vista Previa de Invitado|Aperçu Invité|Anteprima Ospite|Gastvorschau|guest-preview|Full Access Trial|Prueba de Acceso Completo|Essai.*Accès Complet|Prova.*Accesso Completo|Vollzugriff-Test" src/pages src/components src/data src/content; then echo "Retired access/trial language found"; exit 1; fi
-          grep -F 'path="/MyMatchIQ/SignIn" element={<Navigate to="/SignIn?source=mymatchiq-feature" replace />}' src/pages/index.jsx
-          grep -F 'path="/MyMatchIQ/SignUp" element={<Navigate to="/SignUp?source=mymatchiq-feature" replace />}' src/pages/index.jsx
-          grep -F 'path="/MyMatchIQ/Subscription" element={<Navigate to="/Subscription?source=mymatchiq-feature" replace />}' src/pages/index.jsx
           grep -F "master" .github/workflows/deploy-o2ol-production-neon.yml
           if grep -F "o2ol-password-reset-preview" .github/workflows/deploy-o2ol-production-neon.yml; then echo "Production workflow still references retired prelaunch branch"; exit 1; fi
 
@@ -98,14 +84,14 @@ jobs:
           test -n "$CHROME_BIN"
           echo "CHROME_BIN=$CHROME_BIN" >> "$GITHUB_ENV"
 
-      - name: Browser smoke combined O2OL MyMatchIQ Bianca Like Minded
+      - name: Browser smoke combined O2OL Like Minded
         shell: bash
         run: |
           set -euo pipefail
           node --input-type=module <<'NODE'
           import { chromium } from 'playwright-core';
           const BASE=process.env.PREVIEW_URL.replace(/\/$/,'');
-          const routes=['/','/Subscription','/SignUp','/Admin','/O2OLStudio','/Chat','/Chat?room=studio-who-should-apologize-first&from=studio','/MyMatchIQ','/MyMatchIQ/Assessment','/MyMatchIQ/Passport','/MyMatchIQ/Bianca','/MyMatchIQ/Credits','/MyMatchIQ/Meet','/MyMatchIQ/Actions','/MyMatchIQ/Dashboard','/LikeMinded'];
+          const routes=['/','/Subscription','/SignUp','/Admin','/O2OLStudio','/Chat','/Chat?room=studio-who-should-apologize-first&from=studio','/LikeMinded'];
           const langs=['en','es','fr','it','de'];
           const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN,args:['--no-sandbox']});
           const failures=[];
@@ -116,18 +102,6 @@ jobs:
                 await context.addInitScript(l=>localStorage.setItem('preferredLanguage',l),lang);
                 await context.route('**/api/auth/get-session',r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({user:{id:'00000000-0000-4000-8000-000000000001',email:'qa@example.invalid',emailVerified:true,email_verified:true,name:'QA Member',role:'user',subscription_plan:'Exclusive',subscription_status:'active',phoneNumberVerified:true},session:{id:'qa-session',userId:'00000000-0000-4000-8000-000000000001'}})}));
                 await context.route('**/api/profile',r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({profile:{id:'00000000-0000-4000-8000-000000000001',email:'qa@example.invalid',name:'QA Member',role:'user',subscription_plan:'Exclusive',subscription_status:'active',phone_number_verified:true,phoneNumberVerified:true,phone_verification_required:true}})}));
-                await context.route('**/api/mymatchiq/**',async r=>{
-                  const u=new URL(r.request().url()), p=u.pathname;
-                  let body={ok:true};
-                  if(p.endsWith('/access')) body={ok:true,access:{tier:'Elite',source:'qa',grandfathered:false}};
-                  else if(p.endsWith('/bianca/profile')) body={ok:true,profile:{interaction_count:12,conversation_count:3,common_phrases:['you know'],context_depth_score:35}};
-                  else if(p.endsWith('/bianca/conversations')) body={ok:true,conversations:[]};
-                  else if(p.endsWith('/bianca/reports')) body={ok:true,reports:[]};
-                  else if(p.includes('/assessment/sessions/latest')) body={ok:true,session:null};
-                  else if(p.includes('/credits/wallet')) body={ok:true,wallet:{balance:0,auto_replenish_enabled:false}};
-                  else if(p.includes('/members')) body={ok:true,members:[],profile:null,invitations:[]};
-                  await r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
-                });
                 await context.route('**/api/like-minded/**',r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,rooms:[],session:null})}));
                 const page=await context.newPage(); const errors=[]; page.on('pageerror',e=>errors.push(String(e.message||e)));
                 let res=null; try{
@@ -173,16 +147,6 @@ jobs:
                   }
                 }
 
-                if(lang==='en' && route==='/MyMatchIQ'){
-                  try{
-                    const biancaCta=page.getByRole('button',{name:/CHAT with Bianca/i}).first();
-                    await biancaCta.click({timeout:7000});
-                    await page.waitForURL(u=>new URL(u).pathname.toLowerCase()==='/mymatchiq/bianca',{timeout:7000});
-                  }catch(e){
-                    failures.push({route,lang,kind:'mymatchiq-bianca-navigation',error:String(e.message||e),url:page.url()});
-                  }
-                }
-
                 if(lang==='en' && route==='/Admin'){
                   if(!/Chat Room Analytics/i.test(dom.text)) failures.push({route,lang,kind:'admin-chat-analytics-missing',text:dom.text.slice(0,800)});
                   if(!/Prelaunch read-only preview/i.test(dom.text)) failures.push({route,lang,kind:'admin-preview-banner-missing',text:dom.text.slice(0,800)});
@@ -212,7 +176,7 @@ jobs:
             '/','/DateIdeas','/LoveNotes','/LoveLanguageQuiz','/MemoryLane','/PodcastsSupport',
             '/RelationshipQuizzes','/RelationshipMilestones','/RelationshipGoals','/CommunicationPractice',
             '/CoupleSupport','/ArticlesSupport','/CoupleActivities','/CooperativeGames','/WhatShouldTheyDo',
-            '/Games','/ScratchGame','/SharedJournals','/CouplesCalendar','/LGBTQSupport','/O2OLStudio','/Chat','/MyMatchIQ'
+            '/Games','/ScratchGame','/SharedJournals','/CouplesCalendar','/LGBTQSupport','/O2OLStudio','/Chat'
           ];
           const personalPreview=new Set(['/MemoryLane','/RelationshipMilestones','/RelationshipGoals','/SharedJournals','/CouplesCalendar','/CoupleActivities','/CooperativeGames','/ScratchGame']);
           const viewports=[

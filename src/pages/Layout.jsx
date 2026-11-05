@@ -392,10 +392,6 @@ function LanguageContent({ children, currentPageName }) {
           </Link>
           
           <nav className="hidden lg:flex items-center gap-6 text-lg font-bold shrink-0">
-              <a href="https://mymatchiq.com" target="_blank" rel="noreferrer" aria-label="MyMatchIQ" className="mr-6 inline-flex h-12 w-[86px] items-center justify-center rounded-full border border-white/25 bg-white px-2 shadow-[0_5px_15px_rgba(15,4,42,0.24)] transition hover:-translate-y-0.5 hover:brightness-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white">
-                <img src="/assets/mymatchiq-official-logo.webp" alt="MyMatchIQ" className="h-10 w-[76px] scale-[1.2] object-contain" />
-            </a>
-            )}
             <Link to={createPageUrl("Home")} className={headerButton()}>⌂ {t.nav.home}</Link>
             
             <div
@@ -779,7 +775,7 @@ function LanguageContent({ children, currentPageName }) {
                 </div>
               </div>
               <div><h4 className="text-xl font-black mb-4">{fT.supportCol}</h4><FooterLink onClick={() => navigate(createPageUrl("HelpCenter"))}>{fT.help}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("ContactUs"))}>{fT.contact}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("PrivacyPolicy"))}>{fT.privacy}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("TermsOfService"))}>{fT.terms}</FooterLink></div>
-              <div><h4 className="text-xl font-black mb-4">{fT.company}</h4><FooterLink onClick={() => navigate(createPageUrl("AboutUs"))}>{fT.about}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("Reviews"))}>{fT.reviews}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("Suggestions"))}>{fT.suggestions}</FooterLink></div>
+              <div><h4 className="text-xl font-black mb-4">{fT.company}</h4><FooterLink onClick={() => navigate(createPageUrl("AboutUs"))}>{fT.about}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("Reviews"))}>{fT.reviews}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("Suggestions"))}>{fT.suggestions}</FooterLink><a href="https://mymatchiq.com" target="_blank" rel="noreferrer" className="block text-left py-1 hover:text-yellow-200">MyMatchIQ</a></div>
             </div>
             <div className="max-w-7xl mx-auto border-t border-white/25 mt-8 pt-4 text-center text-sm">{fT.copyright}</div>
           </footer>
