@@ -23,7 +23,7 @@ const studioGuestPreviewCopy = {
   de:'Beide veröffentlichten Studio-Folgen sind dauerhaft kostenlos. Kein Konto nötig.',
 };
 const studioPromoNote = {
-  en: 'Both O2OL Studio episodes are FREE FOREVER without signup. Bianca and other paid AI actions still use Credit.',
+  en: 'Both O2OL Studio episodes are FREE FOREVER without signup. Other paid AI actions still use Credit.',
   es: 'Los dos episodios de O2OL Studio son GRATIS PARA SIEMPRE y no requieren registro. Las funciones de IA de pago siguen usando Crédito.',
   fr: 'Les deux épisodes O2OL Studio sont GRATUITS POUR TOUJOURS et accessibles sans inscription. Les fonctions IA payantes utilisent toujours des Crédits.',
   it: 'Entrambi gli episodi O2OL Studio sono GRATIS PER SEMPRE, senza registrazione. Le funzioni IA a pagamento usano ancora Credito.',
@@ -35,9 +35,9 @@ const COPY={
     body:'Watch the latest O2OL Studio conversation, then join the community discussion and share your point of view.',
     studio:'O2OL Studio conversation',
     unavailable:'This episode is temporarily unavailable. Please try again shortly.',
-    test:'Take the MyMatchIQ Compatibility Test',talk:'Talk with Bianca',chat:'Enter Chat Room to Comment',
+    chat:'Enter Chat Room to Comment',
     explore:'Explore MyMatchIQ',episodes:'Previous Episodes',
-    note:'Both O2OL Studio episodes are FREE FOREVER. Bianca and other metered premium actions still use Credit.',
+    note:'Both O2OL Studio episodes are FREE FOREVER. Other metered premium actions still use Credit.',
     replay:'Public replay opens',freeNow:'Create a FREE account to watch now',signIn:'Sign In',
     unlockTitle:'Unlock this episode',unlockNote:'One-time $1.00 in Credit — unlock once, watch anytime, yours to keep.',unlockBtn:'Unlock for $1 Credit',unlocking:'Unlocking…',joinToUnlock:'Create a FREE account to unlock',needCredit:'You need {required} Credit to unlock this episode. Your balance: {balance}.',addCredit:'Add Credit',unlockFailed:'Unable to unlock this episode. Please try again.'
   },
@@ -46,9 +46,9 @@ const COPY={
     body:'Mira la conversación más reciente de O2OL Studio y luego entra a la comunidad para compartir tu punto de vista.',
     studio:'Conversación de O2OL Studio',
     unavailable:'Este episodio no está disponible temporalmente. Inténtalo de nuevo en unos momentos.',
-    test:'Hacer la Prueba de Compatibilidad MyMatchIQ',talk:'Hablar con Bianca',chat:'Entrar al Chat para Comentar',
+    chat:'Entrar al Chat para Comentar',
     explore:'Explorar MyMatchIQ',episodes:'Episodios Anteriores',
-    note:'Los dos episodios de O2OL Studio son GRATIS PARA SIEMPRE. Bianca y otras funciones premium todavía usan Crédito.',
+    note:'Los dos episodios de O2OL Studio son GRATIS PARA SIEMPRE. Otras funciones premium todavía usan Crédito.',
     replay:'La repetición pública abre',freeNow:'Crea una cuenta GRATIS para verlo ahora',signIn:'Iniciar Sesión',
     unlockTitle:'Desbloquea este episodio',unlockNote:'Un solo pago de $1.00 en Crédito — desbloquea una vez y míralo cuando quieras, tuyo para siempre.',unlockBtn:'Desbloquear por $1 de Crédito',unlocking:'Desbloqueando…',joinToUnlock:'Crea una cuenta GRATIS para desbloquear',needCredit:'Necesitas {required} de Crédito para desbloquear este episodio. Tu saldo: {balance}.',addCredit:'Añadir Crédito',unlockFailed:'No se pudo desbloquear este episodio. Inténtalo de nuevo.'
   },
@@ -57,9 +57,9 @@ const COPY={
     body:'Regardez la conversation O2OL Studio la plus récente, puis rejoignez la communauté pour partager votre point de vue.',
     studio:'Conversation O2OL Studio',
     unavailable:'Cet épisode est temporairement indisponible. Veuillez réessayer dans quelques instants.',
-    test:'Faire le Test de Compatibilité MyMatchIQ',talk:'Parler avec Bianca',chat:'Entrer dans le Chat pour Commenter',
+    chat:'Entrer dans le Chat pour Commenter',
     explore:'Explorer MyMatchIQ',episodes:'Épisodes Précédents',
-    note:'Les deux épisodes O2OL Studio sont GRATUITS POUR TOUJOURS. Bianca et les autres fonctions premium utilisent toujours des Crédits.',
+    note:'Les deux épisodes O2OL Studio sont GRATUITS POUR TOUJOURS. Les autres fonctions premium utilisent toujours des Crédits.',
     replay:'La rediffusion publique ouvre',freeNow:'Créez un compte GRATUIT pour regarder maintenant',signIn:'Se Connecter',
     unlockTitle:'Débloquez cet épisode',unlockNote:'Un seul paiement de 1,00 $ en Crédit — débloquez une fois, regardez quand vous voulez, à vous pour toujours.',unlockBtn:'Débloquer pour 1 $ de Crédit',unlocking:'Déblocage…',joinToUnlock:'Créez un compte GRATUIT pour débloquer',needCredit:'Il vous faut {required} de Crédit pour débloquer cet épisode. Votre solde : {balance}.',addCredit:'Ajouter du Crédit',unlockFailed:'Impossible de débloquer cet épisode. Veuillez réessayer.'
   },
@@ -68,9 +68,9 @@ const COPY={
     body:'Guarda la conversazione più recente di O2OL Studio, poi entra nella community e condividi il tuo punto di vista.',
     studio:'Conversazione O2OL Studio',
     unavailable:'Questo episodio non è temporaneamente disponibile. Riprova tra poco.',
-    test:'Fai il Test di Compatibilità MyMatchIQ',talk:'Parla con Bianca',chat:'Entra nella Chat per Commentare',
+    chat:'Entra nella Chat per Commentare',
     explore:'Esplora MyMatchIQ',episodes:'Episodi Precedenti',
-    note:'Entrambi gli episodi O2OL Studio sono GRATIS PER SEMPRE. Bianca e altre funzioni premium usano ancora Credito.',
+    note:'Entrambi gli episodi O2OL Studio sono GRATIS PER SEMPRE. Altre funzioni premium usano ancora Credito.',
     replay:'La replica pubblica apre',freeNow:'Crea un account GRATUITO per guardare ora',signIn:'Accedi',
     unlockTitle:'Sblocca questo episodio',unlockNote:'Un solo pagamento di $1,00 in Credito — sblocca una volta e guardalo quando vuoi, tuo per sempre.',unlockBtn:'Sblocca con $1 di Credito',unlocking:'Sblocco in corso…',joinToUnlock:'Crea un account GRATUITO per sbloccare',needCredit:'Ti servono {required} di Credito per sbloccare questo episodio. Il tuo saldo: {balance}.',addCredit:'Aggiungi Credito',unlockFailed:'Impossibile sbloccare questo episodio. Riprova.'
   },
@@ -79,9 +79,9 @@ const COPY={
     body:'Sieh dir das neueste O2OL-Studio-Gespräch an und teile anschließend deine Sichtweise in der Community.',
     studio:'O2OL-Studio-Gespräch',
     unavailable:'Diese Folge ist vorübergehend nicht verfügbar. Bitte versuche es in Kürze erneut.',
-    test:'MyMatchIQ-Kompatibilitätstest Starten',talk:'Mit Bianca Sprechen',chat:'Chatraum Betreten und Kommentieren',
+    chat:'Chatraum Betreten und Kommentieren',
     explore:'MyMatchIQ Entdecken',episodes:'Frühere Folgen',
-    note:'Beide O2OL-Studio-Folgen sind FÜR IMMER KOSTENLOS. Bianca und andere Premium-Aktionen nutzen weiterhin Credit.',
+    note:'Beide O2OL-Studio-Folgen sind FÜR IMMER KOSTENLOS. Andere Premium-Aktionen nutzen weiterhin Credit.',
     replay:'Öffentliche Wiederholung ab',freeNow:'KOSTENLOSES Konto erstellen und jetzt ansehen',signIn:'Anmelden',
     unlockTitle:'Diese Folge freischalten',unlockNote:'Einmalig 1,00 $ in Credit — einmal freischalten, jederzeit ansehen, für immer deine.',unlockBtn:'Für 1 $ Credit freischalten',unlocking:'Wird freigeschaltet…',joinToUnlock:'KOSTENLOSES Konto erstellen zum Freischalten',needCredit:'Du brauchst {required} Credit, um diese Folge freizuschalten. Dein Guthaben: {balance}.',addCredit:'Credit hinzufügen',unlockFailed:'Diese Folge konnte nicht freigeschaltet werden. Bitte versuche es erneut.'
   }
@@ -266,20 +266,9 @@ export default function O2OLStudio(){
             <Film className="h-5 w-5 shrink-0"/>{t.studio}
           </div>
 
-          <div className="mx-auto mt-8 grid max-w-5xl gap-4 md:grid-cols-2">
-            <Link to="/MyMatchIQ/Assessment" className="group rounded-2xl border border-fuchsia-200/25 bg-gradient-to-r from-fuchsia-600 to-violet-700 p-5 text-center shadow-lg transition hover:-translate-y-0.5 hover:brightness-110">
-              <BrainCircuit className="mx-auto h-7 w-7"/>
-              <div className="mt-2 text-lg font-black">{t.test}</div>
-            </Link>
-            <Link to="/MyMatchIQ/Bianca" className="group rounded-2xl border border-cyan-200/25 bg-gradient-to-r from-blue-600 to-cyan-600 p-5 text-center shadow-lg transition hover:-translate-y-0.5 hover:brightness-110">
-              <MessageCircle className="mx-auto h-7 w-7"/>
-              <div className="mt-2 text-lg font-black">{t.talk}</div>
-            </Link>
-          </div>
-
           <div className="mx-auto mt-5 flex max-w-5xl flex-wrap justify-center gap-3 text-center">
             <Link to="/O2OLStudio/Episodes" className="inline-flex items-center gap-2 rounded-full border border-fuchsia-200/30 bg-fuchsia-500/15 px-5 py-3 text-sm font-black text-white hover:bg-fuchsia-500/25"><Film className="h-4 w-4"/>{t.episodes}</Link>
-            <Link to="/MyMatchIQ" className="inline-flex rounded-full border border-white/20 bg-white/10 px-5 py-3 text-sm font-black text-white hover:bg-white/15">{t.explore}</Link>
+            <a href="https://mymatchiq.com" target="_blank" rel="noreferrer" className="inline-flex rounded-full border border-white/20 bg-white/10 px-5 py-3 text-sm font-black text-white hover:bg-white/15">{t.explore}</a>
           </div>
           <p className="mx-auto mt-5 max-w-3xl text-center text-xs leading-5 text-white/70">{isO2OLFreePromoActive() ? (studioPromoNote[currentLanguage] || studioPromoNote.en) : t.note}</p>
         </div>

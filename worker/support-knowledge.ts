@@ -37,15 +37,15 @@ PRICES (the full governing schedule — quote these exactly, in USD)
 - Date Ideas: $0.49 per idea (titles are shown free; the full idea opens after the unlock).
 - Games: Like Minded $0.49 per game; LOVE SCRATCH GAME $0.49 per game; other premium games $0.49.
 - AI content creator: $0.49 per generation.
-- Reports: $2.99 (MyMatchIQ full report, Personality/Pattern report, Bianca's deeper report, other premium reports). Love Language Quiz detailed results: $1.99.
-- Replies from Amora and Bianca are priced by length the member chooses: Short $0.10, Medium $0.15, Long $0.20.
+- Reports: $2.99 (Personality/Pattern report and other premium reports). Love Language Quiz detailed results: $1.99.
+- Replies from Amora are priced by length the member chooses: Short $0.10, Medium $0.15, Long $0.20.
 - Love Notes: writing your own note is FREE. AI-generated note text: $0.25. Sending a note by text (SMS) costs by the recipient's region: USA & Canada $0.29 · United Kingdom $0.39 · Europe $0.59 · Oceania $0.39 · Asia $0.69 · Latin America & Caribbean $0.79 · Africa $1.49 · Middle East $0.99. The library has 515+ Love Notes and 52 Date Ideas; titles are free, full text opens after payment.
 
 FEATURES — QUICK HOW-TOS
 - Love Notes: pick or write a note, choose the recipient, send now or schedule it. Sending by text needs a verified sender phone (one-time).
 - Games: I Thought So!, Like Minded, PEST'S, Pool Ping Pong, Scrabluko, What Should They Do?, LOVE SCRATCH GAME. Every game is a creation of the site's founder, Eisenhower Antoine.
 - Chat: 8 chat rooms; free for members; first names only.
-- MyMatchIQ: Bianca is the compatibility guide inside One2OneLove.
+- MyMatchIQ is a separate platform at mymatchiq.com with its own accounts; Bianca is the compatibility guide there. One2OneLove's own AI guide is Amora.
 - Amora is One2OneLove's personality and co-host; O2OL and Amora host the O2OL Studio show.
 
 SUPPORT & SAFETY

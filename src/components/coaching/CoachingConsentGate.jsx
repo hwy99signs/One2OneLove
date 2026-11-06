@@ -56,7 +56,7 @@ export default function CoachingConsentGate({children,source='coaching_gate',exi
   return <main className="min-h-[85vh] bg-[#09040c] px-4 py-8 text-white">
     <section className="mx-auto max-w-2xl overflow-hidden rounded-[2rem] border border-fuchsia-200/20 bg-[#16091d] shadow-2xl">
       <div className="flex items-start justify-between border-b border-white/10 p-5 sm:p-7">
-        <div className="pr-4"><div className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[.18em] text-fuchsia-200"><ShieldCheck className="h-4 w-4"/>One2OneLove coaching agreement</div><h1 className="mt-2 text-2xl font-black sm:text-3xl">{copy.title||'Before you chat with Amora or Bianca'}</h1></div>
+        <div className="pr-4"><div className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[.18em] text-fuchsia-200"><ShieldCheck className="h-4 w-4"/>One2OneLove coaching agreement</div><h1 className="mt-2 text-2xl font-black sm:text-3xl">{copy.title||'Before you chat with Amora'}</h1></div>
         <button onClick={leave} aria-label="Close coaching agreement" className="rounded-full border border-white/10 bg-white/5 p-2 text-white/70 hover:bg-white/10"><X className="h-5 w-5"/></button>
       </div>
       <div className="max-h-[62vh] space-y-4 overflow-y-auto p-5 text-sm leading-6 text-white/80 sm:p-7 sm:text-base">

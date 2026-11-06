@@ -178,12 +178,9 @@ jobs:
           grep -F 'navigate("/SignUp")' src/pages/Layout.jsx >/dev/null || { echo "Free signup navigation contract missing." >&2; exit 1; }
           grep -F "Registered Free is the site access identity." src/components/launch/LaunchAccessGate.jsx >/dev/null || { echo "Free-account access contract missing." >&2; exit 1; }
 
-          grep -F "Free: { questionCount:225, dimensionCount:15 }" src/lib/mymatchiqAssessment.js >/dev/null || { echo "Free MyMatchIQ assessment contract missing." >&2; exit 1; }
-          grep -F 'const billingFeatureCode=`bianca_response_${responseLength}`' worker/mymatchiq-ai.ts >/dev/null || { echo "Bianca Credit metering missing." >&2; exit 1; }
           grep -F 'const billingFeatureCode=`amora_response_${responseLength}`' worker/ai.ts
           test -s docs/O2OL_COACHING_KNOWLEDGE_BASE.md
           grep -F "O2OL_COACHING_KB_VERSION='2026-10-10-v2.2'" worker/coaching-knowledge.ts
-          grep -F "retrieveCoachingKnowledge" worker/mymatchiq-ai.ts
           grep -F "retrieveCoachingKnowledge" worker/ai.ts
           grep -F "healthy-red-flags" worker/coaching-knowledge.ts
           grep -F "self-harm-crisis" worker/coaching-knowledge.ts
@@ -209,7 +206,7 @@ jobs:
           grep -F "coaching_consent_version" neon-migrations/2026-10-10-o2ol-coaching-consent.sql
           grep -F "coaching_consent_history" neon-migrations/2026-10-10-o2ol-coaching-consent.sql
           grep -F "COACHING_CONSENT_VERSION='2026-10-10-v1'" worker/consents.ts
-          grep -F "requireCurrentCoachingConsent" worker/ai.ts worker/mymatchiq-ai.ts
+          grep -F "requireCurrentCoachingConsent" worker/ai.ts
           grep -F "coaching_consent_required" worker/consents.ts
           grep -F "Before you chat with Amora or Bianca" worker/consents.ts src/components/coaching/CoachingConsentGate.jsx
           grep -F "I agree" src/components/coaching/CoachingConsentGate.jsx

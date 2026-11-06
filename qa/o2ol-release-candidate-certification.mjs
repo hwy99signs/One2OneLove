@@ -15,10 +15,7 @@ const ACTIVE=[
 '/Games','/ScratchGame','/LikeMinded','/SharedJournals','/CouplesDashboard','/CouplesCalendar',
 '/LGBTQSupport','/HelpCenter','/ContactUs','/PrivacyPolicy','/TermsOfService','/Reviews','/LeaveReview',
 '/Suggestions','/Chat','/PaymentSuccess','/payment-success','/Subscription','/VerifyPhone',
-'/Professionals','/ProfessionalSignup','/TherapistSignup','/InfluencerSignup','/O2OLStudio',
-'/MyMatchIQ','/MyMatchIQ/Meet','/MyMatchIQ/Assessment','/MyMatchIQ/Passport','/MyMatchIQ/Bianca',
-'/MyMatchIQ/Credits','/MyMatchIQ/Actions','/MyMatchIQ/Dashboard','/MyMatchIQ/Invite',
-'/MyMatchIQ/SignIn','/MyMatchIQ/SignUp','/MyMatchIQ/Subscription'
+'/Professionals','/ProfessionalSignup','/TherapistSignup','/InfluencerSignup','/O2OLStudio'
 ];
 
 const PUBLIC=[
@@ -28,10 +25,7 @@ const PUBLIC=[
 '/RelationshipMilestones','/RelationshipGoals','/CommunicationPractice','/CoupleSupport','/ArticlesSupport',
 '/CoupleActivities','/CooperativeGames','/WhatShouldTheyDo','/Games','/ScratchGame','/LikeMinded',
 '/SharedJournals','/CouplesCalendar','/LGBTQSupport','/Chat','/Community','/Professionals',
-'/ProfessionalSignup','/TherapistSignup','/InfluencerSignup','/O2OLStudio','/MyMatchIQ',
-'/MyMatchIQ/Meet','/MyMatchIQ/Assessment','/MyMatchIQ/Passport','/MyMatchIQ/Bianca',
-'/MyMatchIQ/Credits','/MyMatchIQ/Actions','/MyMatchIQ/Dashboard','/MyMatchIQ/Invite',
-'/MyMatchIQ/SignIn','/MyMatchIQ/SignUp','/MyMatchIQ/Subscription'
+'/ProfessionalSignup','/TherapistSignup','/InfluencerSignup','/O2OLStudio'
 ];
 
 const DEFERRED={
@@ -41,7 +35,7 @@ const DEFERRED={
 '/FindFriends':'/Community','/FriendRequests':'/Community','/Blog':'/ArticlesSupport'
 };
 const KNOWN=new Set(ACTIVE.concat(Object.keys(DEFERRED)).map(x=>x.toLowerCase()));
-const AUTH_ENTRY_ROUTES=new Set(['/signin','/login','/mymatchiq/signin']);
+const AUTH_ENTRY_ROUTES=new Set(['/signin','/login']);
 
 const failures=[];
 const report={anonymousDesktop:0,anonymousAndroid:0,memberDesktop:0,memberAndroid:0,deferred:0,links:0,tabs:0,tasks:[],failures};
@@ -81,21 +75,6 @@ async function addMemberMocks(context,writes){
       return fulfill(r,200,{ok:true});
     }
     return r.continue();
-  });
-  await context.route('**/api/mymatchiq/**',r=>{
-    const p=new URL(r.request().url()).pathname;
-    if(r.request().method()!=='GET'){
-      writes.push({path:p,method:r.request().method(),body:r.request().postDataJSON()||null});
-      return fulfill(r,200,{ok:true});
-    }
-    if(p.endsWith('/access')) return fulfill(r,200,{ok:true,access:{tier:'Elite',source:'qa',grandfathered:false}});
-    if(p.endsWith('/bianca/profile')) return fulfill(r,200,{ok:true,profile:{interaction_count:12,conversation_count:3,common_phrases:['you know'],context_depth_score:35}});
-    if(p.endsWith('/bianca/conversations')) return fulfill(r,200,{ok:true,conversations:[]});
-    if(p.endsWith('/bianca/reports')) return fulfill(r,200,{ok:true,reports:[]});
-    if(p.includes('/assessment/sessions/latest')) return fulfill(r,200,{ok:true,session:null});
-    if(p.includes('/credits/wallet')) return fulfill(r,200,{ok:true,wallet:{balance:0,auto_replenish_enabled:false}});
-    if(p.includes('/members')) return fulfill(r,200,{ok:true,members:[],profile:null,invitations:[]});
-    return fulfill(r,200,{ok:true});
   });
 }
 
@@ -187,22 +166,13 @@ async function taskOpenHouse(browser){
   await context.close();
 }
 
-async function taskStudioBianca(browser){
-  let context=await browser.newContext({viewport:{width:390,height:844}});
-  let page=await context.newPage();
+async function taskStudio(browser){
+  const context=await browser.newContext({viewport:{width:390,height:844}});
+  const page=await context.newPage();
   await page.goto(BASE+'/O2OLStudio',{waitUntil:'domcontentloaded'});
   await page.getByRole('link',{name:/Enter Chat Room to Comment/i}).first().click();
   await page.waitForURL(u=>new URL(u).pathname.toLowerCase()==='/chat'&&new URL(u).searchParams.get('room')==='studio-who-should-apologize-first',{timeout:8000});
   report.tasks.push('Studio to episode Chat');
-  await context.close();
-
-  context=await browser.newContext({viewport:{width:390,height:844}});
-  await addMemberMocks(context,[]);
-  page=await context.newPage();
-  await page.goto(BASE+'/MyMatchIQ',{waitUntil:'domcontentloaded'});
-  await page.getByRole('button',{name:/CHAT with Bianca/i}).first().click();
-  await page.waitForURL(u=>new URL(u).pathname.toLowerCase()==='/mymatchiq/bianca',{timeout:8000});
-  report.tasks.push('MyMatchIQ to Bianca');
   await context.close();
 }
 
@@ -457,7 +427,7 @@ try{
     await checkDeferred(browser);
   }
   await taskOpenHouse(browser);
-  await taskStudioBianca(browser);
+  await taskStudio(browser);
   await taskSuggestion(browser);
   await taskReview(browser);
   await taskProfile(browser);

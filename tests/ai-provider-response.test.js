@@ -80,9 +80,9 @@ test('missing AI key fails before external requests',async()=>{
 });
 
 // Regression guard: a persona must never bypass the reasoning-budget-aware adapter.
-test('Both coaching personas use the shared response adapter',async()=>{
+test('The coaching persona uses the shared response adapter',async()=>{
   const {readFileSync}=await import('node:fs');
-  for(const path of ['../worker/ai.ts','../worker/mymatchiq-ai.ts']){
+  for(const path of ['../worker/ai.ts']){
     const source=readFileSync(new URL(path,import.meta.url),'utf8');
     assert.match(source,/requestProviderText\(env,options,/);
     assert.match(source,/maxOutputTokens:COACH_OUTPUT_TOKEN_BUDGETS\.short/);

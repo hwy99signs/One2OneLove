@@ -17,7 +17,6 @@ const FOUNDING_STRIP_COPY = {
 const LOGO = '/assets/o2ol-approved-logo.png';
 const HERO = '/assets/o2ol-hero.png';
 const STUDIO_VIDEO = '/studio-media/season-1-episode-1.mp4';
-const MYMATCHIQ_LABELS = { en: 'Compatibility Test', es: 'Prueba de Compatibilidad', fr: 'Test de Compatibilité', it: 'Test di Compatibilità', de: 'Kompatibilitätstest' };
 const OPEN_HOUSE_COPY = {
   en:{eyebrow:'LIMITED-TIME ONE2ONELOVE OPEN HOUSE',title:'Explore One2OneLove FREE',body:'No account is required to browse. Look around first; create an account only when you want to save, post, or use protected member features.',explore:'Explore Free Tools',studio:'Watch O2OL Studio'},
   es:{eyebrow:'JORNADA DE PUERTAS ABIERTAS ONE2ONELOVE — TIEMPO LIMITADO',title:'Explora One2OneLove GRATIS',body:'No necesitas una cuenta para navegar. Explora primero; crea una cuenta solo cuando quieras guardar, publicar o usar funciones protegidas para miembros.',explore:'Ver Herramientas Gratis',studio:'Ver O2OL Studio'},
@@ -93,7 +92,6 @@ const TOOLS = [
   ['🗣','communicationPractice','CommunicationPractice','from-teal-600 to-emerald-700','free'],
   ['💬','chatRoom','Chat','from-blue-600 to-indigo-700','free'],
   ['🩺','professionals','Professionals','from-purple-600 to-indigo-700','free'],
-  ['✦','MyMatchIQ','MyMatchIQ','from-slate-950 via-indigo-800 to-fuchsia-700','mixed'],
   ['💗','loveNotes','LoveNotes','from-rose-500 to-pink-600','mixed'],
   ['💬','loveLanguage','LoveLanguageQuiz','from-violet-600 to-purple-600','mixed'],
   ['🗓️','dateIdeas','DateIdeas','from-cyan-500 to-blue-600','mixed'],
@@ -108,7 +106,6 @@ export default function Home() {
   const { currentLanguage } = useLanguage();
   const { isAuthenticated } = useAuth();
   const t = COPY[currentLanguage] || COPY.en;
-  const matchIQLabel = MYMATCHIQ_LABELS[currentLanguage] || MYMATCHIQ_LABELS.en;
   const studio = STUDIO_COPY[currentLanguage] || STUDIO_COPY.en;
   const studioE2 = STUDIO_E2_COPY[currentLanguage] || STUDIO_E2_COPY.en;
   const studioTabs = STUDIO_TABS_COPY[currentLanguage] || STUDIO_TABS_COPY.en;
@@ -168,10 +165,6 @@ export default function Home() {
             <button data-analytics-id="home-hero-love-notes" data-analytics-destination="/LoveNotes" onClick={() => go('LoveNotes')} className="rounded-2xl bg-white px-[1.4rem] py-[0.525rem] text-[1.375rem]/[1.925rem] font-extrabold text-pink-600 shadow-xl hover:bg-slate-50">♡ {t.toolLabels.loveNotes}</button>
             <button data-analytics-id="home-hero-podcasts" data-analytics-destination="/PodcastsSupport" onClick={() => go('PodcastsSupport')} className="rounded-2xl bg-orange-500 px-[1.4rem] py-[0.525rem] text-[1.375rem]/[1.925rem] font-extrabold shadow-xl hover:bg-orange-600">🎙 {t.podcast}</button>
             <button data-analytics-id="home-hero-date-ideas" data-analytics-destination="/DateIdeas" onClick={() => go('DateIdeas')} className="rounded-2xl bg-teal-600 px-[1.4rem] py-[0.525rem] text-[1.375rem]/[1.925rem] font-extrabold shadow-xl hover:bg-teal-700">▣ {t.toolLabels.dateIdeas}</button>
-            <button data-analytics-id="home-hero-mymatchiq" data-analytics-destination="/MyMatchIQ" onClick={() => go('MyMatchIQ')} aria-label={`MyMatchIQ ${matchIQLabel}`} className="relative flex min-h-[68px] items-center justify-center overflow-hidden rounded-2xl border-2 border-violet-200 bg-gradient-to-r from-slate-950 via-indigo-800 to-fuchsia-700 px-4 py-2.5 text-white shadow-2xl transition hover:scale-[1.02] hover:from-indigo-950 hover:to-fuchsia-600 md:col-span-2">
-              <img src="/assets/mymatchiq-official-logo.webp" alt="MyMatchIQ" className="h-10 w-auto max-w-[72%] object-contain sm:h-11" />
-              <span className="absolute right-3 top-2 max-w-[45%] rounded-full bg-violet-500/90 px-2.5 py-1 text-[0.48rem] font-black uppercase leading-none tracking-[0.16em] text-white shadow-sm sm:right-4 sm:text-[0.56rem]">{matchIQLabel}</span>
-            </button>
           </div>
 
           {showHeroStats && (
@@ -235,9 +228,9 @@ export default function Home() {
           </button>
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {TOOLS.map(([icon,labelKey,page,gradient,status],index) => (
-              <button key={page} data-feature-status={toolIsFree(page,status) ? 'free' : status} data-analytics-id={`home-tool-${String(page).toLowerCase()}`} data-analytics-destination={`/${page}`} onClick={() => { setSelectedTool(index); go(page); }} className={`relative min-h-[86px] rounded-2xl bg-gradient-to-r ${gradient} px-5 text-xl font-extrabold text-white shadow-lg transition-transform hover:scale-[1.02] ${labelKey === 'MyMatchIQ' ? 'border-2 border-fuchsia-300 ring-2 ring-indigo-200' : ''} ${index===selectedTool?'ring-4 ring-rose-400 ring-offset-2':''}`}>
+              <button key={page} data-feature-status={toolIsFree(page,status) ? 'free' : status} data-analytics-id={`home-tool-${String(page).toLowerCase()}`} data-analytics-destination={`/${page}`} onClick={() => { setSelectedTool(index); go(page); }} className={`relative min-h-[86px] rounded-2xl bg-gradient-to-r ${gradient} px-5 text-xl font-extrabold text-white shadow-lg transition-transform hover:scale-[1.02] ${index===selectedTool?'ring-4 ring-rose-400 ring-offset-2':''}`}>
                 {status === 'locked' && !toolIsFree(page,status) && <span aria-label="Locked" className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-amber-300 text-sm text-amber-950 shadow">🔒</span>}
-                <span>{icon} {labelKey === 'MyMatchIQ' ? 'MyMatchIQ' : (t.toolLabels[labelKey] || COPY.en.toolLabels[labelKey])}</span>
+                <span>{icon} {(t.toolLabels[labelKey] || COPY.en.toolLabels[labelKey])}</span>
               </button>
             ))}
           </div>

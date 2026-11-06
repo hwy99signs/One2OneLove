@@ -1,5 +1,5 @@
 // @ts-nocheck
-// One2OneLove Coaching Knowledge Base — curated grounding for Bianca and Amora.
+// One2OneLove Coaching Knowledge Base — curated grounding for Amora.
 // Phase 1 uses deterministic topic retrieval so the exact guidance is auditable.
 // Future embedding/vector retrieval can replace the scorer without changing the content contract.
 
@@ -544,7 +544,7 @@ export const COACHING_KNOWLEDGE=[
     keywords:['therapist','therapy','counselor','counselling','counseling','professional help','diagnose','medication','legal'],
     source:'O2OL Help Center / AI Relationship Coach limits',
     guidance:[
-      'Bianca and Amora provide general reflection, communication ideas, and relationship education—not diagnosis, therapy, medical care, legal advice, or crisis services.',
+      'Amora provides general reflection, communication ideas, and relationship education—not diagnosis, therapy, medical care, legal advice, or crisis services.',
       'Recommend qualified professional help when issues are persistent, high-stakes, clinical, legal, medical, or beyond general coaching.',
     ],
   },

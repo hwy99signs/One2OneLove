@@ -59,17 +59,11 @@ import Professionals from './Professionals';
 import ProfessionalSignup from './ProfessionalSignup';
 import TherapistSignup from './TherapistSignup';
 import InfluencerSignup from './InfluencerSignup';
-import MyMatchIQ from './MyMatchIQ';
-import MyMatchIQAssessment from './MyMatchIQAssessment';
-import MyMatchIQBianca from './MyMatchIQBianca';
 import Credit from './Credit';
 import FeaturePricing from './FeaturePricing';
 import PaidFeatureGate from '@/components/pricing/PaidFeatureGate';
 import PaidGameSessionGate from '@/components/pricing/PaidGameSessionGate';
 import CoachingConsentGate from '@/components/coaching/CoachingConsentGate.jsx';
-import MyMatchIQMeet from './MyMatchIQMeet';
-import MyMatchIQWorkspace from './MyMatchIQWorkspace';
-import MyMatchIQPassport from './MyMatchIQPassport';
 import ExternalMyMatchIQRedirect from './ExternalMyMatchIQRedirect';
 import O2OLStudio from './O2OLStudio';
 import O2OLStudioEpisodes from './O2OLStudioEpisodes';
@@ -88,7 +82,7 @@ const PAGES = {
   CommunicationPractice, CouplesProfile, CoupleActivities, CooperativeGames, Pests, PoolPingPong, IThoughtSo, Scrabluko, WhatShouldTheyDo, ScratchGame, LikeMinded, SharedJournals, CouplesDashboard,
   CouplesCalendar, LGBTQSupport, HelpCenter, ContactUs, PrivacyPolicy, TermsOfService, Reviews,
   LeaveReview, Suggestions, Chat, PaymentSuccess, Subscription, VerifyPhone,
-  Professionals, ProfessionalSignup, TherapistSignup, InfluencerSignup, MyMatchIQ, MyMatchIQAssessment, MyMatchIQBianca, Credit, FeaturePricing, MyMatchIQMeet, MyMatchIQWorkspace, O2OLStudio, Episodes: O2OLStudioEpisodes,
+  Professionals, ProfessionalSignup, TherapistSignup, InfluencerSignup, Credit, FeaturePricing, O2OLStudio, Episodes: O2OLStudioEpisodes,
 };
 
 function _getCurrentPage(url) {

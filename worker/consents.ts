@@ -22,14 +22,14 @@ async function readJson(request) {
 
 export const COACHING_CONSENT_VERSION='2026-10-10-v1';
 export const COACHING_CONSENT_COPY={
-  title:'Before you chat with Amora or Bianca',
+  title:'Before you chat with Amora',
   paragraphs:[
-    'Amora and Bianca are AI guides created by One2OneLove. They are not human, and they are not therapists, doctors, lawyers, or licensed counselors.',
-    'They offer relationship guidance, education, and reflection for everyday situations. Nothing they say is medical, mental-health, or legal advice, and it is not a substitute for a qualified professional.',
+    'Amora is an AI guide created by One2OneLove. She is not human, and she is not a therapist, doctor, lawyer, or licensed counselor.',
+    'She offers relationship guidance, education, and reflection for everyday situations. Nothing she says is medical, mental-health, or legal advice, and it is not a substitute for a qualified professional.',
   ],
-  crisis:'If you are in danger, thinking of harming yourself, or in crisis, stop and contact your local emergency number or a crisis line (in the U.S., call or text 988) right away. Amora and Bianca are not crisis services.',
+  crisis:'If you are in danger, thinking of harming yourself, or in crisis, stop and contact your local emergency number or a crisis line (in the U.S., call or text 988) right away. Amora is not a crisis service.',
   billing:'How billing works: conversation replies are charged to your Credit by the length you select — Short $0.10, Medium $0.15, Long $0.20 per reply. Formal reports are $2.99 each. You are charged when a reply is generated, and your balance is shown before you send.',
-  privacy:'Your conversations are saved to your account so the guides can remember context and personalize replies. You must be 18 or older to use coaching.',
+  privacy:'Your conversations are saved to your account so she can remember context and personalize replies. You must be 18 or older to use coaching.',
   agreement:'By tapping “I agree,” you accept this disclaimer and the One2OneLove Terms of Service.',
 };
 
@@ -40,7 +40,7 @@ export async function requireCurrentCoachingConsent(db,userId){
   );
   const row=r.rows[0];
   if(!row || row.coaching_consent_version!==COACHING_CONSENT_VERSION || !row.coaching_consent_accepted_at){
-    throw Object.assign(new Error('Please accept the current One2OneLove coaching disclaimer before using Bianca or Amora.'),{
+    throw Object.assign(new Error('Please accept the current One2OneLove coaching disclaimer before using Amora.'),{
       status:428,
       code:'coaching_consent_required',
       consentVersion:COACHING_CONSENT_VERSION,

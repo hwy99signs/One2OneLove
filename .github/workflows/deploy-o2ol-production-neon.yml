@@ -200,9 +200,6 @@ jobs:
             src/pages/LoveNotes.jsx
             src/pages/DateIdeas.jsx
             src/pages/LikeMinded.jsx
-            src/pages/MyMatchIQ.jsx
-            src/pages/MyMatchIQAssessment.jsx
-            src/pages/MyMatchIQBianca.jsx
             src/pages/O2OLStudio.jsx
             src/pages/HelpCenter.jsx
             src/components/launch/LaunchAccessGate.jsx
@@ -223,7 +220,6 @@ jobs:
           grep -F "getLoveNotePriceQuote" src/pages/LoveNotes.jsx >/dev/null
           grep -F "One2OneLove Credit" src/pages/LoveNotes.jsx >/dev/null
           grep -F "Each Amora response uses Credit." src/pages/Amora.jsx >/dev/null
-          grep -F "Sending a message uses Credit." src/pages/MyMatchIQBianca.jsx >/dev/null
           grep -F "Credit" src/pages/LikeMinded.jsx >/dev/null
           grep -F "Credit" src/pages/DateIdeas.jsx >/dev/null
           grep -F "code: 'email_verification_required'" worker/identity-gate.ts >/dev/null

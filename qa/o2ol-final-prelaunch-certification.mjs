@@ -322,7 +322,7 @@ try{
   }
 
   // Registered Free user: interactive routes open with no card/subscription gate.
-  for(const path of ['/LoveLanguageQuiz','/PodcastsSupport','/Amora','/DateIdeas','/LoveNotes','/LikeMinded','/MyMatchIQ/Bianca']){
+  for(const path of ['/LoveLanguageQuiz','/PodcastsSupport','/Amora','/DateIdeas','/LoveNotes','/LikeMinded']){
     const {context,page}=await open(browser,path,{mode:'free',viewport:{width:390,height:844}});
     const body=await page.locator('body').innerText();
     if(/Create your free One2OneLove account/i.test(body)) fail('Registered Free unexpectedly gated '+path);
@@ -333,7 +333,7 @@ try{
   }
 
   // Credit member checks.
-  for(const path of ['/Credit','/Amora','/LikeMinded','/MyMatchIQ/Bianca']){
+  for(const path of ['/Credit','/Amora','/LikeMinded']){
     const {context,page}=await open(browser,path,{mode:'credit'});
     const body=await page.locator('body').innerText();
     if(/\bCredit\b|\bCrédito\b|\bCrédit\b|\bCredito\b/i.test(body)) pass('Credit member sees Credit model '+path);

@@ -38,11 +38,6 @@ import { handleConsentsRequest } from './consents';
 import { saveConsentGate } from './save-consent-gate';
 import { handleContestsRequest } from './contests';
 import { handleAiRequest } from './ai';
-import { handleMyMatchIQAiRequest } from './mymatchiq-ai';
-import { handleMyMatchIQCreditsRequest } from './mymatchiq-credits';
-import { handleMyMatchIQMembersRequest } from './mymatchiq-members';
-import { handleMyMatchIQLegacyRequest } from './mymatchiq-legacy';
-import { handleMyMatchIQCoreRequest } from './mymatchiq-core';
 import { enforceApiEntitlement } from './api-entitlements';
 import { enforceLaunchIdentity } from './identity-gate';
 import { handleLaunchReadinessRequest } from './launch-readiness';
@@ -275,7 +270,7 @@ async function handleFetchV2(request, env, ctx) {
     }
     // Preview-only external delivery guard: never place live payments, SMS, AI or posts.
     if (env.O2OL_PRELAUNCH_NO_OUTBOUND === 'true' && request.method !== 'GET' &&
-        (/^\/api\/(phone-verification|tiktok|ai|mymatchiq\/bianca|sms|twilio|billing)(\/|$)/.test(url.pathname) ||
+        (/^\/api\/(phone-verification|tiktok|ai|sms|twilio|billing)(\/|$)/.test(url.pathname) ||
          url.pathname === '/api/love-notes/send-sms')) {
       return new Response(JSON.stringify({ok:false,error:{code:'prelaunch_external_disabled',message:'External delivery is disabled in prelaunch.'}}),{status:503,headers:{'content-type':'application/json','cache-control':'no-store'}});
     }
@@ -445,31 +440,6 @@ async function handleFetchV2(request, env, ctx) {
 
     if (url.pathname === '/api/site-presence/ping') {
       const response = await handlePresencePing(request, env);
-      if (response) return response;
-    }
-
-    if (url.pathname.startsWith('/api/mymatchiq/credits')) {
-      const response = await handleMyMatchIQCreditsRequest(request, env, url);
-      if (response) return response;
-    }
-
-    if (url.pathname.startsWith('/api/mymatchiq/members')) {
-      const response = await handleMyMatchIQMembersRequest(request, env, url);
-      if (response) return response;
-    }
-
-    if (url.pathname.startsWith('/api/mymatchiq/legacy')) {
-      const response = await handleMyMatchIQLegacyRequest(request, env, url);
-      if (response) return response;
-    }
-
-    if (url.pathname === '/api/mymatchiq/access' || url.pathname.startsWith('/api/mymatchiq/bianca') || url.pathname.startsWith('/api/mymatchiq/assessment')) {
-      const response = await handleMyMatchIQAiRequest(request, env, url);
-      if (response) return response;
-    }
-
-    if (url.pathname.startsWith('/api/mymatchiq/')) {
-      const response = await handleMyMatchIQCoreRequest(request, env, url);
       if (response) return response;
     }
 

@@ -54,7 +54,6 @@ const TRACKABLE_FEATURES = new Set([
   'Scratch Game',
   'Like Minded?',
   'O2OL Studio',
-  'MyMatchIQ',
   'Reviews',
   'Suggestions',
   'Professionals',
