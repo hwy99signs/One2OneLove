@@ -26,7 +26,7 @@ const EPISODES=[
     key:'studio/season-1/episode-1-who-should-apologize-first.mp4',
     path:'/studio-media/season-1-episode-1.mp4',
     chatRoom:'studio-who-should-apologize-first',
-    posterPath:'/assets/o2ol-studio-bianca-card.webp',
+    posterPath:null,
     freeForever:true,
     releasedAt:'2026-10-03T00:00:00.000Z',
   },

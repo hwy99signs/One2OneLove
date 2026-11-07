@@ -182,7 +182,7 @@ async function ensureChatSafetySchema(db) {
   await db.query(`
     INSERT INTO public.chat_rooms(id,slug,name,description,icon,is_active,created_at)
     SELECT gen_random_uuid(),'studio-who-should-apologize-first','O2OL Studio — Who Should Apologize First?',
-           'Discuss Season 1, Episode 1 and share your perspective after watching O2OL and Bianca.',
+           'Discuss Season 1, Episode 1 and share your perspective after watching the new O2OL Studio show.',
            '🎬',true,now()
      WHERE NOT EXISTS (SELECT 1 FROM public.chat_rooms WHERE slug='studio-who-should-apologize-first')
   `);
@@ -206,6 +206,15 @@ async function ensureChatSafetySchema(db) {
   await db.query(`
     UPDATE public.chat_rooms SET is_active=false
      WHERE slug='relationship-100' AND is_active=true
+  `);
+  // Bianca/MyMatchIQ separation (owner ruling 2026-11-06; cleanup ordered
+  // 2026-11-07): the Episode 1 discussion room was seeded with a description
+  // naming Bianca. The seed above only inserts when missing, so rewrite the
+  // stored row in place; the LIKE guard makes this a no-op once cleaned.
+  await db.query(`
+    UPDATE public.chat_rooms
+       SET description='Discuss Season 1, Episode 1 and share your perspective after watching the new O2OL Studio show.'
+     WHERE slug='studio-who-should-apologize-first' AND description LIKE '%Bianca%'
   `);
   chatSafetySchemaReady = true;
 }
