@@ -125,6 +125,7 @@ function PagesContent() {
           <Route path="/Analytics" element={<AdminMfaGate><Analytics /></AdminMfaGate>} />
           <Route path="/TokenSystemDashboard" element={<AdminMfaGate><TokenSystemDashboard /></AdminMfaGate>} />
           <Route path="/MemoryLane" element={<PaidFeatureGate featureCode="memories_unlock"><MemoryLane /></PaidFeatureGate>} />
+          <Route path="/Memories" element={<PaidFeatureGate featureCode="memories_unlock"><MemoryLane /></PaidFeatureGate>} />
           <Route path="/LoveNotes" element={<LoveNotes />} />
           <Route path="/SendCredits" element={<SendCredits />} />
           <Route path="/CoupleSupport" element={<CoupleSupport />} />

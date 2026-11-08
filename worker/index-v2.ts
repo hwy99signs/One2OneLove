@@ -190,7 +190,11 @@ async function socialPageResponse(request, env, url) {
 //   - images/media: same origin, data:/blob:, and https: — member photos,
 //     podcast artwork and episode audio can live on external https CDNs.
 //   - frames: same origin (games) plus the LOVE SCRATCH GAME, which is
-//     framed from https://play.one2onelove.com.
+//     framed from https://play.one2onelove.com, plus the Apple Podcasts
+//     embedded player, framed from https://embed.podcasts.apple.com.
+//   - connections: same origin plus Cloudflare Web Analytics, plus the
+//     iTunes lookup/search API (https://itunes.apple.com) that the podcast
+//     player uses to resolve episode metadata and embed URLs.
 //   - everything else (objects, base, forms, ancestors) is locked down.
 // public/_headers carries the same two headers for asset-served responses
 // that never reach this Worker; the helper below only sets a header when
@@ -202,8 +206,8 @@ const CONTENT_SECURITY_POLICY = [
   "font-src 'self' https://fonts.gstatic.com data:",
   "img-src 'self' data: blob: https:",
   "media-src 'self' blob: https:",
-  "connect-src 'self' https://static.cloudflareinsights.com",
-  "frame-src 'self' https://play.one2onelove.com",
+  "connect-src 'self' https://static.cloudflareinsights.com https://itunes.apple.com",
+  "frame-src 'self' https://play.one2onelove.com https://embed.podcasts.apple.com",
   "worker-src 'self' blob:",
   "manifest-src 'self'",
   "object-src 'none'",
