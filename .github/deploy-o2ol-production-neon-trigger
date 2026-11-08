@@ -14,3 +14,6 @@ requested_by_owner=2026-11-01
 promotion=remove_mymatchiq_bianca_separation
 source_commit=73371977
 requested_by_owner=2026-11-06
+promotion=bianca_studio_e1_data_cleanup
+source_commit=7304d5be
+requested_by_owner=2026-11-08
