@@ -17,3 +17,6 @@ requested_by_owner=2026-11-06
 promotion=bianca_studio_e1_data_cleanup
 source_commit=7304d5be
 requested_by_owner=2026-11-08
+promotion=memories_route_and_podcast_player_csp
+source_commit=e2d05bf3
+requested_by_owner=2026-11-08
