@@ -20,3 +20,6 @@ requested_by_owner=2026-11-08
 promotion=memories_route_and_podcast_player_csp
 source_commit=e2d05bf3
 requested_by_owner=2026-11-08
+promotion=o2ol_fixes_20261111
+source_commit=ccfe34b8
+requested_by_owner=2026-11-11
