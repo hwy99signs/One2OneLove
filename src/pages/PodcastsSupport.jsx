@@ -63,6 +63,8 @@ function PodcastLibraryPage() {
     [selectedLanguage],
   );
   const totalEpisodes = useMemo(() => languagePodcasts.reduce((sum, podcast) => sum + podcast.episodes.length, 0), [languagePodcasts]);
+  const languageTotal = selectedLanguage === "all" ? podcastLanguages.length : 1;
+  const languageCountLabel = languageTotal === 1 ? (t.languageCountOne || t.languageCount) : t.languageCount;
 
   const filteredPodcasts = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
@@ -111,7 +113,7 @@ function PodcastLibraryPage() {
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">{t.library}</h2>
-              <p className="mt-2 text-sm text-gray-600">{languagePodcasts.length} {t.creatorCount} · {totalEpisodes} {t.episodeCount} · {selectedLanguage === "all" ? podcastLanguages.length : 1} {t.languageCount}</p>
+              <p className="mt-2 text-sm text-gray-600">{languagePodcasts.length} {t.creatorCount} · {totalEpisodes} {t.episodeCount} · {`${languageTotal} ${languageCountLabel}`}</p>
             </div>
             <div className="relative w-full lg:max-w-md">
               <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />

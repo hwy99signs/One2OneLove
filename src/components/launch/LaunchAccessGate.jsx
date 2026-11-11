@@ -74,6 +74,7 @@ const KNOWN_APP_ROUTES = new Set([
   '/lovenotes',
   '/meditation',
   '/memorylane',
+  '/memories',
   '/mymatchiq',
   '/mymatchiq/actions',
   '/mymatchiq/assessment',
@@ -151,7 +152,7 @@ export default function LaunchAccessGate({ pathname, children }) {
   // This is an account privacy boundary, never a public signup marketing gate.
   const privateRoute = new Set([
     '/chat','/chatrooms','/chatroom','/community','/communities','/findfriends','/friendrequests',
-    '/memorylane','/sharedjournals','/relationshipmilestones','/relationshipgoals',
+    '/memorylane','/memories','/sharedjournals','/relationshipmilestones','/relationshipgoals',
     '/anniversarytracker','/couplescalendar','/couplesdashboard','/couplesprofile',
     '/profile','/dashboard','/analytics','/admin','/tokensystemdashboard',
     '/credit','/sendcredits','/payment-success','/paymentsuccess','/verifyphone',

@@ -431,7 +431,7 @@ function LanguageContent({ children, currentPageName }) {
                 onClick={() => setDesktopActionOpen((open) => !open)}
                 className={`${'hover:text-yellow-200'} cursor-pointer`}
               >
-                ♡ {t.nav.action} ▾
+                ♡ {t.nav.action} <ChevronDown className={`inline-block h-4 w-4 transition-transform ${desktopActionOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
               </button>
               {desktopActionOpen && (
                 <div id="desktop-action-menu" className="absolute right-0 top-8 w-72 bg-white text-slate-800 rounded-xl shadow-xl p-2 z-50 text-sm font-normal">
