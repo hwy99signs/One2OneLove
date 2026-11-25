@@ -15,7 +15,10 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { uploadProfilePicture, updateUserProfile } from "@/lib/profileService";
 import SubscriptionCard from "@/components/profile/SubscriptionCard";
-import FoundingPerkNotice from "@/components/profile/FoundingPerkNotice";
+// FoundingPerkNotice (giveaway claim flow) RETIRED 2026-11-25 — owner
+// ruling: "no credit prizes or offers." The component file is kept in
+// src/components/profile/FoundingPerkNotice.jsx, unmounted, for
+// possible future re-activation; /api/founding-perks/* answers 410.
 import goalsService from "@/lib/goalsService";
 
 const translations = {
@@ -1334,7 +1337,8 @@ export default function Profile() {
             {user?.name || user?.email?.split('@')[0] || t.profile.userFallback} 💕
           </h1>
           <p className="text-gray-600 mb-6">{t.profile.memberSince} {joinDate}</p>
-          <FoundingPerkNotice currentLanguage={currentLanguage} />
+          {/* Founding Member Giveaway claim notice retired 2026-11-25 —
+              see the note at the FoundingPerkNotice import above. */}
         </motion.div>
 
 

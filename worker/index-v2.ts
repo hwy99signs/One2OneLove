@@ -313,9 +313,16 @@ async function handleFetchV2(request, env, ctx) {
     }
     if (url.pathname === '/api/epscie/admin-health') return handlePrivateAdminHealth(request,env);
 
-    // These handlers are confined to the prelaunch Neon clone by the branch binding.
+    // Founding Member Giveaway RETIRED 2026-11-25 (owner ruling,
+    // 2026-11-25 12:40 CT: "no credit prizes or offers"). The giveaway
+    // ran on signups + Game Credit + free SMS sends — all disabled — so
+    // its API (hero, status, claim) answers 410 like the other retired
+    // systems. The handler stays in worker/founding-perks.ts, and the
+    // prefix is also listed in the retired block below; re-activation
+    // is restoring this route. (This early return stays because the
+    // route predates the retired block in this handler.)
     if (url.pathname.startsWith('/api/founding-perks/')) {
-      return handleFoundingPerksRequest(request,env,url);
+      return retiredFeatureResponse();
     }
     if (url.pathname.startsWith('/api/what-should-they-do/')) {
       return handleWhatShouldTheyDoRequest(request,env,url);
@@ -366,6 +373,11 @@ async function handleFetchV2(request, env, ctx) {
     // one exception — it stays live so legacy events still settle; it
     // spends nothing and sells nothing.
     //
+    // Founding Member Giveaway (owner ruling, 2026-11-25 12:40 CT:
+    // "no credit prizes or offers") is retired here too — its prefix
+    // joins this block, and the earlier /api/founding-perks/ route in
+    // this handler returns the same 410.
+    //
     // Member system + Credit system (owner ruling, 2026-11-25 10:58 CT):
     // "There are NO MEMBERS or CREDIT SYSTEM in the 100% FREE. Keep them
     // disabled and I will re-activate them at a future date as needed."
@@ -387,6 +399,7 @@ async function handleFetchV2(request, env, ctx) {
       url.pathname === '/api/billing/change-plan' ||
       (url.pathname.startsWith('/api/billing') && url.pathname !== '/api/billing/webhook') ||
       url.pathname.startsWith('/api/auth') ||
+      url.pathname.startsWith('/api/founding-perks') ||
       url.pathname.startsWith('/api/launch-signup') ||
       url.pathname.startsWith('/api/professional-signup') ||
       url.pathname.startsWith('/api/chat') ||
