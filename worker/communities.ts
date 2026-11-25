@@ -41,6 +41,51 @@ function order(value, allowed, fallback) {
   const field = requested.replace(/^-/, '');
   return { field: allowed.has(field) ? field : fallback.replace(/^-/,''), dir: desc ? 'DESC' : 'ASC' };
 }
+// ---------------------------------------------------------------------------
+// Guest participation (2026-11-25, all-free conversion): in PUBLIC
+// communities, guests may post, comment, and like under a display name —
+// no account and no membership row. The client sends a browser-held guest
+// id (UUID) + display name as headers; guest rows store author_id/user_id
+// NULL plus guest_key. Creating communities and membership stay
+// member-only. DROP NOT NULL statements are tolerated on any error so a
+// differently-shaped table can never break member traffic.
+// ---------------------------------------------------------------------------
+const GUEST_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+function guestIdentity(request) {
+  const id = String(request.headers.get('x-o2ol-guest-id') || '').trim();
+  if (!GUEST_UUID.test(id)) return null;
+  const name = String(request.headers.get('x-o2ol-guest-name') || '')
+    .replace(/[\u0000-\u001f\u007f]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 40);
+  return { id, name: name || 'Guest' };
+}
+const GUEST_DDL_TOLERATED = new Set(['42501', '42701', '42P07']);
+async function guestDdl(db, sql) {
+  try { await db.query(sql); }
+  catch (err) { if (!GUEST_DDL_TOLERATED.has(err?.code)) throw err; }
+}
+let guestCommunitySchemaReady = false;
+async function ensureGuestCommunitySchema(db) {
+  if (guestCommunitySchemaReady) return;
+  await guestDdl(db, `ALTER TABLE public.community_posts ADD COLUMN IF NOT EXISTS guest_key text`);
+  await guestDdl(db, `ALTER TABLE public.post_comments ADD COLUMN IF NOT EXISTS guest_key text`);
+  await guestDdl(db, `ALTER TABLE public.post_likes ADD COLUMN IF NOT EXISTS guest_key text`);
+  await guestDdl(db, `ALTER TABLE public.comment_likes ADD COLUMN IF NOT EXISTS guest_key text`);
+  await guestDdl(db, `CREATE UNIQUE INDEX IF NOT EXISTS idx_post_likes_guest ON public.post_likes(post_id, guest_key) WHERE guest_key IS NOT NULL`);
+  await guestDdl(db, `CREATE UNIQUE INDEX IF NOT EXISTS idx_comment_likes_guest ON public.comment_likes(comment_id, guest_key) WHERE guest_key IS NOT NULL`);
+  for (const sql of [
+    `ALTER TABLE public.community_posts ALTER COLUMN author_id DROP NOT NULL`,
+    `ALTER TABLE public.post_comments ALTER COLUMN author_id DROP NOT NULL`,
+    `ALTER TABLE public.post_likes ALTER COLUMN user_id DROP NOT NULL`,
+    `ALTER TABLE public.comment_likes ALTER COLUMN user_id DROP NOT NULL`,
+  ]) {
+    try { await db.query(sql); } catch { /* see note above */ }
+  }
+  guestCommunitySchemaReady = true;
+}
+
 async function membership(db, communityId, userId) {
   if (!userId) return null;
   const result = await db.query('SELECT * FROM public.community_members WHERE community_id=$1::uuid AND user_id=$2::uuid', [communityId,userId]);
@@ -87,16 +132,19 @@ async function authorName(db, auth, anonymous) {
   const result = await db.query('SELECT name FROM public.users WHERE id=$1::uuid', [auth.user.id]);
   return result.rows[0]?.name || auth.user.name || auth.user.email?.split('@')[0] || 'User';
 }
-async function postFlags(db, posts, auth) {
+async function postFlags(db, posts, auth, guest) {
   if (!posts.length) return [];
   let liked = new Set();
   if (auth) {
     const result = await db.query('SELECT post_id FROM public.post_likes WHERE user_id=$1::uuid AND post_id=ANY($2::uuid[])', [auth.user.id,posts.map(p=>p.id)]);
     liked = new Set(result.rows.map(r=>r.post_id));
+  } else if (guest) {
+    const result = await db.query('SELECT post_id FROM public.post_likes WHERE guest_key=$1 AND post_id=ANY($2::uuid[])', [guest.id,posts.map(p=>p.id)]);
+    liked = new Set(result.rows.map(r=>r.post_id));
   }
   return posts.map(p=>({ ...p, userHasLiked: liked.has(p.id), created_date:p.created_at, replies_count:p.comments_count }));
 }
-async function listPosts(db, communityId, auth, url) {
+async function listPosts(db, communityId, auth, url, guest) {
   const access = await communityAccess(db,communityId,auth);
   if (!access.community) throw Object.assign(new Error('Community not found.'),{status:404});
   if (!access.allowed) throw Object.assign(new Error('Community access denied.'),{status:403});
@@ -114,9 +162,9 @@ async function listPosts(db, communityId, auth, url) {
       ORDER BY is_pinned DESC,${sort.field} ${sort.dir},id ASC`,
     values,
   );
-  return postFlags(db,result.rows,auth);
+  return postFlags(db,result.rows,auth,guest);
 }
-async function comments(db, postId, auth) {
+async function comments(db, postId, auth, guest) {
   const postResult=await db.query('SELECT community_id FROM public.community_posts WHERE id=$1::uuid AND moderation_status=\'approved\'', [postId]);
   if(!postResult.rows[0]) throw Object.assign(new Error('Post not found.'),{status:404});
   const access=await communityAccess(db,postResult.rows[0].community_id,auth);
@@ -127,6 +175,7 @@ async function comments(db, postId, auth) {
   );
   let liked=new Set();
   if(auth&&result.rows.length){const l=await db.query('SELECT comment_id FROM public.comment_likes WHERE user_id=$1::uuid AND comment_id=ANY($2::uuid[])',[auth.user.id,result.rows.map(c=>c.id)]);liked=new Set(l.rows.map(x=>x.comment_id));}
+  else if(guest&&result.rows.length){const l=await db.query('SELECT comment_id FROM public.comment_likes WHERE guest_key=$1 AND comment_id=ANY($2::uuid[])',[guest.id,result.rows.map(c=>c.id)]);liked=new Set(l.rows.map(x=>x.comment_id));}
   const top=[];const replies=new Map();
   for(const c of result.rows){const item={...c,userHasLiked:liked.has(c.id),created_date:c.created_at,replies:[]};if(c.parent_comment_id){if(!replies.has(c.parent_comment_id))replies.set(c.parent_comment_id,[]);replies.get(c.parent_comment_id).push(item);}else top.push(item);}
   for(const c of top)c.replies=replies.get(c.id)||[];
@@ -136,7 +185,9 @@ async function comments(db, postId, auth) {
 export async function handleCommunitiesRequest(request,env,url){
   if(!url.pathname.startsWith('/api/communities'))return null;
   const auth=await session(request,env);
+  const guest=auth?null:guestIdentity(request);
   try{return await withDb(env,async db=>{
+    await ensureGuestCommunitySchema(db);
     if(url.pathname==='/api/communities'&&request.method==='GET')return json({ok:true,communities:await listCommunities(db,auth,url)});
     if(url.pathname==='/api/communities/mine'){
       if(!auth)return fail('Authentication required.',401,'unauthorized');
@@ -147,45 +198,47 @@ export async function handleCommunitiesRequest(request,env,url){
     const commentsMatch=url.pathname.match(/^\/api\/communities\/posts\/([0-9a-f-]{36})\/comments$/i);
     if(commentsMatch){
       const postId=commentsMatch[1];
-      if(request.method==='GET')return json({ok:true,comments:await comments(db,postId,auth)});
-      if(!auth)return fail('Authentication required.',401,'unauthorized');
+      if(request.method==='GET')return json({ok:true,comments:await comments(db,postId,auth,guest)});
+      if(!auth&&!guest)return fail('Authentication required.',401,'unauthorized');
       if(request.method==='POST'){
         const input=await readJson(request);const content=text(input.content,10000,true);const anonymous=Boolean(input.is_anonymous);const parent=input.parent_comment_id||null;
         const post=await db.query('SELECT community_id,is_locked FROM public.community_posts WHERE id=$1::uuid AND moderation_status=\'approved\'',[postId]);
         if(!post.rows[0])return fail('Post not found.',404,'not_found');if(post.rows[0].is_locked)return fail('This discussion is locked.',403,'forbidden');
-        const access=await communityAccess(db,post.rows[0].community_id,auth);if(!access.allowed||!await requireActiveMember(db,access.community,auth.user.id))return fail('Active community membership is required.',403,'forbidden');
+        const access=await communityAccess(db,post.rows[0].community_id,auth);
+        if(auth){if(!access.allowed||!await requireActiveMember(db,access.community,auth.user.id))return fail('Active community membership is required.',403,'forbidden');}
+        else if(!access.community?.is_public)return fail('Active community membership is required.',403,'forbidden');
         if(parent){const p=await db.query('SELECT 1 FROM public.post_comments WHERE id=$1::uuid AND post_id=$2::uuid',[parent,postId]);if(!p.rowCount)return fail('Parent comment not found.',404,'not_found');}
-        const name=await authorName(db,auth,anonymous);const r=await db.query(`INSERT INTO public.post_comments(post_id,author_id,parent_comment_id,content,author_name,is_anonymous,moderation_status) VALUES($1::uuid,$2::uuid,$3::uuid,$4,$5,$6,'approved') RETURNING *`,[postId,auth.user.id,parent,content,name,anonymous]);
+        const name=auth?await authorName(db,auth,anonymous):(anonymous?null:guest.name);const r=await db.query(`INSERT INTO public.post_comments(post_id,author_id,guest_key,parent_comment_id,content,author_name,is_anonymous,moderation_status) VALUES($1::uuid,$2::uuid,$3,$4::uuid,$5,$6,$7,'approved') RETURNING *`,[postId,auth?.user.id||null,guest?.id||null,parent,content,name,anonymous]);
         return json({ok:true,comment:{...r.rows[0],created_date:r.rows[0].created_at,replies:[]}},201);
       }return fail('Method not allowed.',405,'method_not_allowed');
     }
     const commentItem=url.pathname.match(/^\/api\/communities\/comments\/([0-9a-f-]{36})$/i);
-    if(commentItem){if(!auth)return fail('Authentication required.',401,'unauthorized');const id=commentItem[1];
-      if(request.method==='PATCH'){const input=await readJson(request);const fields=[];const values=[];if('content'in input){values.push(text(input.content,10000,true));fields.push(`content=$${values.length}`);}if('is_anonymous'in input){const anon=Boolean(input.is_anonymous);values.push(anon);fields.push(`is_anonymous=$${values.length}`);values.push(await authorName(db,auth,anon));fields.push(`author_name=$${values.length}`);}if(!fields.length)return fail('No comment updates provided.');values.push(id,auth.user.id);const r=await db.query(`UPDATE public.post_comments SET ${fields.join(',')},updated_at=now() WHERE id=$${values.length-1}::uuid AND author_id=$${values.length}::uuid RETURNING *`,values);return r.rows[0]?json({ok:true,comment:{...r.rows[0],created_date:r.rows[0].created_at}}):fail('Comment not found.',404,'not_found');}
-      if(request.method==='DELETE'){const r=await db.query('DELETE FROM public.post_comments WHERE id=$1::uuid AND author_id=$2::uuid RETURNING id',[id,auth.user.id]);return r.rowCount?json({ok:true}):fail('Comment not found.',404,'not_found');}
+    if(commentItem){if(!auth&&!guest)return fail('Authentication required.',401,'unauthorized');const id=commentItem[1];
+      if(request.method==='PATCH'){const input=await readJson(request);const fields=[];const values=[];if('content'in input){values.push(text(input.content,10000,true));fields.push(`content=$${values.length}`);}if('is_anonymous'in input){const anon=Boolean(input.is_anonymous);values.push(anon);fields.push(`is_anonymous=$${values.length}`);values.push(auth?await authorName(db,auth,anon):(anon?null:guest.name));fields.push(`author_name=$${values.length}`);}if(!fields.length)return fail('No comment updates provided.');values.push(id);if(auth){values.push(auth.user.id);const r=await db.query(`UPDATE public.post_comments SET ${fields.join(',')},updated_at=now() WHERE id=$${values.length-1}::uuid AND author_id=$${values.length}::uuid RETURNING *`,values);return r.rows[0]?json({ok:true,comment:{...r.rows[0],created_date:r.rows[0].created_at}}):fail('Comment not found.',404,'not_found');}values.push(guest.id);const r=await db.query(`UPDATE public.post_comments SET ${fields.join(',')},updated_at=now() WHERE id=$${values.length-1}::uuid AND guest_key=$${values.length} RETURNING *`,values);return r.rows[0]?json({ok:true,comment:{...r.rows[0],created_date:r.rows[0].created_at}}):fail('Comment not found.',404,'not_found');}
+      if(request.method==='DELETE'){const r=auth?await db.query('DELETE FROM public.post_comments WHERE id=$1::uuid AND author_id=$2::uuid RETURNING id',[id,auth.user.id]):await db.query('DELETE FROM public.post_comments WHERE id=$1::uuid AND guest_key=$2 RETURNING id',[id,guest.id]);return r.rowCount?json({ok:true}):fail('Comment not found.',404,'not_found');}
       return fail('Method not allowed.',405,'method_not_allowed');}
     const commentLike=url.pathname.match(/^\/api\/communities\/comments\/([0-9a-f-]{36})\/like$/i);
     if(commentLike){
-      if(!auth)return fail('Authentication required.',401,'unauthorized');
+      if(!auth&&!guest)return fail('Authentication required.',401,'unauthorized');
       const target=await db.query(`SELECT p.community_id FROM public.post_comments c JOIN public.community_posts p ON p.id=c.post_id WHERE c.id=$1::uuid AND c.moderation_status='approved' AND p.moderation_status='approved'`,[commentLike[1]]);
       if(!target.rows[0])return fail('Comment not found.',404,'not_found');
       const access=await communityAccess(db,target.rows[0].community_id,auth);
       if(!access.allowed)return fail('Community access denied.',403,'forbidden');
-      if(request.method==='POST'){await db.query('INSERT INTO public.comment_likes(comment_id,user_id) VALUES($1::uuid,$2::uuid) ON CONFLICT DO NOTHING',[commentLike[1],auth.user.id]);return json({ok:true});}
-      if(request.method==='DELETE'){await db.query('DELETE FROM public.comment_likes WHERE comment_id=$1::uuid AND user_id=$2::uuid',[commentLike[1],auth.user.id]);return json({ok:true});}
+      if(request.method==='POST'){if(auth)await db.query('INSERT INTO public.comment_likes(comment_id,user_id) VALUES($1::uuid,$2::uuid) ON CONFLICT DO NOTHING',[commentLike[1],auth.user.id]);else await db.query('INSERT INTO public.comment_likes(comment_id,guest_key) VALUES($1::uuid,$2) ON CONFLICT DO NOTHING',[commentLike[1],guest.id]);return json({ok:true});}
+      if(request.method==='DELETE'){if(auth)await db.query('DELETE FROM public.comment_likes WHERE comment_id=$1::uuid AND user_id=$2::uuid',[commentLike[1],auth.user.id]);else await db.query('DELETE FROM public.comment_likes WHERE comment_id=$1::uuid AND guest_key=$2',[commentLike[1],guest.id]);return json({ok:true});}
       return fail('Method not allowed.',405,'method_not_allowed');
     }
     const postInteraction=url.pathname.match(/^\/api\/communities\/posts\/([0-9a-f-]{36})\/(like|share)$/i);
     if(postInteraction){
-      if(!auth)return fail('Authentication required.',401,'unauthorized');
+      if(!auth&&!(guest&&postInteraction[2]==='like'))return fail('Authentication required.',401,'unauthorized');
       const postId=postInteraction[1];const action=postInteraction[2];
       const target=await db.query("SELECT community_id FROM public.community_posts WHERE id=$1::uuid AND moderation_status='approved'",[postId]);
       if(!target.rows[0])return fail('Post not found.',404,'not_found');
       const access=await communityAccess(db,target.rows[0].community_id,auth);
       if(!access.allowed)return fail('Community access denied.',403,'forbidden');
       if(action==='like'){
-        if(request.method==='POST'){await db.query('INSERT INTO public.post_likes(post_id,user_id) VALUES($1::uuid,$2::uuid) ON CONFLICT DO NOTHING',[postId,auth.user.id]);return json({ok:true});}
-        if(request.method==='DELETE'){await db.query('DELETE FROM public.post_likes WHERE post_id=$1::uuid AND user_id=$2::uuid',[postId,auth.user.id]);return json({ok:true});}
+        if(request.method==='POST'){if(auth)await db.query('INSERT INTO public.post_likes(post_id,user_id) VALUES($1::uuid,$2::uuid) ON CONFLICT DO NOTHING',[postId,auth.user.id]);else await db.query('INSERT INTO public.post_likes(post_id,guest_key) VALUES($1::uuid,$2) ON CONFLICT DO NOTHING',[postId,guest.id]);return json({ok:true});}
+        if(request.method==='DELETE'){if(auth)await db.query('DELETE FROM public.post_likes WHERE post_id=$1::uuid AND user_id=$2::uuid',[postId,auth.user.id]);else await db.query('DELETE FROM public.post_likes WHERE post_id=$1::uuid AND guest_key=$2',[postId,guest.id]);return json({ok:true});}
       }
       if(action==='share'&&request.method==='POST'){
         const input=await readJson(request);const via=text(input.shared_via,100)||'internal';const dest=input.shared_to_community_id||null;
@@ -196,9 +249,9 @@ export async function handleCommunitiesRequest(request,env,url){
       return fail('Method not allowed.',405,'method_not_allowed');
     }
     const postsMatch=url.pathname.match(/^\/api\/communities\/([0-9a-f-]{36})\/posts$/i);
-    if(postsMatch){const communityId=postsMatch[1];if(request.method==='GET')return json({ok:true,posts:await listPosts(db,communityId,auth,url)});if(!auth)return fail('Authentication required.',401,'unauthorized');if(request.method==='POST'){const access=await communityAccess(db,communityId,auth);if(!access.community)return fail('Community not found.',404,'not_found');if(!await requireActiveMember(db,access.community,auth.user.id))return fail('Active community membership is required.',403,'forbidden');if(!access.community.allow_member_posts&&access.community.creator_id!==auth.user.id)return fail('Member posts are disabled for this community.',403,'forbidden');const input=await readJson(request);const anonymous=Boolean(input.is_anonymous);const name=await authorName(db,auth,anonymous);const r=await db.query(`INSERT INTO public.community_posts(community_id,author_id,title,content,author_name,is_anonymous,tags,moderation_status) VALUES($1::uuid,$2::uuid,$3,$4,$5,$6,$7::text[],'approved') RETURNING *`,[communityId,auth.user.id,text(input.title,300,true),text(input.content,30000,true),name,anonymous,textArray(input.tags)]);return json({ok:true,post:{...r.rows[0],created_date:r.rows[0].created_at}},201);}return fail('Method not allowed.',405,'method_not_allowed');}
+    if(postsMatch){const communityId=postsMatch[1];if(request.method==='GET')return json({ok:true,posts:await listPosts(db,communityId,auth,url,guest)});if(!auth&&!guest)return fail('Authentication required.',401,'unauthorized');if(request.method==='POST'){const access=await communityAccess(db,communityId,auth);if(!access.community)return fail('Community not found.',404,'not_found');if(auth){if(!await requireActiveMember(db,access.community,auth.user.id))return fail('Active community membership is required.',403,'forbidden');if(!access.community.allow_member_posts&&access.community.creator_id!==auth.user.id)return fail('Member posts are disabled for this community.',403,'forbidden');}else{if(!access.community.is_public||!access.community.allow_member_posts)return fail('Active community membership is required.',403,'forbidden');}const input=await readJson(request);const anonymous=Boolean(input.is_anonymous);const name=auth?await authorName(db,auth,anonymous):(anonymous?null:guest.name);const r=await db.query(`INSERT INTO public.community_posts(community_id,author_id,guest_key,title,content,author_name,is_anonymous,tags,moderation_status) VALUES($1::uuid,$2::uuid,$3,$4,$5,$6,$7,$8::text[],'approved') RETURNING *`,[communityId,auth?.user.id||null,guest?.id||null,text(input.title,300,true),text(input.content,30000,true),name,anonymous,textArray(input.tags)]);return json({ok:true,post:{...r.rows[0],created_date:r.rows[0].created_at}},201);}return fail('Method not allowed.',405,'method_not_allowed');}
     const postItem=url.pathname.match(/^\/api\/communities\/posts\/([0-9a-f-]{36})$/i);
-    if(postItem){if(!auth)return fail('Authentication required.',401,'unauthorized');const id=postItem[1];if(request.method==='PATCH'){const input=await readJson(request);const fields=[];const values=[];for(const key of ['title','content','is_anonymous','tags'])if(key in input){let v=input[key];if(key==='title')v=text(v,300,true);if(key==='content')v=text(v,30000,true);if(key==='is_anonymous')v=Boolean(v);if(key==='tags')v=textArray(v);values.push(v);fields.push(`${key}=$${values.length}`);}if('is_anonymous'in input){values.push(await authorName(db,auth,Boolean(input.is_anonymous)));fields.push(`author_name=$${values.length}`);}if(!fields.length)return fail('No post updates provided.');values.push(id,auth.user.id);const r=await db.query(`UPDATE public.community_posts SET ${fields.join(',')},updated_at=now() WHERE id=$${values.length-1}::uuid AND author_id=$${values.length}::uuid RETURNING *`,values);return r.rows[0]?json({ok:true,post:{...r.rows[0],created_date:r.rows[0].created_at}}):fail('Post not found.',404,'not_found');}if(request.method==='DELETE'){const r=await db.query('DELETE FROM public.community_posts WHERE id=$1::uuid AND author_id=$2::uuid RETURNING id',[id,auth.user.id]);return r.rowCount?json({ok:true}):fail('Post not found.',404,'not_found');}return fail('Method not allowed.',405,'method_not_allowed');}
+    if(postItem){if(!auth&&!guest)return fail('Authentication required.',401,'unauthorized');const id=postItem[1];if(request.method==='PATCH'){const input=await readJson(request);const fields=[];const values=[];for(const key of ['title','content','is_anonymous','tags'])if(key in input){let v=input[key];if(key==='title')v=text(v,300,true);if(key==='content')v=text(v,30000,true);if(key==='is_anonymous')v=Boolean(v);if(key==='tags')v=textArray(v);values.push(v);fields.push(`${key}=$${values.length}`);}if('is_anonymous'in input){values.push(auth?await authorName(db,auth,Boolean(input.is_anonymous)):(Boolean(input.is_anonymous)?null:guest.name));fields.push(`author_name=$${values.length}`);}if(!fields.length)return fail('No post updates provided.');values.push(id);if(auth){values.push(auth.user.id);const r=await db.query(`UPDATE public.community_posts SET ${fields.join(',')},updated_at=now() WHERE id=$${values.length-1}::uuid AND author_id=$${values.length}::uuid RETURNING *`,values);return r.rows[0]?json({ok:true,post:{...r.rows[0],created_date:r.rows[0].created_at}}):fail('Post not found.',404,'not_found');}values.push(guest.id);const r=await db.query(`UPDATE public.community_posts SET ${fields.join(',')},updated_at=now() WHERE id=$${values.length-1}::uuid AND guest_key=$${values.length} RETURNING *`,values);return r.rows[0]?json({ok:true,post:{...r.rows[0],created_date:r.rows[0].created_at}}):fail('Post not found.',404,'not_found');}if(request.method==='DELETE'){const r=auth?await db.query('DELETE FROM public.community_posts WHERE id=$1::uuid AND author_id=$2::uuid RETURNING id',[id,auth.user.id]):await db.query('DELETE FROM public.community_posts WHERE id=$1::uuid AND guest_key=$2 RETURNING id',[id,guest.id]);return r.rowCount?json({ok:true}):fail('Post not found.',404,'not_found');}return fail('Method not allowed.',405,'method_not_allowed');}
     const membershipRoute=url.pathname.match(/^\/api\/communities\/([0-9a-f-]{36})\/membership$/i);
     if(membershipRoute){if(!auth)return fail('Authentication required.',401,'unauthorized');const id=membershipRoute[1];const access=await communityAccess(db,id,auth);if(!access.community)return fail('Community not found.',404,'not_found');if(request.method==='POST'){const creator=access.community.creator_id===auth.user.id;const status=access.community.requires_approval&&!creator?'pending':'active';const role=creator?'admin':'member';const r=await db.query(`INSERT INTO public.community_members(community_id,user_id,role,status) VALUES($1::uuid,$2::uuid,$3,$4) ON CONFLICT(community_id,user_id) DO UPDATE SET role=CASE WHEN public.community_members.role='admin' THEN 'admin' ELSE EXCLUDED.role END,status=EXCLUDED.status RETURNING *`,[id,auth.user.id,role,status]);return json({ok:true,membership:r.rows[0]},201);}if(request.method==='DELETE'){if(access.community.creator_id===auth.user.id)return fail('A community creator cannot leave their own community. Delete it or transfer ownership first.',409,'conflict');await db.query("UPDATE public.community_members SET status='left' WHERE community_id=$1::uuid AND user_id=$2::uuid",[id,auth.user.id]);return json({ok:true});}return fail('Method not allowed.',405,'method_not_allowed');}
     const item=url.pathname.match(/^\/api\/communities\/([0-9a-f-]{36})$/i);

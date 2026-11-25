@@ -126,6 +126,28 @@ const SOCIAL_PAGE_META = {
 };
 SOCIAL_PAGE_META['/home'] = SOCIAL_PAGE_META['/'];
 
+// RETIRED 2026-11-25 (all-free conversion): features that cost money per
+// use are permanently off — AI chat/content (OpenAI), the AI support chat,
+// phone verification and Love Note SMS (Twilio), Credit/token purchases,
+// and subscription billing. Their routes answer 410 so no code path can
+// reach the providers or charge anyone.
+function retiredFeatureResponse() {
+  return new Response(JSON.stringify({
+    ok: false,
+    error: {
+      code: 'feature_retired',
+      message: 'This feature has been retired. One2OneLove is now 100% free — no signup, no card, no Credit.',
+    },
+  }), {
+    status: 410,
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'no-store',
+      'x-content-type-options': 'nosniff',
+    },
+  });
+}
+
 function escapeHtmlMeta(value='') {
   return String(value).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
@@ -337,6 +359,21 @@ async function handleFetchV2(request, env, ctx) {
     if (url.pathname === '/api/launch-readiness') {
       const response = await handleLaunchReadinessRequest(request, env, url);
       if (response) return response;
+    }
+
+    // Retired per-use-cost features (2026-11-25): refused before any
+    // handler, gate, or provider call. The Stripe billing webhook is the
+    // one exception — it stays live so legacy events still settle; it
+    // spends nothing and sells nothing.
+    if (
+      url.pathname.startsWith('/api/ai') ||
+      url.pathname.startsWith('/api/support-chat') ||
+      url.pathname.startsWith('/api/phone-verification') ||
+      url.pathname.startsWith('/api/tokens') ||
+      url.pathname === '/api/billing/change-plan' ||
+      (url.pathname.startsWith('/api/billing') && url.pathname !== '/api/billing/webhook')
+    ) {
+      return retiredFeatureResponse();
     }
 
     if (url.pathname.startsWith('/api/phone-verification')) {

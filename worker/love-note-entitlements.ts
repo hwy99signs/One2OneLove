@@ -169,9 +169,14 @@ async function loveNoteWriteAccess(db, auth) {
        FROM public.users WHERE id=$1::uuid LIMIT 1`,
     [auth.user.id],
   );
-  // Decision lives in worker/love-note-access.js (pure + unit-tested):
-  // active account AND a verified phone on file, or the write is refused.
-  return loveNoteAccessDecision(result.rows[0]||{});
+  // Retired 2026-11-25 (all-free conversion): the verified-phone half of
+  // the old decision is gone with phone verification itself. An active
+  // account may write Love Notes; inactive accounts may not.
+  const row = result.rows[0] || {};
+  if (row.is_active === false) {
+    return { allowed: false, reason: 'account_inactive', message: 'This One2OneLove account is not active.' };
+  }
+  return { allowed: true, reason: 'active_member' };
 }
 async function categoryPreferenceForDate(db, userId, quotaDate) {
   const quotaMonth=monthStart(quotaDate);
@@ -253,9 +258,9 @@ async function postSent(db, auth, body) {
   const title = cleanText(body.note_title, 250, true);
   const content = validateLoveNoteBody(body.note_content);
   const recipientType = cleanText(body.recipient_type, 50, true);
-  const allowedTypes = new Set(['social_media', 'other']);
+  const allowedTypes = new Set(['social_media', 'other', 'in_app']);
   if (!allowedTypes.has(recipientType)) {
-    return fail('SMS Love Notes must use One2OneLove managed SMS delivery.', 400, 'managed_sms_required');
+    return fail('Love Note sends are recorded in the app or shared from your own apps.', 400, 'managed_sms_required');
   }
   const recipient = cleanText(body.recipient_identifier, 500, false);
   const platform = cleanText(body.social_platform, 100, false);
@@ -465,6 +470,17 @@ async function cancelScheduled(db, auth, noteId) {
 
 export async function handleLoveNoteEntitlementRequest(request, env, url) {
   if (!url.pathname.startsWith('/api/love-notes/')) return null;
+  // RETIRED 2026-11-25 (all-free conversion): Love Note SMS sending,
+  // SMS scheduling, and SMS price quotes are off — Twilio is never
+  // called and nothing is charged. In-app sends, records, category
+  // preferences, and cancelling an existing booking keep working below.
+  if (
+    (url.pathname === '/api/love-notes/send-sms' && request.method === 'POST') ||
+    (url.pathname === '/api/love-notes/scheduled' && request.method === 'POST') ||
+    (url.pathname === '/api/love-notes/price' && request.method === 'GET')
+  ) {
+    return fail('This feature has been retired. One2OneLove is now 100% free.', 410, 'feature_retired');
+  }
   const supported =
     url.pathname === '/api/love-notes/usage' ||
     url.pathname === '/api/love-notes/price' ||
@@ -534,6 +550,9 @@ export async function handleLoveNoteEntitlementRequest(request, env, url) {
           ok: true,
           delivery: {
             ...scheduledSmsReadiness(env),
+            enabled:false,
+            scheduledSmsReady:false,
+            smsRetired:true,
             billingMode:'o2ol_tokens',
             creditMode:false,
             tokenMode:true,

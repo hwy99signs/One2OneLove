@@ -306,7 +306,9 @@ async function sentLoveNotesRoute(request, env, auth) {
     const title = cleanText(body.note_title, 250, true);
     const content = cleanText(body.note_content, 10000, true);
     const recipientType = cleanText(body.recipient_type, 50, true);
-    const allowedTypes = new Set(['partner', 'sms', 'social_media', 'other']);
+    // 'sms' removed 2026-11-25: sends are recorded in-app or as shares
+    // from the sender's own apps; One2OneLove no longer sends texts.
+    const allowedTypes = new Set(['partner', 'in_app', 'social_media', 'other']);
     if (!allowedTypes.has(recipientType)) return error('Invalid recipient_type.');
     const recipient = cleanText(body.recipient_identifier, 500, false);
     const platform = cleanText(body.social_platform, 100, false);
@@ -359,6 +361,10 @@ async function scheduledLoveNotesRoute(request, env, auth, url) {
   }
 
   if (request.method === 'POST') {
+    // RETIRED 2026-11-25 (all-free conversion): scheduled Love Notes were
+    // an SMS-delivery booking. SMS is off; new bookings are refused.
+    // Listing and cancelling existing bookings above still work.
+    return error('Scheduled Love Note delivery has been retired. One2OneLove is now 100% free.', 410, 'feature_retired');
     const body = await readJson(request);
     const title = cleanText(body.note_title, 250, true);
     const content = cleanText(body.note_content, 10000, true);

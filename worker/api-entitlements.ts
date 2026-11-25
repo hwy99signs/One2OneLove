@@ -25,7 +25,6 @@ const MEMBER_ONLY_PREFIXES = [
   '/api/profile/photo',
   '/api/media/profile/',
   '/api/engagement',
-  '/api/ai',
   '/api/milestones',
   '/api/media/milestones/',
   '/api/journals',
@@ -90,6 +89,12 @@ export async function enforceApiEntitlement(request, env, url) {
   // community-chat handler. Do not impose any paid membership requirement.
   if (url.pathname.startsWith('/api/community-chat')) return null;
 
+  // Communities (2026-11-25): public communities are guest-participation
+  // areas now — the communities handler enforces its own per-route rules
+  // (member-only creation/membership; guest posts/comments/likes in
+  // public communities), so the gate does not pre-empt it.
+  if (url.pathname.startsWith('/api/communities')) return null;
+
   if (!memberIdentityRequired(url.pathname)) return null;
 
   const auth = await authSession(request, env);
@@ -113,41 +118,13 @@ export async function enforceApiEntitlement(request, env, url) {
       return json({ ok: false, error: { code: 'forbidden', message: 'Account access is unavailable.' } }, 403);
     }
 
-    const phoneVerificationRequired = Boolean(
-      env.TWILIO_ACCOUNT_SID &&
-      env.TWILIO_AUTH_TOKEN &&
-      env.TWILIO_VERIFY_SERVICE_SID
-    );
-    if (phoneVerificationRequired && row.phone_number_verified !== true) {
-      return json({ ok: false, error: { code: 'phone_verification_required', message: 'Phone verification is required.' } }, 428);
-    }
+    // Phone verification retired 2026-11-25: no feature requires a
+    // verified phone number any more (Twilio Verify was a per-use cost).
 
-    // The paid feature pages show the price and handle the purchase; every
-    // protected API also verifies ownership of its one-time Credit unlock.
-    // Administrators retain access for QA without customer Credit charges.
-    const unlockFeature = contentUnlockFeature(url.pathname);
-    if (unlockFeature && row.role !== 'admin' && !isO2OLPromoFreeFeature(unlockFeature)) {
-      const unlocked = await db.query(
-        `SELECT EXISTS(
-           SELECT 1 FROM public.o2ol_token_content_unlocks
-            WHERE user_id=$1::uuid AND feature_code=$2 AND content_key='feature'
-         ) AS owned`,
-        [auth.user.id, unlockFeature],
-      );
-      if (unlocked.rows[0]?.owned !== true) {
-        return json({
-          ok: false,
-          error: {
-            code: 'content_unlock_required',
-            message: 'This feature uses Credit. Unlock it to continue.',
-            featureCode: unlockFeature,
-          },
-        }, 402);
-      }
-    }
-
-    // No recurring membership, Stripe-subscription or tier eligibility gate.
-    // Per-use Credit charges stay in their own feature handlers.
+    // No recurring membership, Stripe-subscription or tier eligibility
+    // gate, and no Credit content-unlock check (retired 2026-11-25):
+    // every feature is free. Member identity above only scopes access
+    // to the signed-in member's own data.
     return null;
   } finally {
     await db.end();

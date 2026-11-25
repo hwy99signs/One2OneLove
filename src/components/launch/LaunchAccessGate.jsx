@@ -1,18 +1,19 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import QuickAccountGate from '@/components/launch/QuickAccountGate.jsx';
-import PrivateSpaceNotice from '@/components/launch/PrivateSpaceNotice.jsx';
-import { isGuestOpenRoute } from '@/lib/guestAccessPolicy';
 
-// Site locked behind sign-up (owner decision, 2026-10-11): guests may open
-// only the entry pages (sign in / sign up / invite / recovery / admin entry)
-// and the public information pages a person needs BEFORE joining (About,
-// Reviews, Help, Contact, Suggestions, Terms, Privacy, professional
-// application funnels). Every other known route - the homepage included -
-// shows the QuickAccountGate sign-up wall to guests, with a return to the
-// page they asked for after they join. Unknown routes stay public by the
-// isKnown rule below (SPA not-found handling + the certification canary).
+// One2OneLove is a free, open relationship platform (owner decision,
+// 2026-11-25): no signup, no card, no Credit. Every route renders for
+// everyone — guests and members alike. This gate used to enforce the
+// 2026-10-11 "site locked behind sign-up" wall (QuickAccountGate), the
+// view-only homepage, the PrivateSpaceNotice for member areas and the
+// phone-verification redirect. All of that is retired:
+//   - There is no sign-up wall: personal features run in guest mode
+//     (browser-local storage) when there is no account, and Chat Rooms /
+//     Communities accept guest participation with a display name.
+//   - Phone verification is retired with the SMS features it served.
+//   - Admin routes stay protected by AdminMfaGate in the router, which is
+//     independent of this component.
+// The historical route-set exports are kept because other launch
+// components import them; they no longer restrict anything.
 export const PUBLIC_INFORMATION_ROUTES = new Set([
   '/aboutus', '/signin', '/login', '/signup', '/forgotpassword',
   '/helpcenter', '/contactus', '/privacypolicy', '/termsofservice', '/reviews', '/suggestions',
@@ -20,179 +21,8 @@ export const PUBLIC_INFORMATION_ROUTES = new Set([
   '/adminaccess', '/catalog',
 ]);
 
-// View-only routes (owner, 2026-10-11): guests may OPEN and SCROLL these
-// pages - the homepage is the shop window - but every action tab, button,
-// card and menu item on them is locked: GuestHomepageGate intercepts the
-// tap and opens the sign-up panel instead. Members are unaffected.
 export const VIEW_ONLY_ROUTES = new Set(['/', '/home']);
 
-// Each guest feature route stays at its ORIGINAL page URL. While signed out,
-// only a safe, title-only view of that specific feature is mounted.
-// Members keep their original feature components and navigation.
-const KNOWN_APP_ROUTES = new Set([
-  '/',
-  '/aboutus',
-  '/achievements',
-  '/admin',
-  '/adminaccess',
-  '/aicontentcreator',
-  '/amora',
-  '/analytics',
-  '/anniversarytracker',
-  '/articlessupport',
-  '/blog',
-  '/chat',
-  '/communicationpractice',
-  '/community',
-  '/contactus',
-  '/cooperativegames',
-  '/counselingsupport',
-  '/coupleactivities',
-  '/couplescalendar',
-  '/couplesdashboard',
-  '/couplesprofile',
-  '/couplesupport',
-  '/credit',
-  '/dashboard',
-  '/dateideas',
-  '/developer',
-  '/findfriends',
-  '/forgotpassword',
-  '/friendrequests',
-  '/games',
-  '/helpcenter',
-  '/home',
-  '/influencersignup',
-  '/influencerssupport',
-  '/invite',
-  '/leaderboard',
-  '/leavereview',
-  '/lgbtqsupport',
-  '/likeminded',
-  '/login',
-  '/lovelanguagequiz',
-  '/lovenotes',
-  '/meditation',
-  '/memorylane',
-  '/memories',
-  '/mymatchiq',
-  '/mymatchiq/actions',
-  '/mymatchiq/assessment',
-  '/mymatchiq/bianca',
-  '/mymatchiq/credits',
-  '/mymatchiq/dashboard',
-  '/mymatchiq/invite',
-  '/mymatchiq/meet',
-  '/mymatchiq/passport',
-  '/mymatchiq/signin',
-  '/mymatchiq/signup',
-  '/mymatchiq/subscription',
-  '/o2olstudio',
-  '/o2olstudio/episodes',
-  '/payment-success',
-  '/paymentsuccess',
-  '/podcastssupport',
-  '/premiumfeatures',
-  '/privacypolicy',
-  '/professionals',
-  '/professionalsignup',
-  '/profile',
-  '/relationshipcoach',
-  '/relationshipgoals',
-  '/relationshipmilestones',
-  '/relationshipquizzes',
-  '/reviews',
-  '/scratchgame',
-  '/sendcredits',
-  '/sharedjournals',
-  '/signin',
-  '/signup',
-  '/subscription',
-  '/suggestions',
-  '/termsofservice',
-  '/therapistsignup',
-  '/tiktokpost',
-  '/credit',
-  '/tokensystemdashboard',
-  '/verifyphone',
-  '/whatshouldtheydo',
-]);
-
-const LOADING_COPY = {
-  en:'Loading your One2OneLove access…',
-  es:'Cargando tu acceso a One2OneLove…',
-  fr:'Chargement de votre accès One2OneLove…',
-  it:'Caricamento del tuo accesso One2OneLove…',
-  de:'Ihr One2OneLove-Zugang wird geladen…',
-};
-
-function preferredLanguage(){
-  try{
-    const value=String(localStorage.getItem('preferredLanguage')||'en').toLowerCase();
-    return LOADING_COPY[value]?value:'en';
-  }catch{return 'en';}
-}
-
-export default function LaunchAccessGate({ pathname, children }) {
-  const { user,isAuthenticated,isLoading }=useAuth();
-  const route=String(pathname||'/').toLowerCase().replace(/\/$/,'')||'/';
-  const isKnown=KNOWN_APP_ROUTES.has(route);
-  // MyMatchIQ has its own production app, signup and verification.
-  // Never require One2OneLove membership or phone verification just to
-  // follow an external MyMatchIQ link from a public entry point.
-  const isStandaloneMyMatchIQ = route === '/mymatchiq' || route.startsWith('/mymatchiq/');
-  const isPublic=PUBLIC_INFORMATION_ROUTES.has(route) || !isKnown || isStandaloneMyMatchIQ;
-  const isViewOnly=VIEW_ONLY_ROUTES.has(route);
-  // Launch guest policy (owner 2026-11-01): only routes in GUEST_OPEN_ROUTES
-  // open without an account. Never admin/account/payment/private routes, and
-  // server-side ownership, verification, entitlement and Credit rules still apply.
-  const openAccess = isGuestOpenRoute(route);
-  const paidRoute = new Set(['/credit','/sendcredits','/aicontentcreator','/amora','/relationshipcoach','/mymatchiq/credits']).has(route);
-  // Private member-owned records and person-to-person interactions require a verified identity.
-  // This is an account privacy boundary, never a public signup marketing gate.
-  const privateRoute = new Set([
-    '/chat','/chatrooms','/chatroom','/community','/communities','/findfriends','/friendrequests',
-    '/memorylane','/memories','/sharedjournals','/relationshipmilestones','/relationshipgoals',
-    '/anniversarytracker','/couplescalendar','/couplesdashboard','/couplesprofile',
-    '/profile','/dashboard','/analytics','/admin','/tokensystemdashboard',
-    '/credit','/sendcredits','/payment-success','/paymentsuccess','/verifyphone',
-  ]).has(route) || route.startsWith('/admin/');
-  // Owner-approved open access: free components render directly in prelaunch.
-  const previewGuestBrowse = openAccess && !privateRoute && !paidRoute;
-
-  if(isLoading && (!isPublic && !previewGuestBrowse)){
-    const language=preferredLanguage();
-    return <div className="flex min-h-[55vh] items-center justify-center bg-white">
-      <div className="text-center">
-        <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-pink-500 border-t-transparent"/>
-        <p className="text-sm font-medium text-gray-600">{LOADING_COPY[language]}</p>
-      </div>
-    </div>;
-  }
-
-  if(!isAuthenticated || !user){
-    if(previewGuestBrowse) return children;
-    if(privateRoute && !paidRoute) return <PrivateSpaceNotice path={pathname||'/'} />;
-    return (isPublic || isViewOnly || previewGuestBrowse) ? children : <QuickAccountGate intendedPath={pathname||'/'} />;
-  }
-
-  // Registered Free is the site access identity. Feature-specific APIs/components
-  // decide whether an action is free or requires Credit.
-  //
-  // Phone verification front door (owner decision, 2026-10-10): phone
-  // verification is a hard requirement for the member area, not a step a
-  // signed-in member can click out of. A signed-in member whose phone is not
-  // verified may browse public information pages (Open House), but every
-  // member route redirects to /VerifyPhone until verification is completed.
-  // The only exits from that state are verifying the phone or signing out
-  // (the site header with Sign Out renders above this gate). Server-side 428
-  // phone checks remain the backstop for every protected API.
-  const phoneRequired = user?.phone_verification_required === true;
-  const phoneVerified = user?.phoneNumberVerified === true || user?.phone_number_verified === true;
-  const isAdmin = String(user?.role || '').toLowerCase() === 'admin';
-  if (phoneRequired && !phoneVerified && !isAdmin && isKnown && !isPublic && route !== '/verifyphone' && (!openAccess || privateRoute || paidRoute)) {
-    return <Navigate to={`/VerifyPhone?redirect=${encodeURIComponent(pathname || '/')}`} replace />;
-  }
-
+export default function LaunchAccessGate({ children }) {
   return children;
 }

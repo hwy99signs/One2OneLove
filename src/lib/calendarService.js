@@ -1,5 +1,24 @@
 import { formatLocalDateInput } from '@/utils/localDate';
 import { apiRequest } from '@/lib/apiClient';
+import { loadCollection, insertRecord, updateRecord, deleteRecord, getRecord, isUnauthorized } from './guestStore';
+
+// Guest mode (2026-11-25): with no account, calendar events live in the
+// browser-local guest store. Members keep the server API. Calls try the
+// API first and fall back locally only on a 401 (no session); a create
+// with no user id goes straight to the local store.
+const LOCAL = 'calendar_events';
+
+function localEvents(options = {}) {
+  let rows = loadCollection(LOCAL);
+  if (options.eventType) rows = rows.filter(event => event?.event_type === options.eventType);
+  if (options.startDate) rows = rows.filter(event => String(event?.event_date || '') >= String(options.startDate));
+  if (options.endDate) rows = rows.filter(event => String(event?.event_date || '') <= String(options.endDate));
+  const sortBy = options.sortBy || 'event_date';
+  const dir = String(options.sortOrder || 'asc').toLowerCase() === 'desc' ? -1 : 1;
+  rows = [...rows].sort((a, b) => String(a?.[sortBy] || '').localeCompare(String(b?.[sortBy] || '')) * dir);
+  if (options.limit) rows = rows.slice(0, Number(options.limit));
+  return rows;
+}
 
 export const getCalendarEvents = async (_userId, options = {}) => {
   const params = new URLSearchParams();
@@ -11,18 +30,27 @@ export const getCalendarEvents = async (_userId, options = {}) => {
   if (options.limit) params.set('limit', String(options.limit));
   const suffix = params.toString() ? `?${params.toString()}` : '';
 
-  const payload = await apiRequest(`/api/calendar-events${suffix}`);
-  return payload?.events || [];
+  try {
+    const payload = await apiRequest(`/api/calendar-events${suffix}`);
+    return payload?.events || [];
+  } catch (error) {
+    if (!isUnauthorized(error)) throw error;
+    return localEvents(options);
+  }
 };
 
 export const getCalendarEvent = async (eventId, _userId) => {
   if (!eventId) throw new Error('Calendar event ID is required');
-  const payload = await apiRequest(`/api/calendar-events/${encodeURIComponent(eventId)}`);
-  return payload?.event || null;
+  try {
+    const payload = await apiRequest(`/api/calendar-events/${encodeURIComponent(eventId)}`);
+    return payload?.event || null;
+  } catch (error) {
+    if (!isUnauthorized(error)) throw error;
+    return getRecord(LOCAL, eventId);
+  }
 };
 
 export const createCalendarEvent = async (userId, eventData) => {
-  if (!userId) throw new Error('User ID is required');
   if (!eventData?.title?.trim()) throw new Error('Event title is required');
   if (!eventData?.event_date) throw new Error('Event date is required');
 
@@ -43,22 +71,38 @@ export const createCalendarEvent = async (userId, eventData) => {
     recurrence_pattern: eventData.recurrence_pattern || null,
   };
 
-  const payload = await apiRequest('/api/calendar-events', { method: 'POST', body });
-  return payload?.event || null;
+  if (!userId) return insertRecord(LOCAL, body);
+  try {
+    const payload = await apiRequest('/api/calendar-events', { method: 'POST', body });
+    return payload?.event || null;
+  } catch (error) {
+    if (!isUnauthorized(error)) throw error;
+    return insertRecord(LOCAL, body);
+  }
 };
 
 export const updateCalendarEvent = async (eventId, _userId, updates) => {
   if (!eventId) throw new Error('Calendar event ID is required');
-  const payload = await apiRequest(`/api/calendar-events/${encodeURIComponent(eventId)}`, {
-    method: 'PATCH',
-    body: updates,
-  });
-  return payload?.event || null;
+  try {
+    const payload = await apiRequest(`/api/calendar-events/${encodeURIComponent(eventId)}`, {
+      method: 'PATCH',
+      body: updates,
+    });
+    return payload?.event || null;
+  } catch (error) {
+    if (!isUnauthorized(error)) throw error;
+    return updateRecord(LOCAL, eventId, updates || {});
+  }
 };
 
 export const deleteCalendarEvent = async (eventId, _userId) => {
   if (!eventId) throw new Error('Calendar event ID is required');
-  await apiRequest(`/api/calendar-events/${encodeURIComponent(eventId)}`, { method: 'DELETE' });
+  try {
+    await apiRequest(`/api/calendar-events/${encodeURIComponent(eventId)}`, { method: 'DELETE' });
+  } catch (error) {
+    if (!isUnauthorized(error)) throw error;
+    deleteRecord(LOCAL, eventId);
+  }
 };
 
 export const getUpcomingEvents = async (userId, limit = 10) => {

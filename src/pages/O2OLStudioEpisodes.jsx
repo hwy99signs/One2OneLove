@@ -1,18 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, CreditCard, Film, Loader2, LockKeyhole, PlayCircle, UserPlus } from 'lucide-react';
+import { ArrowLeft, Film, PlayCircle } from 'lucide-react';
 import { useLanguage } from './Layout';
 import { useAuth } from '@/contexts/AuthContext';
-import { getTokenWallet, isTokensRequiredError, tokenRequiredDetails, unlockTokenContent } from '@/lib/tokenService';
-import UnlockPriceDialog from '@/components/pricing/UnlockPriceDialog';
-import { isO2OLPromoFreeFeature } from '@/lib/o2olFreePromo2026';
 
 const COPY={
-  en:{title:'Previous Episodes',sub:'Watch both O2OL Studio videos FREE FOREVER — no account or Credit needed.',back:'Back to O2OL Studio',season:'Season',episode:'Episode',watch:'Watch Episode',locked:'Replay not available yet',opens:'Public replay opens',empty:'No Studio episodes are available yet.',loading:'Loading episodes…',unlockBtn:'Unlock for $1 Credit',unlockPrice:'Episode unlock — $1 Credit',unlocking:'Unlocking…',needCredit:'You need {required} Credit. Balance: {balance}.',addCredit:'Add Credit',unlockFailed:'Unable to unlock. Please try again.'},
-  es:{title:'Episodios Anteriores',sub:'Mira ambos vídeos de O2OL Studio GRATIS PARA SIEMPRE, sin cuenta ni Crédito.',back:'Volver a O2OL Studio',season:'Temporada',episode:'Episodio',watch:'Ver Episodio',locked:'La repetición aún no está disponible',opens:'La repetición pública abre',empty:'Aún no hay episodios de Studio disponibles.',loading:'Cargando episodios…',unlockBtn:'Desbloquear por $1 de Crédito',unlockPrice:'Desbloqueo del episodio — $1 de Crédito',unlocking:'Desbloqueando…',needCredit:'Necesitas {required} de Crédito. Saldo: {balance}.',addCredit:'Añadir Crédito',unlockFailed:'No se pudo desbloquear. Inténtalo de nuevo.'},
-  fr:{title:'Épisodes Précédents',sub:'Regardez les deux vidéos O2OL Studio GRATUITEMENT POUR TOUJOURS, sans compte ni Crédit.',back:'Retour à O2OL Studio',season:'Saison',episode:'Épisode',watch:'Regarder l’épisode',locked:'La rediffusion n’est pas encore disponible',opens:'La rediffusion publique ouvre',empty:'Aucun épisode Studio n’est encore disponible.',loading:'Chargement des épisodes…',unlockBtn:'Débloquer pour 1 $ de Crédit',unlockPrice:'Déblocage de l’épisode — 1 $ de Crédit',unlocking:'Déblocage…',needCredit:'Il vous faut {required} de Crédit. Solde : {balance}.',addCredit:'Ajouter du Crédit',unlockFailed:'Déblocage impossible. Veuillez réessayer.'},
-  it:{title:'Episodi Precedenti',sub:'Guarda entrambi i video O2OL Studio GRATIS PER SEMPRE, senza account né Credito.',back:'Torna a O2OL Studio',season:'Stagione',episode:'Episodio',watch:'Guarda Episodio',locked:'La replica non è ancora disponibile',opens:'La replica pubblica apre',empty:'Non ci sono ancora episodi Studio disponibili.',loading:'Caricamento episodi…',unlockBtn:'Sblocca con $1 di Credito',unlockPrice:'Sblocco episodio — $1 di Credito',unlocking:'Sblocco in corso…',needCredit:'Ti servono {required} di Credito. Saldo: {balance}.',addCredit:'Aggiungi Credito',unlockFailed:'Sblocco non riuscito. Riprova.'},
-  de:{title:'Frühere Folgen',sub:'Beide O2OL-Studio-Videos sind FÜR IMMER KOSTENLOS — ohne Konto oder Credit.',back:'Zurück zu O2OL Studio',season:'Staffel',episode:'Folge',watch:'Folge ansehen',locked:'Wiederholung noch nicht verfügbar',opens:'Öffentliche Wiederholung ab',empty:'Noch keine Studio-Folgen verfügbar.',loading:'Folgen werden geladen…',unlockBtn:'Für 1 $ Credit freischalten',unlockPrice:'Folge freischalten — 1 $ Credit',unlocking:'Wird freigeschaltet…',needCredit:'Du brauchst {required} Credit. Guthaben: {balance}.',addCredit:'Credit hinzufügen',unlockFailed:'Freischalten nicht möglich. Bitte erneut versuchen.'}
+  en:{title:'Previous Episodes',sub:'Watch both O2OL Studio videos FREE FOREVER — no account or Credit needed.',back:'Back to O2OL Studio',season:'Season',episode:'Episode',watch:'Watch Episode',locked:'Replay not available yet',opens:'Public replay opens',empty:'No Studio episodes are available yet.',loading:'Loading episodes…'},
+  es:{title:'Episodios Anteriores',sub:'Mira ambos vídeos de O2OL Studio GRATIS PARA SIEMPRE, sin cuenta ni Crédito.',back:'Volver a O2OL Studio',season:'Temporada',episode:'Episodio',watch:'Ver Episodio',locked:'La repetición aún no está disponible',opens:'La repetición pública abre',empty:'Aún no hay episodios de Studio disponibles.',loading:'Cargando episodios…'},
+  fr:{title:'Épisodes Précédents',sub:'Regardez les deux vidéos O2OL Studio GRATUITEMENT POUR TOUJOURS, sans compte ni Crédit.',back:'Retour à O2OL Studio',season:'Saison',episode:'Épisode',watch:'Regarder l’épisode',locked:'La rediffusion n’est pas encore disponible',opens:'La rediffusion publique ouvre',empty:'Aucun épisode Studio n’est encore disponible.',loading:'Chargement des épisodes…'},
+  it:{title:'Episodi Precedenti',sub:'Guarda entrambi i video O2OL Studio GRATIS PER SEMPRE, senza account né Credito.',back:'Torna a O2OL Studio',season:'Stagione',episode:'Episodio',watch:'Guarda Episodio',locked:'La replica non è ancora disponibile',opens:'La replica pubblica apre',empty:'Non ci sono ancora episodi Studio disponibili.',loading:'Caricamento episodi…'},
+  de:{title:'Frühere Folgen',sub:'Beide O2OL-Studio-Videos sind FÜR IMMER KOSTENLOS — ohne Konto oder Credit.',back:'Zurück zu O2OL Studio',season:'Staffel',episode:'Folge',watch:'Folge ansehen',locked:'Wiederholung noch nicht verfügbar',opens:'Öffentliche Wiederholung ab',empty:'Noch keine Studio-Folgen verfügbar.',loading:'Folgen werden geladen…'}
 };
 
 const FREE_EPISODE_NOTE = {
@@ -32,22 +29,12 @@ export default function O2OLStudioEpisodes(){
   const {currentLanguage}=useLanguage();
   const {isAuthenticated,user}=useAuth();
   const t=COPY[currentLanguage]||COPY.en;
-  const promoFree=isO2OLPromoFreeFeature('studio_episode_unlock');
   const freeNote=FREE_EPISODE_NOTE[currentLanguage]||FREE_EPISODE_NOTE.en;
   const [episodes,setEpisodes]=useState([]);
   const [loading,setLoading]=useState(true);
   const [failedMedia,setFailedMedia]=useState({});
   const [refreshKey,setRefreshKey]=useState(0);
-  const [unlockingId,setUnlockingId]=useState(null);
-  const [unlockErrors,setUnlockErrors]=useState({});
-  const [confirmEpisode,setConfirmEpisode]=useState(null);
-  const [creditBalance,setCreditBalance]=useState(null);
 
-  useEffect(()=>{
-    let active=true;
-    if(isAuthenticated)getTokenWallet().then(data=>{if(active)setCreditBalance(Number(data?.wallet?.balance||0));}).catch(()=>{});
-    return()=>{active=false};
-  },[isAuthenticated,refreshKey]);
 
   useEffect(()=>{
     let active=true;
@@ -59,25 +46,7 @@ export default function O2OLStudioEpisodes(){
     return()=>{active=false};
   },[isAuthenticated,refreshKey]);
 
-  const handleUnlock=async(ep)=>{
-    if(!user?.id||unlockingId)return;
-    setUnlockingId(ep.id);
-    setUnlockErrors(v=>({...v,[ep.id]:''}));
-    try{
-      await unlockTokenContent({featureCode:'studio_episode_unlock',contentKey:ep.id,source:'o2ol_studio_episodes',idempotencyKey:`studio:${user.id}:${ep.id}`});
-      setRefreshKey(k=>k+1);
-      getTokenWallet().then(data=>setCreditBalance(Number(data?.wallet?.balance||0))).catch(()=>{});
-    }catch(error){
-      if(isTokensRequiredError(error)){
-        const info=tokenRequiredDetails(error);
-        setUnlockErrors(v=>({...v,[ep.id]:t.needCredit.replace('{required}',(Number(info.required||ep.unlockPriceCents||0)/100).toFixed(2)).replace('{balance}',(Number(info.balance||0)/100).toFixed(2))}));
-      }else{
-        setUnlockErrors(v=>({...v,[ep.id]:error?.message||t.unlockFailed}));
-      }
-    }finally{setUnlockingId(null);}
-  };
-
-  const ordered=useMemo(()=>[...episodes].sort((a,b)=>{
+const ordered=useMemo(()=>[...episodes].sort((a,b)=>{
     const seasonDiff=Number(a?.season||0)-Number(b?.season||0);
     return seasonDiff||Number(a?.episode||0)-Number(b?.episode||0);
   }),[episodes]);
@@ -96,35 +65,14 @@ export default function O2OLStudioEpisodes(){
             return <article key={ep.id} className="relative overflow-hidden rounded-[1.5rem] border border-white/15 bg-white/[0.06] shadow-xl">
               <div className="aspect-video bg-black">
                 {playable?<video className="h-full w-full bg-black object-contain" controls playsInline preload="metadata" poster={ep.posterPath||undefined} src={ep.mediaPath+'#t=0.1'} onError={()=>setFailedMedia(v=>({...v,[ep.id]:true}))}>Your browser does not support HTML5 video.</video>:
-                <div className="flex h-full items-center justify-center bg-[radial-gradient(circle_at_center,rgba(124,58,237,0.32),transparent_45%),#030712] p-6 text-center"><div>{promoFree && ep?.unlockPriceCents ? <UserPlus className="mx-auto h-11 w-11 text-emerald-300"/> : ep?.unlockPriceCents ? <LockKeyhole className="mx-auto h-11 w-11 text-amber-300"/> : <PlayCircle className="mx-auto h-11 w-11 text-amber-300"/>}<p className="mt-3 font-black">{promoFree&&ep?.unlockPriceCents?freeNote:t.locked}</p>{ep?.unlockPriceCents&&!promoFree?<p className="mt-1 text-xs font-bold text-amber-200">{t.unlockPrice}</p>:(ep?.publicAvailableAt&&<p className="mt-1 text-xs text-white/55">{t.opens}: {new Date(ep.publicAvailableAt).toLocaleDateString()}</p>)}</div></div>}
+                <div className="flex h-full items-center justify-center bg-[radial-gradient(circle_at_center,rgba(124,58,237,0.32),transparent_45%),#030712] p-6 text-center"><div><PlayCircle className="mx-auto h-11 w-11 text-amber-300"/><p className="mt-3 font-black">{ep?.freeForever?freeNote:t.locked}</p>{ep?.publicAvailableAt&&!ep?.freeForever&&<p className="mt-1 text-xs text-white/55">{t.opens}: {new Date(ep.publicAvailableAt).toLocaleDateString()}</p>}</div></div>}
               </div>
               <div className="p-5"><p className="text-xs font-black uppercase tracking-[.16em] text-cyan-200">{t.season} {ep.season} • {t.episode} {ep.episode}</p><h2 className="mt-2 text-2xl font-black">{EPISODE_TITLES[currentLanguage]?.[ep.id]||EPISODE_TITLES.en[ep.id]||ep.title}</h2>{canOpen&&<Link to={`/O2OLStudio?episode=${encodeURIComponent(ep.id)}`} className="mt-4 inline-flex items-center gap-2 rounded-full border border-fuchsia-300/30 bg-fuchsia-500/15 px-4 py-2 text-sm font-black text-fuchsia-100 hover:bg-fuchsia-500/25"><PlayCircle className="h-5 w-5"/>{t.watch} {ep.episode}</Link>}
-              {!canOpen&&ep?.unlockPriceCents&&promoFree&&<Link to={`/O2OLStudio?episode=${encodeURIComponent(ep.id)}`} className="mt-4 inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-black text-white"><PlayCircle className="h-4 w-4"/>{t.watch} {ep.episode}</Link>}
-              {!canOpen&&ep?.unlockPriceCents&&!promoFree&&(isAuthenticated?(
-                <span className="mt-4 block">
-                  <button type="button" disabled={unlockingId===ep.id} onClick={()=>setConfirmEpisode(ep)} className="inline-flex items-center gap-2 rounded-full bg-fuchsia-600 px-4 py-2 text-sm font-black text-white transition hover:brightness-110 disabled:opacity-60">
-                    {unlockingId===ep.id?<Loader2 className="h-4 w-4 animate-spin"/>:<CreditCard className="h-4 w-4"/>}{unlockingId===ep.id?t.unlocking:t.unlockBtn}
-                  </button>
-                  {unlockErrors[ep.id]&&<span className="mt-2 block text-xs font-bold text-amber-200">{unlockErrors[ep.id]} <Link to="/Credit" className="underline">{t.addCredit}</Link></span>}
-                </span>
-              ):(
-                <Link to={`/O2OLStudio?episode=${encodeURIComponent(ep.id)}`} className="mt-4 inline-flex items-center gap-2 rounded-full bg-fuchsia-600 px-4 py-2 text-sm font-black text-white transition hover:brightness-110"><CreditCard className="h-4 w-4"/>{t.unlockBtn}</Link>
-              ))}</div>
+              {!canOpen&&ep?.mediaReady===false&&<p className="mt-4 text-sm text-white/60">{t.locked}</p>}</div>
             </article>;
           })}
         </div>}
       </div>
     </section>
-    <UnlockPriceDialog
-      open={Boolean(confirmEpisode)}
-      title={confirmEpisode?.title ? 'Unlock '+confirmEpisode.title : 'Unlock O2OL Studio Episode'}
-      priceCents={Number(confirmEpisode?.unlockPriceCents||100)}
-      terms="One-time unlock — yours forever."
-      balanceCents={creditBalance}
-      busy={Boolean(confirmEpisode&&unlockingId===confirmEpisode.id)}
-      error={confirmEpisode ? (unlockErrors[confirmEpisode.id]||'') : ''}
-      onUnlock={()=>confirmEpisode&&handleUnlock(confirmEpisode)}
-      onClose={()=>setConfirmEpisode(null)}
-    />
   </main>;
 }

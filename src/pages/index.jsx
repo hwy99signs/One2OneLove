@@ -11,7 +11,6 @@ import Analytics from './Analytics';
 import AdminMfaGate from '@/components/admin/AdminMfaGate.jsx';
 import MemoryLane from './MemoryLane';
 import LoveNotes from './LoveNotes';
-import SendCredits from './SendCredits';
 import CoupleSupport from './CoupleSupport';
 import LoveLanguageQuiz from './LoveLanguageQuiz';
 import DateIdeas from './DateIdeas';
@@ -50,39 +49,32 @@ import Reviews from './Reviews';
 import LeaveReview from './LeaveReview';
 import Suggestions from './Suggestions';
 import Chat from './Chat';
-import PaymentSuccess from './PaymentSuccess';
-import Subscription from './Subscription';
-import Amora from './Amora';
 import TokenSystemDashboard from './TokenSystemDashboard';
-import VerifyPhone from './VerifyPhone';
 import Professionals from './Professionals';
 import ProfessionalSignup from './ProfessionalSignup';
 import TherapistSignup from './TherapistSignup';
 import InfluencerSignup from './InfluencerSignup';
-import Credit from './Credit';
 import FeaturePricing from './FeaturePricing';
-import PaidFeatureGate from '@/components/pricing/PaidFeatureGate';
 import PaidGameSessionGate from '@/components/pricing/PaidGameSessionGate';
-import CoachingConsentGate from '@/components/coaching/CoachingConsentGate.jsx';
 import ExternalMyMatchIQRedirect from './ExternalMyMatchIQRedirect';
 import O2OLStudio from './O2OLStudio';
 import O2OLStudioEpisodes from './O2OLStudioEpisodes';
 import TikTokPost from './TikTokPost';
 import NotFound from './NotFound';
 import FeatureUnavailable from './FeatureUnavailable';
-import AIContentCreator from './AIContentCreator';
+import RetiredFeature from './RetiredFeature';
 import LaunchAccessGate from '@/components/launch/LaunchAccessGate.jsx';
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import { trackPageView } from '@/lib/interactionAnalytics';
 
 const PAGES = {
-  Home, PublicCatalog, AboutUs, SignIn, SignUp, AdminAccess, Admin, Analytics, TokenSystemDashboard, Amora, MemoryLane, LoveNotes, SendCredits, CoupleSupport,
+  Home, PublicCatalog, AboutUs, SignIn, SignUp, AdminAccess, Admin, Analytics, TokenSystemDashboard, MemoryLane, LoveNotes, CoupleSupport,
   LoveLanguageQuiz, DateIdeas, Profile, Invite, PodcastsSupport, ArticlesSupport, RelationshipQuizzes,
   AnniversaryTracker, ForgotPassword, Dashboard, RelationshipMilestones, RelationshipGoals,
   CommunicationPractice, CouplesProfile, CoupleActivities, CooperativeGames, Pests, PoolPingPong, IThoughtSo, Scrabluko, WhatShouldTheyDo, ScratchGame, LikeMinded, SharedJournals, CouplesDashboard,
   CouplesCalendar, LGBTQSupport, HelpCenter, ContactUs, PrivacyPolicy, TermsOfService, Reviews,
-  LeaveReview, Suggestions, Chat, PaymentSuccess, Subscription, VerifyPhone,
-  Professionals, ProfessionalSignup, TherapistSignup, InfluencerSignup, Credit, FeaturePricing, O2OLStudio, Episodes: O2OLStudioEpisodes,
+  LeaveReview, Suggestions, Chat,
+  Professionals, ProfessionalSignup, TherapistSignup, InfluencerSignup, FeaturePricing, O2OLStudio, Episodes: O2OLStudioEpisodes,
 };
 
 function _getCurrentPage(url) {
@@ -124,10 +116,10 @@ function PagesContent() {
           <Route path="/Admin" element={<AdminMfaGate><Admin /></AdminMfaGate>} />
           <Route path="/Analytics" element={<AdminMfaGate><Analytics /></AdminMfaGate>} />
           <Route path="/TokenSystemDashboard" element={<AdminMfaGate><TokenSystemDashboard /></AdminMfaGate>} />
-          <Route path="/MemoryLane" element={<PaidFeatureGate featureCode="memories_unlock"><MemoryLane /></PaidFeatureGate>} />
-          <Route path="/Memories" element={<PaidFeatureGate featureCode="memories_unlock"><MemoryLane /></PaidFeatureGate>} />
+          <Route path="/MemoryLane" element={<MemoryLane />} />
+          <Route path="/Memories" element={<MemoryLane />} />
           <Route path="/LoveNotes" element={<LoveNotes />} />
-          <Route path="/SendCredits" element={<SendCredits />} />
+          <Route path="/SendCredits" element={<Navigate to="/LoveNotes" replace />} />
           <Route path="/CoupleSupport" element={<CoupleSupport />} />
           <Route path="/LoveLanguageQuiz" element={<LoveLanguageQuiz />} />
           <Route path="/DateIdeas" element={<DateIdeas />} />
@@ -144,8 +136,8 @@ function PagesContent() {
           <Route path="/Dashboard" element={<Dashboard />} />
           <Route path="/Community" element={<Chat />} />
           <Route path="/Communities" element={<Chat />} />
-          <Route path="/RelationshipMilestones" element={<PaidFeatureGate featureCode="milestones_unlock"><RelationshipMilestones /></PaidFeatureGate>} />
-          <Route path="/RelationshipGoals" element={<PaidFeatureGate featureCode="goals_unlock"><RelationshipGoals /></PaidFeatureGate>} />
+          <Route path="/RelationshipMilestones" element={<RelationshipMilestones />} />
+          <Route path="/RelationshipGoals" element={<RelationshipGoals />} />
           <Route path="/CommunicationPractice" element={<CommunicationPractice />} />
           <Route path="/CouplesProfile" element={<CouplesProfile />} />
           <Route path="/CoupleActivities" element={<CoupleActivities />} />
@@ -159,9 +151,9 @@ function PagesContent() {
           <Route path="/Games" element={<PaidGameSessionGate image="/game-cards/card-what-should.jpg" backdrop="#2e1020" game="what_should_they_do" title="What Should They Do?"><WhatShouldTheyDo /></PaidGameSessionGate>} />
           <Route path="/ScratchGame" element={<ScratchGame />} />
           <Route path="/LikeMinded" element={<LikeMinded />} />
-          <Route path="/SharedJournals" element={<PaidFeatureGate featureCode="journals_unlock"><SharedJournals /></PaidFeatureGate>} />
+          <Route path="/SharedJournals" element={<SharedJournals />} />
           <Route path="/CouplesDashboard" element={<CouplesDashboard />} />
-          <Route path="/CouplesCalendar" element={<PaidFeatureGate featureCode="calendar_unlock"><CouplesCalendar /></PaidFeatureGate>} />
+          <Route path="/CouplesCalendar" element={<CouplesCalendar />} />
           <Route path="/LGBTQSupport" element={<LGBTQSupport />} />
           <Route path="/HelpCenter" element={<HelpCenter />} />
           <Route path="/ContactUs" element={<ContactUs />} />
@@ -173,13 +165,13 @@ function PagesContent() {
           <Route path="/Chat" element={<Chat />} />
           <Route path="/ChatRooms" element={<Chat />} />
           <Route path="/ChatRoom" element={<Chat />} />
-          <Route path="/PaymentSuccess" element={<PaymentSuccess />} />
-          <Route path="/payment-success" element={<PaymentSuccess />} />
-          <Route path="/Tokens" element={<Navigate to="/Credit" replace />} />
-          <Route path="/Amora" element={<CoachingConsentGate source="amora" exitTo="/Home"><Amora /></CoachingConsentGate>} />
-          <Route path="/Subscription" element={<Navigate to="/Credit" replace />} />
+          <Route path="/PaymentSuccess" element={<Navigate to="/Home" replace />} />
+          <Route path="/payment-success" element={<Navigate to="/Home" replace />} />
+          <Route path="/Tokens" element={<Navigate to="/FeaturePricing" replace />} />
+          <Route path="/Amora" element={<RetiredFeature feature="Amora — AI Relationship Coach" />} />
+          <Route path="/Subscription" element={<Navigate to="/FeaturePricing" replace />} />
           <Route path="/MyMatchIQ/Subscription" element={<ExternalMyMatchIQRedirect />} />
-          <Route path="/VerifyPhone" element={<VerifyPhone />} />
+          <Route path="/VerifyPhone" element={<Navigate to="/Home" replace />} />
           <Route path="/Professionals" element={<Professionals />} />
           <Route path="/ProfessionalSignup" element={<ProfessionalSignup />} />
           <Route path="/TherapistSignup" element={<TherapistSignup />} />
@@ -194,7 +186,7 @@ function PagesContent() {
           <Route path="/MyMatchIQ/Passport" element={<ExternalMyMatchIQRedirect />} />
           <Route path="/MyMatchIQ/Bianca" element={<ExternalMyMatchIQRedirect />} />
           <Route path="/MyMatchIQ/Credits" element={<ExternalMyMatchIQRedirect />} />
-          <Route path="/Credit" element={<Credit />} />
+          <Route path="/Credit" element={<Navigate to="/FeaturePricing" replace />} />
           <Route path="/FeaturePricing" element={<FeaturePricing />} />
           <Route path="/pricing" element={<FeaturePricing />} />
           <Route path="/MyMatchIQ/Actions" element={<ExternalMyMatchIQRedirect />} />
@@ -207,13 +199,13 @@ function PagesContent() {
           {/* Launch-deferred surfaces stay preserved in source but are not customer-facing. */}
           <Route path="/CounselingSupport" element={<FeatureUnavailable feature="Counseling Support" />} />
           <Route path="/InfluencersSupport" element={<FeatureUnavailable feature="Influencer Support" />} />
-          <Route path="/AIContentCreator" element={<AIContentCreator />} />
+          <Route path="/AIContentCreator" element={<RetiredFeature feature="AI Content Creator" />} />
           <Route path="/RelationshipCoach" element={<Navigate to="/Amora" replace />} />
           <Route path="/Meditation" element={<FeatureUnavailable feature="Meditation" />} />
           <Route path="/Developer" element={<FeatureUnavailable feature="Developer" />} />
           <Route path="/Leaderboard" element={<FeatureUnavailable feature="Leaderboard" />} />
           <Route path="/Achievements" element={<FeatureUnavailable feature="Achievements" />} />
-          <Route path="/PremiumFeatures" element={<Navigate to="/Credit" replace />} />
+          <Route path="/PremiumFeatures" element={<Navigate to="/FeaturePricing" replace />} />
           <Route path="/FindFriends" element={<FeatureUnavailable feature="Find Friends" />} />
           <Route path="/FriendRequests" element={<FeatureUnavailable feature="Friend Requests" />} />
           <Route path="/Blog" element={<Navigate to="/ArticlesSupport" replace />} />

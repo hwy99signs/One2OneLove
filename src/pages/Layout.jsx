@@ -1,5 +1,5 @@
 
-import { isO2OLFreePromoActive, isO2OLPromoFreeFeature, freePromoMessage } from '@/lib/o2olFreePromo2026';
+import { freePromoMessage } from '@/lib/o2olFreePromo2026';
 import SaveConsentDialog from '@/components/launch/SaveConsentDialog';
 
 import React, { useState, createContext, useContext, useRef, useEffect } from "react";
@@ -19,50 +19,47 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-function MenuFeatureIndicator({ featureCode }) {
-  // Owner order (2026-10-31): no FREE badges on user-facing tabs/menus.
-  // Accessible features show no tag; the paid lock returns after the promo.
-  const free = ['premium_game_session', 'studio_episode_unlock', 'podcast_episode_unlock'].includes(featureCode) || isO2OLPromoFreeFeature(featureCode);
-  return free
-    ? null
-    : <span className="ml-auto" aria-label="Locked">🔒</span>;
+function MenuFeatureIndicator() {
+  // Owner decision (2026-11-25): the whole platform is free — no feature
+  // is locked, so menus never show a lock or a badge.
+  return null;
 }
 
 const translations = {
   en: {
-    nav: { home: "Home", action: "Action", profile: "Profile", signIn: "Sign In", signUp: "Sign Up", invite: "Invite", community: "Community", aiCreator: "AI Content Creator", lgbtq: "LGBTQ+ Support", developer: "Dev", requests: "Requests", chat: "Chat", signOut: "Sign Out", language:"Language", buyTokens:"BUY CREDIT", openMenu:"Open navigation menu", closeMenu:"Close navigation menu" },
-    actionMenu: { sendLoveNote: "Send A Love Note", coupleSupport: "Relationship Support", lgbtqSupport: "LGBTQ+ Support", relationshipQuizzes: "Relationship Quizzes", relationshipMilestones: "Milestones & Anniversaries", relationshipGoals: "Relationship Goals", dateIdeas: "Date Ideas", memoryLane: "Memory Lane", games: "Games", aiCreator: "AI Content Creator", community: "Community & Chat Rooms", studio: "O2OL Studio", journals: "Journals", calendar: "Calendar" },
-    announcement: { label: "NEW · THE CREDIT SYSTEM IS HERE", text: "Buy Credit to send Love Notes and unlock pay-as-you-go features across One2OneLove." }
+    nav: { home: "Home", action: "Action", profile: "Profile", signIn: "Sign In", signUp: "Sign Up", invite: "Invite", community: "Community", lgbtq: "LGBTQ+ Support", developer: "Dev", requests: "Requests", chat: "Chat", signOut: "Sign Out", language:"Language", openMenu:"Open navigation menu", closeMenu:"Close navigation menu" },
+    actionMenu: { sendLoveNote: "Send A Love Note", coupleSupport: "Relationship Support", lgbtqSupport: "LGBTQ+ Support", relationshipQuizzes: "Relationship Quizzes", relationshipMilestones: "Milestones & Anniversaries", relationshipGoals: "Relationship Goals", dateIdeas: "Date Ideas", memoryLane: "Memory Lane", games: "Games", community: "Community & Chat Rooms", studio: "O2OL Studio", journals: "Journals", calendar: "Calendar" },
+    announcement: { label: "100% FREE", text: "One2OneLove is 100% FREE — every feature, no signup, no card." }
   },
   es: {
-    nav: { home: "Inicio", action: "Acción", profile: "Perfil", signIn: "Iniciar Sesión", signUp: "Registrarse", invite: "Invitar", community: "Comunidad", aiCreator: "Creador de Contenido IA", lgbtq: "Apoyo LGBTQ+", developer: "Dev", requests: "Solicitudes", chat: "Chat", signOut: "Cerrar Sesión", language:"Idioma", buyTokens:"AGREGAR CRÉDITO", openMenu:"Abrir menú de navegación", closeMenu:"Cerrar menú de navegación" },
-    actionMenu: { sendLoveNote: "Enviar una Nota de Amor", coupleSupport: "Apoyo para Relaciones", lgbtqSupport: "Apoyo LGBTQ+", relationshipQuizzes: "Cuestionarios de Relaciones", relationshipMilestones: "Hitos y Aniversarios", relationshipGoals: "Metas de Relación", dateIdeas: "Ideas para Citas", memoryLane: "Carril de Recuerdos", games: "Juegos", aiCreator: "Creador de Contenido IA", community: "Comunidad y Salas de Chat", studio: "Estudio O2OL", journals: "Diarios", calendar: "Calendario" },
-    announcement: { label: "NUEVO · EL SISTEMA DE CRÉDITOS YA ESTÁ AQUÍ", text: "Compra créditos para enviar Notas de Amor y desbloquear funciones de pago por uso en todo One2OneLove." }
+    nav: { home: "Inicio", action: "Acción", profile: "Perfil", signIn: "Iniciar Sesión", signUp: "Registrarse", invite: "Invitar", community: "Comunidad", lgbtq: "Apoyo LGBTQ+", developer: "Dev", requests: "Solicitudes", chat: "Chat", signOut: "Cerrar Sesión", language:"Idioma", openMenu:"Abrir menú de navegación", closeMenu:"Cerrar menú de navegación" },
+    actionMenu: { sendLoveNote: "Enviar una Nota de Amor", coupleSupport: "Apoyo para Relaciones", lgbtqSupport: "Apoyo LGBTQ+", relationshipQuizzes: "Cuestionarios de Relaciones", relationshipMilestones: "Hitos y Aniversarios", relationshipGoals: "Metas de Relación", dateIdeas: "Ideas para Citas", memoryLane: "Carril de Recuerdos", games: "Juegos", community: "Comunidad y Salas de Chat", studio: "Estudio O2OL", journals: "Diarios", calendar: "Calendario" },
+    announcement: { label: "100% FREE", text: "One2OneLove is 100% FREE — every feature, no signup, no card." }
   },
   fr: {
-    nav: { home: "Accueil", action: "Action", profile: "Profil", signIn: "Se Connecter", signUp: "S'inscrire", invite: "Inviter", community: "Communauté", aiCreator: "Créateur de Contenu IA", lgbtq: "Soutien LGBTQ+", developer: "Dev", requests: "Demandes", chat: "Chat", signOut: "Se Déconnecter", language:"Langue", buyTokens:"AJOUTER DU CRÉDIT", openMenu:"Ouvrir le menu de navigation", closeMenu:"Fermer le menu de navigation" },
-    actionMenu: { sendLoveNote: "Envoyer une Note d'Amour", coupleSupport: "Soutien aux Relations", lgbtqSupport: "Soutien LGBTQ+", relationshipQuizzes: "Quiz sur les Relations", relationshipMilestones: "Jalons et Anniversaires", relationshipGoals: "Objectifs de Relation", dateIdeas: "Idées de Rendez-vous", memoryLane: "Allée des Souvenirs", games: "Jeux", aiCreator: "Créateur de Contenu IA", community: "Communauté et Salons de Discussion", studio: "Studio O2OL", journals: "Journaux", calendar: "Calendrier" },
-    announcement: { label: "NOUVEAU · LE SYSTÈME DE CRÉDITS EST ARRIVÉ", text: "Achetez des crédits pour envoyer des Notes d’Amour et débloquer les fonctions à l’usage sur tout One2OneLove." }
+    nav: { home: "Accueil", action: "Action", profile: "Profil", signIn: "Se Connecter", signUp: "S'inscrire", invite: "Inviter", community: "Communauté", lgbtq: "Soutien LGBTQ+", developer: "Dev", requests: "Demandes", chat: "Chat", signOut: "Se Déconnecter", language:"Langue", openMenu:"Ouvrir le menu de navigation", closeMenu:"Fermer le menu de navigation" },
+    actionMenu: { sendLoveNote: "Envoyer une Note d'Amour", coupleSupport: "Soutien aux Relations", lgbtqSupport: "Soutien LGBTQ+", relationshipQuizzes: "Quiz sur les Relations", relationshipMilestones: "Jalons et Anniversaires", relationshipGoals: "Objectifs de Relation", dateIdeas: "Idées de Rendez-vous", memoryLane: "Allée des Souvenirs", games: "Jeux", community: "Communauté et Salons de Discussion", studio: "Studio O2OL", journals: "Journaux", calendar: "Calendrier" },
+    announcement: { label: "100% FREE", text: "One2OneLove is 100% FREE — every feature, no signup, no card." }
   },
   it: {
-    nav: { home: "Home", action: "Azione", profile: "Profilo", signIn: "Accedi", signUp: "Iscriviti", invite: "Invita", community: "Comunità", aiCreator: "Creatore de Contenuti IA", lgbtq: "Supporto LGBTQ+", developer: "Dev", requests: "Richieste", chat: "Chat", signOut: "Esci", language:"Lingua", buyTokens:"AGGIUNGI CREDITO", openMenu:"Apri menu di navigazione", closeMenu:"Chiudi menu di navigazione" },
-    actionMenu: { sendLoveNote: "Invia una Nota d'Amore", coupleSupport: "Supporto per Relazioni", lgbtqSupport: "Supporto LGBTQ+", relationshipQuizzes: "Quiz sulle Relazioni", relationshipMilestones: "Traguardi e Anniversari", relationshipGoals: "Obiettivi di Relazione", dateIdeas: "Idee per Appuntamenti", memoryLane: "Viale dei Ricordi", games: "Giochi", aiCreator: "Creatore de Contenuti IA", community: "Community e Stanze di Chat", studio: "Studio O2OL", journals: "Diari", calendar: "Calendario" },
-    announcement: { label: "NOVITÀ · IL SISTEMA DI CREDITI È ARRIVATO", text: "Acquista crediti per inviare Note d’Amore e sbloccare le funzioni a consumo su tutto One2OneLove." }
+    nav: { home: "Home", action: "Azione", profile: "Profilo", signIn: "Accedi", signUp: "Iscriviti", invite: "Invita", community: "Comunità", lgbtq: "Supporto LGBTQ+", developer: "Dev", requests: "Richieste", chat: "Chat", signOut: "Esci", language:"Lingua", openMenu:"Apri menu di navigazione", closeMenu:"Chiudi menu di navigazione" },
+    actionMenu: { sendLoveNote: "Invia una Nota d'Amore", coupleSupport: "Supporto per Relazioni", lgbtqSupport: "Supporto LGBTQ+", relationshipQuizzes: "Quiz sulle Relazioni", relationshipMilestones: "Traguardi e Anniversari", relationshipGoals: "Obiettivi di Relazione", dateIdeas: "Idee per Appuntamenti", memoryLane: "Viale dei Ricordi", games: "Giochi", community: "Community e Stanze di Chat", studio: "Studio O2OL", journals: "Diari", calendar: "Calendario" },
+    announcement: { label: "100% FREE", text: "One2OneLove is 100% FREE — every feature, no signup, no card." }
   },
   de: {
-    nav: { home: "Startseite", action: "Aktion", profile: "Profil", signIn: "Anmelden", signUp: "Registrieren", invite: "Einladen", community: "Gemeinschaft", aiCreator: "KI-Content-Ersteller", lgbtq: "LGBTQ+ Unterstützung", developer: "Dev", requests: "Anfragen", chat: "Chat", signOut: "Abmelden", language:"Sprache", buyTokens:"CREDIT HINZUFÜGEN", openMenu:"Navigationsmenü öffnen", closeMenu:"Navigationsmenü schließen" },
-    actionMenu: { sendLoveNote: "Eine Liebesbotschaft Senden", coupleSupport: "Beziehungsunterstützung", lgbtqSupport: "LGBTQ+ Unterstützung", relationshipQuizzes: "Beziehungsquiz", relationshipMilestones: "Meilensteine & Jahrestage", relationshipGoals: "Beziehungsziele", dateIdeas: "Date-Ideen", memoryLane: "Erinnerungsgasse", games: "Spiele", aiCreator: "KI-Content-Ersteller", community: "Community & Chaträume", studio: "O2OL Studio", journals: "Tagebücher", calendar: "Kalender" },
-    announcement: { label: "NEU · DAS CREDIT-SYSTEM IST DA", text: "Kaufe Credits, um Liebesnotizen zu senden und nutzungsbasierte Funktionen auf ganz One2OneLove freizuschalten." }
+    nav: { home: "Startseite", action: "Aktion", profile: "Profil", signIn: "Anmelden", signUp: "Registrieren", invite: "Einladen", community: "Gemeinschaft", lgbtq: "LGBTQ+ Unterstützung", developer: "Dev", requests: "Anfragen", chat: "Chat", signOut: "Abmelden", language:"Sprache", openMenu:"Navigationsmenü öffnen", closeMenu:"Navigationsmenü schließen" },
+    actionMenu: { sendLoveNote: "Eine Liebesbotschaft Senden", coupleSupport: "Beziehungsunterstützung", lgbtqSupport: "LGBTQ+ Unterstützung", relationshipQuizzes: "Beziehungsquiz", relationshipMilestones: "Meilensteine & Jahrestage", relationshipGoals: "Beziehungsziele", dateIdeas: "Date-Ideen", memoryLane: "Erinnerungsgasse", games: "Spiele", community: "Community & Chaträume", studio: "O2OL Studio", journals: "Tagebücher", calendar: "Kalender" },
+    announcement: { label: "100% FREE", text: "One2OneLove is 100% FREE — every feature, no signup, no card." }
   },
   nl: {
-    nav: { home: "Home", action: "Actie", profile: "Profil", signIn: "Inloggen", signUp: "Aanmelden", invite: "Uitnodigen", community: "Gemeenschap", aiCreator: "AI Content Maker", lgbtq: "LGBTQ+ Ondersteuning", developer: "Dev", requests: "Verzoeken", chat: "Chat", signOut: "Uitloggen" },
-    actionMenu: { sendLoveNote: "Stuur een Liefdebriefje", coupleSupport: "Relatie Ondersteuning", lgbtqSupport: "LGBTQ+ Ondersteuning", relationshipQuizzes: "Relatie Quizzen", relationshipMilestones: "Mijlpalen & Jubilea", relationshipGoals: "Relatie Doelen", dateIdeas: "Date Ideeën", memoryLane: "Herinnerings Laan", games: "Spellen", aiCreator: "AI Content Maker", community: "Community & Chatrooms", studio: "O2OL Studio", journals: "Dagboeken", calendar: "Kalender" },
-    announcement: { label: "NIEUW · HET CREDITSYSTEEM IS ER", text: "Koop credits om Liefdesnotities te sturen en functies met betaling per gebruik op heel One2OneLove te ontgrendelen." }
+    nav: { home: "Home", action: "Actie", profile: "Profil", signIn: "Inloggen", signUp: "Aanmelden", invite: "Uitnodigen", community: "Gemeenschap", lgbtq: "LGBTQ+ Ondersteuning", developer: "Dev", requests: "Verzoeken", chat: "Chat", signOut: "Uitloggen" },
+    actionMenu: { sendLoveNote: "Stuur een Liefdebriefje", coupleSupport: "Relatie Ondersteuning", lgbtqSupport: "LGBTQ+ Ondersteuning", relationshipQuizzes: "Relatie Quizzen", relationshipMilestones: "Mijlpalen & Jubilea", relationshipGoals: "Relatie Doelen", dateIdeas: "Date Ideeën", memoryLane: "Herinnerings Laan", games: "Spellen", community: "Community & Chatrooms", studio: "O2OL Studio", journals: "Dagboeken", calendar: "Kalender" },
+    announcement: { label: "100% FREE", text: "One2OneLove is 100% FREE — every feature, no signup, no card." }
   },
   pt: {
-    nav: { home: "Início", action: "Ação", profile: "Perfil", signIn: "Entrar", signUp: "Inscrever-se", invite: "Convidar", community: "Comunidade", aiCreator: "Criador de Conteúdo IA", lgbtq: "Apoio LGBTQ+", developer: "Dev", requests: "Solicitações", chat: "Chat", signOut: "Sair" },
-    actionMenu: { sendLoveNote: "Enviar uma Nota de Amor", coupleSupport: "Apoio para Relacionamentos", lgbtqSupport: "Apoio LGBTQ+", relationshipQuizzes: "Questionários de Relacionamento", relationshipMilestones: "Marcos e Aniversários", relationshipGoals: "Metas de Relacionamento", dateIdeas: "Ideas de Encontros", memoryLane: "Alameda das Memórias", games: "Jogos", aiCreator: "Criador de Conteúdo IA", community: "Comunidade e Salas de Bate-papo", studio: "Estúdio O2OL", journals: "Diários", calendar: "Calendário" },
-    announcement: { label: "NOVO · O SISTEMA DE CRÉDITOS CHEGOU", text: "Compre créditos para enviar Notas de Amor e desbloquear funções pagas por uso em todo o One2OneLove." }
+    nav: { home: "Início", action: "Ação", profile: "Perfil", signIn: "Entrar", signUp: "Inscrever-se", invite: "Convidar", community: "Comunidade", lgbtq: "Apoio LGBTQ+", developer: "Dev", requests: "Solicitações", chat: "Chat", signOut: "Sair" },
+    actionMenu: { sendLoveNote: "Enviar uma Nota de Amor", coupleSupport: "Apoio para Relacionamentos", lgbtqSupport: "Apoio LGBTQ+", relationshipQuizzes: "Questionários de Relacionamento", relationshipMilestones: "Marcos e Aniversários", relationshipGoals: "Metas de Relacionamento", dateIdeas: "Ideas de Encontros", memoryLane: "Alameda das Memórias", games: "Jogos", community: "Comunidade e Salas de Bate-papo", studio: "Estúdio O2OL", journals: "Diários", calendar: "Calendário" },
+    announcement: { label: "100% FREE", text: "One2OneLove is 100% FREE — every feature, no signup, no card." }
   }
 };
 
@@ -395,8 +392,8 @@ function LanguageContent({ children, currentPageName }) {
       {t.announcement && location.pathname.toLowerCase() !== '/subscription' && (
         <div className="relative w-full max-w-[100vw] overflow-hidden bg-indigo-950 py-2 text-white" style={{ contain: 'layout paint' }}>
           <div className="o2ol-announcement-track whitespace-nowrap text-lg md:text-xl font-medium tracking-wide" style={{ fontFamily: "'Outfit', 'Inter', sans-serif" }}>
-            <span className="font-extrabold text-yellow-400 uppercase tracking-widest text-sm mr-3">{isO2OLFreePromoActive() ? ({en:'FREE PROMO',es:'PROMOCIÓN GRATIS',fr:'OFFRE GRATUITE',it:'PROMO GRATIS',de:'GRATIS-AKTION'}[currentLanguage] || 'FREE PROMO') : t.announcement.label}</span> 
-            <span className="text-white/90">{isO2OLFreePromoActive() ? freePromoMessage(currentLanguage) : t.announcement.text}</span>
+            <span className="font-extrabold text-yellow-400 uppercase tracking-widest text-sm mr-3">{({en:'100% FREE',es:'100% GRATIS',fr:'100 % GRATUIT',it:'100% GRATIS',de:'100 % KOSTENLOS'}[currentLanguage] || '100% FREE')}</span>
+            <span className="text-white/90">{freePromoMessage(currentLanguage)}</span>
           </div>
         </div>
       )}
@@ -454,20 +451,6 @@ function LanguageContent({ children, currentPageName }) {
                 </div>
               )}
             </div>
-
-              <Link
-                to="/AIContentCreator"
-                className="inline-flex max-w-[112px] items-center justify-center rounded-full border border-white/30 bg-white/15 px-2 py-2 text-center text-xs font-bold leading-tight text-white transition hover:bg-white/25 2xl:max-w-none 2xl:px-3 2xl:text-sm"
-              >
-                ✨ {t.nav.aiCreator}
-              </Link>
-
-            <Link
-              to="/Credit"
-              className={'rounded-full bg-yellow-300 px-3 py-2 text-sm font-black text-blue-900 shadow-sm transition hover:bg-yellow-200'}
-            >
-              {t.nav.buyTokens || 'BUY CREDIT'}
-            </Link>
 
             {isAuthenticated ? (
               <>
@@ -601,15 +584,6 @@ function LanguageContent({ children, currentPageName }) {
                   )}
                 </div>
 
-                  <Link
-                    to="/AIContentCreator"
-                    className="flex items-center gap-2 rounded-lg bg-white/15 px-3 py-2.5 font-bold text-white transition hover:bg-white/25"
-                    onClick={() => { setMobileMenuOpen(false); setMobileActionOpen(false); }}
-                  >
-                    <Sparkles className="h-4 w-4" />
-                    {t.nav.aiCreator}
-                  </Link>
-
                 <Link
                   to={createPageUrl("Community")}
                   className="flex items-center gap-2 text-white hover:bg-white/10 px-3 py-2.5 rounded-lg transition-all"
@@ -637,16 +611,6 @@ function LanguageContent({ children, currentPageName }) {
                   </Link>
                 )}
                 <div className="border-t border-white/20 my-1.5"></div>
-                
-
-                <Link
-                  to="/Credit"
-                  className="flex items-center gap-2 rounded-lg bg-yellow-300 px-3 py-2.5 font-black text-blue-900 transition hover:bg-yellow-200"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <Gift className="h-4 w-4" />
-                  {t.nav.buyTokens || 'BUY CREDIT'}
-                </Link>
 
                 {/* Chat - Only show when authenticated */}
                 {isAuthenticated && (
@@ -775,7 +739,7 @@ function LanguageContent({ children, currentPageName }) {
                   <a href="https://www.pinterest.com/One2onelovers" target="_blank" rel="noopener noreferrer" aria-label="Pinterest"><PinterestIcon /></a>
                 </div>
               </div>
-              <div><h4 className="text-xl font-black mb-4">{fT.supportCol}</h4><FooterLink guestPath="/HelpCenter" onClick={() => navigate(createPageUrl("HelpCenter"))}>{fT.help}</FooterLink><FooterLink guestPath="/ContactUs" onClick={() => navigate(createPageUrl("ContactUs"))}>{fT.contact}</FooterLink><FooterLink guestPath="/PrivacyPolicy" onClick={() => navigate(createPageUrl("PrivacyPolicy"))}>{fT.privacy}</FooterLink><FooterLink guestPath="/TermsOfService" onClick={() => navigate(createPageUrl("TermsOfService"))}>{fT.terms}</FooterLink><FooterLink guestPath="/FeaturePricing" onClick={() => navigate("/FeaturePricing")}>Feature Price List</FooterLink></div>
+              <div><h4 className="text-xl font-black mb-4">{fT.supportCol}</h4><FooterLink guestPath="/HelpCenter" onClick={() => navigate(createPageUrl("HelpCenter"))}>{fT.help}</FooterLink><FooterLink guestPath="/ContactUs" onClick={() => navigate(createPageUrl("ContactUs"))}>{fT.contact}</FooterLink><FooterLink guestPath="/PrivacyPolicy" onClick={() => navigate(createPageUrl("PrivacyPolicy"))}>{fT.privacy}</FooterLink><FooterLink guestPath="/TermsOfService" onClick={() => navigate(createPageUrl("TermsOfService"))}>{fT.terms}</FooterLink><FooterLink guestPath="/FeaturePricing" onClick={() => navigate("/FeaturePricing")}>Feature List</FooterLink></div>
               <div><h4 className="text-xl font-black mb-4">{fT.company}</h4><FooterLink guestPath="/AboutUs" onClick={() => navigate(createPageUrl("AboutUs"))}>{fT.about}</FooterLink><FooterLink guestPath="/Reviews" onClick={() => navigate(createPageUrl("Reviews"))}>{fT.reviews}</FooterLink><FooterLink guestPath="/Suggestions" onClick={() => navigate(createPageUrl("Suggestions"))}>{fT.suggestions}</FooterLink><FooterLink guestPath="/Suggestions" onClick={() => navigate('/Suggestions?mode=problem')}>{fT.reportProblem}</FooterLink><a href="https://mymatchiq.com" target="_blank" rel="noreferrer" className="block text-left py-1 hover:text-yellow-200">MyMatchIQ</a></div>
             </div>
             <div className="max-w-7xl mx-auto border-t border-white/25 mt-8 pt-4 text-center text-sm">{fT.copyright}</div>

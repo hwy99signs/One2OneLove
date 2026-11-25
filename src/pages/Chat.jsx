@@ -12,11 +12,13 @@ import {
   createCommunityChatTopic,
   sendCommunityChatMessage,
   touchCommunityChatPresence,
+  leaveCommunityChatRoom,
   beaconLeaveCommunityChatRoom,
   deleteCommunityChatMessage,
   reportCommunityChatMessage,
   muteCommunityChatUser,
 } from '@/lib/communityChatService';
+import { getGuestId, getGuestName, setGuestName } from '@/lib/guestIdentity';
 import VotingCard from '@/components/chat/VotingCard';
 import { questionForRoom, CLICK_VOTE_QUESTIONS } from '@/lib/votingQuestions';
 import { getClickResults } from '@/lib/votingService';
@@ -93,7 +95,7 @@ const copy = {
     title: 'One2OneLove Chat Rooms', subtitle: 'Real conversations about love, dating, marriage and relationships.', back: 'Back',
     online: 'active now', messages: 'messages', choose: 'Choose a conversation', loading: 'Loading conversations…',
     empty: 'The conversation starter is above. Be the first to answer and get this room talking.', placeholder: 'Share your thoughts respectfully…', send: 'Send',
-    signIn: 'Sign in to join the conversation', readOnly: 'You can read the conversation now. Sign in to post.', featuredBadgeOpen: '💯 Voting closed · Results saved', featuredBadgeClosed: '💯 Voting closed · Results saved', moreVoting: 'Keep on the lookout for more votings.', resultsTitle: 'Latest Click-to-Vote results', votesWord: 'votes', noVotes: 'No votes yet — be the first on the homepage.', voteHome: 'Vote on the homepage', nextResults: 'Next',
+    signIn: 'Sign in to join the conversation', readOnly: 'You are chatting as a guest — no account needed. Pick a display name and join in.', guestName: 'Your display name', guestNamePlaceholder: 'e.g. Alex', featuredBadgeOpen: '💯 Voting closed · Results saved', featuredBadgeClosed: '💯 Voting closed · Results saved', moreVoting: 'Keep on the lookout for more votings.', resultsTitle: 'Latest Click-to-Vote results', votesWord: 'votes', noVotes: 'No votes yet — be the first on the homepage.', voteHome: 'Vote on the homepage', nextResults: 'Next',
     guidelines: 'Respect the room', guidelinesBody: 'Be kind. No harassment, threats, hate speech, explicit sexual content, personal attacks, or sharing someone else’s private information.',
     prompt: 'Conversation starter', delete: 'Delete message', refresh: 'Refresh', defaultPrompt:'What is on your mind today?', loadRoomsError:'Unable to load chat rooms.', emptyRooms:'No conversations are available right now.', loadMessagesError:'Unable to load messages.', sendError:'Unable to send message.', deleteError:'Unable to delete message.',
     prompts: {
@@ -111,7 +113,7 @@ const copy = {
     title: 'Salas de Chat One2OneLove', subtitle: 'Conversaciones reales sobre amor, citas, matrimonio y relaciones.', back: 'Volver',
     online: 'activos ahora', messages: 'mensajes', choose: 'Elige una conversación', loading: 'Cargando conversaciones…',
     empty: 'El tema para conversar está arriba. Sé la primera persona en responder y dar vida a esta sala.', placeholder: 'Comparte tus ideas con respeto…', send: 'Enviar',
-    signIn: 'Inicia sesión para participar', readOnly: 'Puedes leer la conversación. Inicia sesión para publicar.', featuredBadgeOpen: '💯 Votación cerrada · Resultados guardados', featuredBadgeClosed: '💯 Votación cerrada · Resultados guardados', moreVoting: 'Mantente atento a más votaciones.', resultsTitle: 'Últimos resultados de Vota con un clic', votesWord: 'votos', noVotes: 'Aún no hay votos — sé el primero en la página principal.', voteHome: 'Vota en la página principal', nextResults: 'Siguiente',
+    signIn: 'Inicia sesión para participar', readOnly: 'Estás chateando como invitado — no necesitas una cuenta. Elige un nombre para mostrar y participa.', guestName: 'Tu nombre para mostrar', guestNamePlaceholder: 'ej. Alex', featuredBadgeOpen: '💯 Votación cerrada · Resultados guardados', featuredBadgeClosed: '💯 Votación cerrada · Resultados guardados', moreVoting: 'Mantente atento a más votaciones.', resultsTitle: 'Últimos resultados de Vota con un clic', votesWord: 'votos', noVotes: 'Aún no hay votos — sé el primero en la página principal.', voteHome: 'Vota en la página principal', nextResults: 'Siguiente',
     guidelines: 'Respeta la sala', guidelinesBody: 'Sé amable. No se permite acoso, amenazas, odio, contenido sexual explícito, ataques personales ni compartir información privada de otra persona.',
     prompt: 'Tema para conversar', delete: 'Eliminar mensaje', refresh: 'Actualizar', defaultPrompt:'¿Qué tienes en mente hoy?', loadRoomsError:'No se pudieron cargar las salas de chat.', emptyRooms:'No hay conversaciones disponibles en este momento.', loadMessagesError:'No se pudieron cargar los mensajes.', sendError:'No se pudo enviar el mensaje.', deleteError:'No se pudo eliminar el mensaje.',
     prompts: {
@@ -129,7 +131,7 @@ const copy = {
     title: 'Salons One2OneLove', subtitle: 'De vraies conversations sur l’amour, les rencontres, le mariage et les relations.', back: 'Retour',
     online: 'actifs maintenant', messages: 'messages', choose: 'Choisissez une conversation', loading: 'Chargement des conversations…',
     empty: 'Aucun message pour le moment. Lancez la conversation.', placeholder: 'Partagez vos pensées avec respect…', send: 'Envoyer',
-    signIn: 'Connectez-vous pour participer', readOnly: 'Vous pouvez lire la conversation. Connectez-vous pour publier.', featuredBadgeOpen: '💯 Vote terminé · Résultats enregistrés', featuredBadgeClosed: '💯 Vote terminé · Résultats enregistrés', moreVoting: 'Restez à l’affût des prochains votes.', resultsTitle: 'Derniers résultats du Vote en un clic', votesWord: 'votes', noVotes: 'Aucun vote pour l’instant — soyez le premier sur la page d’accueil.', voteHome: 'Votez sur la page d’accueil', nextResults: 'Suivant',
+    signIn: 'Connectez-vous pour participer', readOnly: 'Vous discutez en tant qu’invité — aucun compte nécessaire. Choisissez un nom d’affichage et participez.', guestName: 'Votre nom d’affichage', guestNamePlaceholder: 'ex. Alex', featuredBadgeOpen: '💯 Vote terminé · Résultats enregistrés', featuredBadgeClosed: '💯 Vote terminé · Résultats enregistrés', moreVoting: 'Restez à l’affût des prochains votes.', resultsTitle: 'Derniers résultats du Vote en un clic', votesWord: 'votes', noVotes: 'Aucun vote pour l’instant — soyez le premier sur la page d’accueil.', voteHome: 'Votez sur la page d’accueil', nextResults: 'Suivant',
     guidelines: 'Respectez le salon', guidelinesBody: 'Soyez bienveillant. Pas de harcèlement, menaces, haine, contenu sexuel explicite, attaques personnelles ou partage d’informations privées d’autrui.',
     prompt: 'Point de départ', delete: 'Supprimer le message', refresh: 'Actualiser', defaultPrompt:'À quoi pensez-vous aujourd’hui ?', loadRoomsError:'Impossible de charger les salons.', emptyRooms:'Aucune conversation n’est disponible pour le moment.', loadMessagesError:'Impossible de charger les messages.', sendError:'Impossible d’envoyer le message.', deleteError:'Impossible de supprimer le message.',
     prompts: {
@@ -147,7 +149,7 @@ const copy = {
     title: 'Stanze Chat One2OneLove', subtitle: 'Conversazioni vere su amore, incontri, matrimonio e relazioni.', back: 'Indietro',
     online: 'attivi ora', messages: 'messaggi', choose: 'Scegli una conversazione', loading: 'Caricamento conversazioni…',
     empty: 'Lo spunto di conversazione è qui sopra. Sii la prima persona a rispondere e ad animare la stanza.', placeholder: 'Condividi i tuoi pensieri con rispetto…', send: 'Invia',
-    signIn: 'Accedi per partecipare', readOnly: 'Puoi leggere la conversazione. Accedi per pubblicare.', featuredBadgeOpen: '💯 Votazione chiusa · Risultati salvati', featuredBadgeClosed: '💯 Votazione chiusa · Risultati salvati', moreVoting: 'Tieni d’occhio le prossime votazioni.', resultsTitle: 'Ultimi risultati di Vota con un clic', votesWord: 'voti', noVotes: 'Ancora nessun voto — sii il primo dalla pagina principale.', voteHome: 'Vota dalla pagina principale', nextResults: 'Avanti',
+    signIn: 'Accedi per partecipare', readOnly: 'Stai chattando come ospite — nessun account necessario. Scegli un nome visualizzato e partecipa.', guestName: 'Il tuo nome visualizzato', guestNamePlaceholder: 'es. Alex', featuredBadgeOpen: '💯 Votazione chiusa · Risultati salvati', featuredBadgeClosed: '💯 Votazione chiusa · Risultati salvati', moreVoting: 'Tieni d’occhio le prossime votazioni.', resultsTitle: 'Ultimi risultati di Vota con un clic', votesWord: 'voti', noVotes: 'Ancora nessun voto — sii il primo dalla pagina principale.', voteHome: 'Vota dalla pagina principale', nextResults: 'Avanti',
     guidelines: 'Rispetta la stanza', guidelinesBody: 'Sii gentile. Niente molestie, minacce, odio, contenuti sessuali espliciti, attacchi personali o condivisione di informazioni private altrui.',
     prompt: 'Spunto di conversazione', delete: 'Elimina messaggio', refresh: 'Aggiorna', defaultPrompt:'A cosa stai pensando oggi?', loadRoomsError:'Impossibile caricare le stanze di chat.', emptyRooms:'Nessuna conversazione è disponibile al momento.', loadMessagesError:'Impossibile caricare i messaggi.', sendError:'Impossibile inviare il messaggio.', deleteError:'Impossibile eliminare il messaggio.',
     prompts: {
@@ -165,7 +167,7 @@ const copy = {
     title: 'One2OneLove Chaträume', subtitle: 'Echte Gespräche über Liebe, Dating, Ehe und Beziehungen.', back: 'Zurück',
     online: 'jetzt aktiv', messages: 'Nachrichten', choose: 'Wähle ein Gespräch', loading: 'Gespräche werden geladen…',
     empty: 'Der Gesprächsimpuls steht oben. Sei die erste Person, die antwortet und den Raum ins Gespräch bringt.', placeholder: 'Teile deine Gedanken respektvoll…', send: 'Senden',
-    signIn: 'Melde dich an, um mitzuschreiben', readOnly: 'Du kannst das Gespräch lesen. Melde dich an, um zu schreiben.', featuredBadgeOpen: '💯 Abstimmung geschlossen · Ergebnisse gespeichert', featuredBadgeClosed: '💯 Abstimmung geschlossen · Ergebnisse gespeichert', moreVoting: 'Halte Ausschau nach weiteren Abstimmungen.', resultsTitle: 'Neueste Ergebnisse der Klick-Abstimmung', votesWord: 'Stimmen', noVotes: 'Noch keine Stimmen — gib die erste auf der Startseite ab.', voteHome: 'Auf der Startseite abstimmen', nextResults: 'Weiter',
+    signIn: 'Melde dich an, um mitzuschreiben', readOnly: 'Du chattest als Gast — kein Konto nötig. Wähle einen Anzeigenamen und mach mit.', guestName: 'Dein Anzeigename', guestNamePlaceholder: 'z. B. Alex', featuredBadgeOpen: '💯 Abstimmung geschlossen · Ergebnisse gespeichert', featuredBadgeClosed: '💯 Abstimmung geschlossen · Ergebnisse gespeichert', moreVoting: 'Halte Ausschau nach weiteren Abstimmungen.', resultsTitle: 'Neueste Ergebnisse der Klick-Abstimmung', votesWord: 'Stimmen', noVotes: 'Noch keine Stimmen — gib die erste auf der Startseite ab.', voteHome: 'Auf der Startseite abstimmen', nextResults: 'Weiter',
     guidelines: 'Respektiere den Raum', guidelinesBody: 'Sei freundlich. Keine Belästigung, Drohungen, Hassrede, explizit sexuelle Inhalte, persönlichen Angriffe oder Weitergabe privater Informationen anderer.',
     prompt: 'Gesprächsimpuls', delete: 'Nachricht löschen', refresh: 'Aktualisieren', defaultPrompt:'Was beschäftigt dich heute?', loadRoomsError:'Chaträume konnten nicht geladen werden.', emptyRooms:'Derzeit sind keine Gespräche verfügbar.', loadMessagesError:'Nachrichten konnten nicht geladen werden.', sendError:'Nachricht konnte nicht gesendet werden.', deleteError:'Nachricht konnte nicht gelöscht werden.',
     prompts: {
@@ -265,6 +267,14 @@ export default function Chat() {
   const [creatingTopic, setCreatingTopic] = useState(false);
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState('');
+  // Guest participation (2026-11-25): no account needed — a guest posts
+  // under a display name they choose, kept in this browser.
+  const myGuestId = useMemo(() => getGuestId(), []);
+  const [guestName, setGuestNameState] = useState(() => getGuestName());
+  const updateGuestName = (value) => {
+    setGuestNameState(value);
+    setGuestName(value);
+  };
   const [loadingRooms, setLoadingRooms] = useState(true);
   const [roomsError, setRoomsError] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
@@ -333,7 +343,6 @@ export default function Chat() {
 
   const startTopic = async (event) => {
     event.preventDefault();
-    if (!isAuthenticated) return toast.error(t.signIn);
     const title = topicTitle.trim();
     if (title.length < 3 || creatingTopic || !selectedRoomId) return;
     setCreatingTopic(true);
@@ -366,10 +375,9 @@ export default function Chat() {
     const roomTimer = window.setInterval(() => { if (!tabHidden()) loadRooms(); }, 10000);
     const topicTimer = lgbtqMode ? window.setInterval(() => { if (!tabHidden()) loadTopics(selectedRoomId); }, 10000) : null;
     let presenceTimer;
-    if (isAuthenticated) {
-      touchCommunityChatPresence(selectedRoomId).catch(() => {});
-      presenceTimer = window.setInterval(() => { if (!tabHidden()) touchCommunityChatPresence(selectedRoomId).catch(() => {}); }, 45000);
-    }
+    // Members and guests both hold a presence row now (guests by guest id).
+    touchCommunityChatPresence(selectedRoomId).catch(() => {});
+    presenceTimer = window.setInterval(() => { if (!tabHidden()) touchCommunityChatPresence(selectedRoomId).catch(() => {}); }, 45000);
     return () => {
       window.clearInterval(messageTimer);
       window.clearInterval(roomTimer);
@@ -385,11 +393,16 @@ export default function Chat() {
   // row immediately and the room drops to empty instead of burning polls
   // and presence until a timeout. Re-entering is a fresh join — the
   // polling effect above re-touches presence and reloads messages.
-  // Guests hold no presence row, so there is nothing for them to leave.
+  // Guests leave through the fetch route (the beacon cannot carry the
+  // guest identity headers); if that signal is lost, the presence TTL
+  // clears the row on its own.
   useEffect(() => {
-    if (!selectedRoomId || !isAuthenticated) return undefined;
+    if (!selectedRoomId) return undefined;
     const roomId = selectedRoomId;
-    const leave = () => { beaconLeaveCommunityChatRoom(roomId); };
+    const leave = () => {
+      if (isAuthenticated) beaconLeaveCommunityChatRoom(roomId);
+      else leaveCommunityChatRoom(roomId).catch(() => {});
+    };
     window.addEventListener('pagehide', leave);
     return () => {
       window.removeEventListener('pagehide', leave);
@@ -410,10 +423,6 @@ export default function Chat() {
 
   const submit = async (event) => {
     event.preventDefault();
-    if (!isAuthenticated) {
-      toast.error(t.signIn);
-      return;
-    }
     const text = message.trim();
     if (!text || !selectedRoomId || sending) return;
     setSending(true);
@@ -575,7 +584,7 @@ export default function Chat() {
                           {topics.map(topic=><button key={topic.id} type="button" onClick={()=>setSelectedTopicId(topic.id)} className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${selectedTopicId===topic.id?'border-purple-500 bg-purple-600 text-white':'border-slate-200 bg-white text-slate-600 hover:border-purple-300'}`} title={`${topic.messageCount || 0} messages`}>{topic.title}</button>)}
                         </div>
                       </div>
-                      {isAuthenticated && <button type="button" onClick={()=>setTopicFormOpen(true)} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-500 px-4 py-2 text-sm font-black text-white shadow-sm"><Plus size={16}/>{lt.startTopic}</button>}
+                      {<button type="button" onClick={()=>setTopicFormOpen(true)} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-500 px-4 py-2 text-sm font-black text-white shadow-sm"><Plus size={16}/>{lt.startTopic}</button>}
                     </div>
                     {topicFormOpen && <form onSubmit={startTopic} className="relative mt-4 rounded-2xl border border-purple-200 bg-purple-50 p-4">
                       <button type="button" onClick={()=>setTopicFormOpen(false)} className="absolute right-3 top-3 rounded-lg p-1 text-slate-400 hover:bg-white hover:text-slate-700" aria-label={lt.cancelTopic}><X size={17}/></button>
@@ -602,7 +611,7 @@ export default function Chat() {
                   {loadingMessages ? <p className="py-10 text-center text-slate-500">{t.loading}</p> : messages.length === 0 ? <div className="grid h-full place-items-center text-center"><div><MessageCircle className="mx-auto mb-3 text-purple-200" size={54}/><p className="font-semibold text-slate-500">{t.empty}</p></div></div> : (
                     <div className="space-y-4">
                       {messages.map(item => {
-                        const mine = user?.id === item.userId;
+                        const mine = isAuthenticated ? user?.id === item.userId : Boolean(item.guestKey) && item.guestKey === myGuestId;
                         return (
                           <div key={item.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
                             <div className={`max-w-[86%] rounded-2xl px-4 py-3 sm:max-w-[74%] ${mine ? 'bg-purple-600 text-white' : 'bg-slate-100 text-slate-900'}`}>
@@ -619,8 +628,8 @@ export default function Chat() {
                 </div>
 
                 <div className="border-t border-slate-200 p-4 sm:p-5">
-                  {!isAuthenticated && <div className="mb-3 flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"><span>{t.readOnly}</span><Link to={createPageUrl('SignIn')} className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-amber-600 px-3 py-2 font-bold text-white"><LogIn size={15}/>{t.signIn}</Link></div>}
-                  <form onSubmit={submit} className="flex gap-3"><textarea value={message} onChange={event => setMessage(event.target.value.slice(0, 2000))} disabled={!isAuthenticated || sending} placeholder={t.placeholder} rows={2} className="min-h-[54px] flex-1 resize-none rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-purple-400 focus:ring-4 focus:ring-purple-100 disabled:bg-slate-50"/><button type="submit" disabled={!isAuthenticated || sending || !message.trim()} className="inline-flex min-w-[96px] items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-500 px-4 font-black text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-50"><Send size={17}/>{t.send}</button></form>
+                  {!isAuthenticated && <div className="mb-3 flex flex-wrap items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"><span className="min-w-0 flex-1">{t.readOnly}</span><label className="flex items-center gap-2 font-bold">{t.guestName}<input value={guestName} onChange={event => updateGuestName(event.target.value.slice(0, 40))} placeholder={t.guestNamePlaceholder} maxLength={40} className="w-36 rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm font-semibold text-slate-800 outline-none focus:border-emerald-500"/></label></div>}
+                  <form onSubmit={submit} className="flex gap-3"><textarea value={message} onChange={event => setMessage(event.target.value.slice(0, 2000))} disabled={sending} placeholder={t.placeholder} rows={2} className="min-h-[54px] flex-1 resize-none rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-purple-400 focus:ring-4 focus:ring-purple-100 disabled:bg-slate-50"/><button type="submit" disabled={sending || !message.trim()} className="inline-flex min-w-[96px] items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-500 px-4 font-black text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-50"><Send size={17}/>{t.send}</button></form>
                   <div className="mt-3 flex items-start gap-2 text-xs leading-5 text-slate-500"><ShieldCheck className="mt-0.5 shrink-0 text-emerald-600" size={15}/><span><strong className="text-slate-700">{t.guidelines}:</strong> {t.guidelinesBody}</span></div>
                 </div>
               </>
@@ -629,14 +638,7 @@ export default function Chat() {
                 <div>
                   <MessageCircle className="mx-auto mb-3 text-purple-200" size={54}/>
                   <p className="font-semibold text-slate-600">{roomsError ? t.loadRoomsError : t.emptyRooms}</p>
-                  {!isAuthenticated ? (
-                    <>
-                      <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">{t.readOnly}</p>
-                      <Link to={createPageUrl('SignIn')} className="mt-4 inline-flex items-center gap-1 rounded-lg bg-amber-600 px-4 py-2 font-bold text-white"><LogIn size={15}/>{t.signIn}</Link>
-                    </>
-                  ) : (
-                    <button type="button" onClick={loadRooms} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 font-bold text-white"><RefreshCw size={15}/>{t.refresh}</button>
-                  )}
+                  <button type="button" onClick={loadRooms} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 font-bold text-white"><RefreshCw size={15}/>{t.refresh}</button>
                 </div>
               </div>
             )}

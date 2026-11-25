@@ -267,6 +267,11 @@ async function verifyCode(request, env, auth) {
 export async function handlePhoneVerificationRequest(request, env, url) {
   if (!url.pathname.startsWith('/api/phone-verification')) return null;
 
+  // RETIRED 2026-11-25 (all-free conversion): phone verification used
+  // Twilio Verify per check and gated member features — no feature needs
+  // a phone number any more. index-v2 also refuses the route.
+  return fail('This feature has been retired. One2OneLove is now 100% free.', 410, 'feature_retired');
+
   const auth = await session(request, env);
   if (!auth) return fail('Verified sign-in is required.', 401, 'unauthorized');
 

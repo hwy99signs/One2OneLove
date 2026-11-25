@@ -16,7 +16,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { uploadProfilePicture, updateUserProfile } from "@/lib/profileService";
 import SubscriptionCard from "@/components/profile/SubscriptionCard";
 import FoundingPerkNotice from "@/components/profile/FoundingPerkNotice";
-import { getTokenWallet } from "@/lib/tokenService";
 import goalsService from "@/lib/goalsService";
 
 const translations = {
@@ -102,11 +101,6 @@ const translations = {
       imageUpdated: "Profile image updated successfully!",
       imageUploadFailed: "Failed to upload image. Please try again.",
       profileCompletion: "Profile Completion",
-      walletTitle: "My Wallet",
-      walletCredit: "$ Credit",
-      walletBonus: "O2OL Bonus Game Credits",
-      walletExpires: "Expires {date}",
-      walletOpen: "Open My Wallet",
       completeTab: "Complete Your Profile",
       tabNote: "This tab disappears when your profile is completed.",
       complete: "Complete",
@@ -229,11 +223,6 @@ const translations = {
       imageUpdated: "¡Foto de perfil actualizada correctamente!",
       imageUploadFailed: "No se pudo subir la imagen. Inténtalo de nuevo.",
       profileCompletion: "Finalización del Perfil",
-      walletTitle: "Mi Billetera",
-      walletCredit: "$ Crédito",
-      walletBonus: "O2OL Bonus Game Credits",
-      walletExpires: "Vence el {date}",
-      walletOpen: "Abrir Mi Billetera",
       completeTab: "Completa Tu Perfil",
       tabNote: "Esta pestaña desaparece cuando tu perfil esté completo.",
       complete: "Completo",
@@ -356,11 +345,6 @@ const translations = {
       imageUpdated: "Photo de profil mise à jour avec succès !",
       imageUploadFailed: "Impossible d’importer l’image. Veuillez réessayer.",
       profileCompletion: "Achèvement du Profil",
-      walletTitle: "Mon Portefeuille",
-      walletCredit: "Crédit $",
-      walletBonus: "O2OL Bonus Game Credits",
-      walletExpires: "Expire le {date}",
-      walletOpen: "Ouvrir Mon Portefeuille",
       completeTab: "Complétez Votre Profil",
       tabNote: "Cet onglet disparaît lorsque votre profil est terminé.",
       complete: "Complet",
@@ -483,11 +467,6 @@ const translations = {
       imageUpdated: "Immagine del profilo aggiornata correttamente!",
       imageUploadFailed: "Impossibile caricare l’immagine. Riprova.",
       profileCompletion: "Completamento Profilo",
-      walletTitle: "Il Mio Portafoglio",
-      walletCredit: "Credito $",
-      walletBonus: "O2OL Bonus Game Credits",
-      walletExpires: "Scade il {date}",
-      walletOpen: "Apri Il Mio Portafoglio",
       completeTab: "Completa Il Tuo Profilo",
       tabNote: "Questa scheda scompare quando il tuo profilo è completo.",
       complete: "Completo",
@@ -610,11 +589,6 @@ const translations = {
       imageUpdated: "Profilbild erfolgreich aktualisiert!",
       imageUploadFailed: "Das Bild konnte nicht hochgeladen werden. Bitte versuchen Sie es erneut.",
       profileCompletion: "Profilvollständigkeit",
-      walletTitle: "Meine Wallet",
-      walletCredit: "$ Credit",
-      walletBonus: "O2OL Bonus Game Credits",
-      walletExpires: "Verfällt am {date}",
-      walletOpen: "Meine Wallet Öffnen",
       completeTab: "Vervollständigen Sie Ihr Profil",
       tabNote: "Diese Registerkarte verschwindet, wenn Ihr Profil vollständig ist.",
       complete: "Vollständig",
@@ -724,11 +698,6 @@ const translations = {
       pleaseSignIn: "Log in om uw profiel te bekijken",
       signIn: "Inloggen",
       profileCompletion: "Profiel Voltooiing",
-      walletTitle: "Mijn Portemonnee",
-      walletCredit: "$ Credit",
-      walletBonus: "O2OL Bonus Game Credits",
-      walletExpires: "Verloopt op {date}",
-      walletOpen: "Open Mijn Portemonnee",
       completeTab: "Voltooi Je Profiel",
       tabNote: "Dit tabblad verdwijnt als je profiel compleet is.",
       complete: "Voltooid",
@@ -838,11 +807,6 @@ const translations = {
       pleaseSignIn: "Por favor, faça login para ver seu perfil",
       signIn: "Entrar",
       profileCompletion: "Conclusão do Perfil",
-      walletTitle: "Minha Carteira",
-      walletCredit: "Crédito $",
-      walletBonus: "O2OL Bonus Game Credits",
-      walletExpires: "Expira em {date}",
-      walletOpen: "Abrir Minha Carteira",
       completeTab: "Complete Seu Perfil",
       tabNote: "Esta aba desaparece quando seu perfil estiver completo.",
       complete: "Completo",
@@ -1013,53 +977,8 @@ function ActiveGoalsCard() {
   );
 }
 
-// The member's wallet at the top of their Profile (owner-directed,
-// 2026-10-12): a new member who received the $5 verification bonus had
-// NO surface anywhere in their account showing it — the Profile carried
-// no balance of any kind. This card shows both balances, the bonus
-// expiry, and the door to the full wallet. It renders nothing until
-// the wallet loads, and nothing at all if the load fails, so the
-// Profile itself can never break over it.
-function ProfileWalletCard({ t }) {
-  const [data, setData] = useState(null);
-  useEffect(() => {
-    let live = true;
-    getTokenWallet().then((payload) => { if (live) setData(payload); }).catch(() => {});
-    return () => { live = false; };
-  }, []);
-  if (!data) return null;
-  const money = (cents) => "$" + (Number(cents || 0) / 100).toFixed(2);
-  const bonus = data.gameCredit || {};
-  const expiry = bonus.nextExpiryAt ? new Date(bonus.nextExpiryAt).toLocaleDateString() : null;
-  return (
-    <div className="max-w-md mx-auto mb-8">
-      <Card className="shadow-xl border-2 border-violet-200">
-        <CardContent className="p-6">
-          <div className="mb-4 flex items-center gap-2">
-            <Gift className="w-5 h-5 text-purple-600" />
-            <span className="text-lg font-bold text-gray-900">{t.profile.walletTitle}</span>
-          </div>
-          <div className="flex items-end justify-between border-b border-gray-100 pb-3">
-            <span className="font-semibold text-gray-600">{t.profile.walletCredit}</span>
-            <span className="text-3xl font-black text-gray-900">{money(data.wallet?.balance)}</span>
-          </div>
-          <div className="flex items-end justify-between pt-3">
-            <span className="font-semibold text-emerald-700">{t.profile.walletBonus}</span>
-            <span className="text-3xl font-black text-emerald-600">{money(bonus.balanceCents)}</span>
-          </div>
-          {expiry && Number(bonus.balanceCents || 0) > 0 && (
-            <p className="mt-1 text-right text-sm font-semibold text-emerald-700">{t.profile.walletExpires.replace("{date}", expiry)}</p>
-          )}
-          <Link to={createPageUrl("Credit")} className="mt-5 block">
-            <Button className="w-full bg-gradient-to-r from-pink-500 to-purple-600 py-5 font-semibold text-white">
-              {t.profile.walletOpen}
-            </Button>
-          </Link>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
+// Credit/wallet retired (2026-11-25): the Profile wallet card was
+// removed with the all-free conversion — no balances are shown anywhere.
 
 export default function Profile() {
   const { currentLanguage } = useLanguage();
@@ -1418,8 +1337,6 @@ export default function Profile() {
           <FoundingPerkNotice currentLanguage={currentLanguage} />
         </motion.div>
 
-        {/* My Wallet — balances live at the top of the account now */}
-        <ProfileWalletCard t={t} />
 
         {/* Quick Actions */}
         <motion.div 

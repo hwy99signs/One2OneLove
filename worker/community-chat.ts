@@ -124,6 +124,59 @@ async function ensureDdl(db, sql) {
   catch (err) { if (!TOLERATED_DDL_CODES.has(err?.code)) throw err; }
 }
 
+// ---------------------------------------------------------------------------
+// Guest participation (2026-11-25, all-free conversion): chat rooms are
+// open to guests with a self-chosen display name — no account. The client
+// sends a browser-held guest id (UUID) and display name as headers. Guest
+// rows store user_id NULL plus guest_key/guest_name. The DROP NOT NULL
+// statements are tolerated on ANY error: if a table was built with the
+// user column inside a primary key, member traffic must not break —
+// guest writes then fail on their own insert instead.
+// ---------------------------------------------------------------------------
+function guestIdentity(request) {
+  const id = String(request.headers.get('x-o2ol-guest-id') || '').trim();
+  if (!isUuid(id)) return null;
+  const name = String(request.headers.get('x-o2ol-guest-name') || '')
+    .replace(/[\u0000-\u001f\u007f]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 40);
+  return { id, name: name || 'Guest' };
+}
+
+let guestChatSchemaReady = false;
+async function ensureGuestChatSchema(db) {
+  if (guestChatSchemaReady) return;
+  await ensureDdl(db, `ALTER TABLE public.chat_room_messages ADD COLUMN IF NOT EXISTS guest_key text`);
+  await ensureDdl(db, `ALTER TABLE public.chat_room_messages ADD COLUMN IF NOT EXISTS guest_name text`);
+  await ensureDdl(db, `ALTER TABLE public.chat_room_topics ADD COLUMN IF NOT EXISTS guest_key text`);
+  await ensureDdl(db, `ALTER TABLE public.chat_room_topics ADD COLUMN IF NOT EXISTS guest_name text`);
+  await ensureDdl(db, `ALTER TABLE public.chat_room_presence ADD COLUMN IF NOT EXISTS guest_key text`);
+  await ensureDdl(db, `CREATE UNIQUE INDEX IF NOT EXISTS idx_chat_room_presence_guest
+    ON public.chat_room_presence(room_id, guest_key) WHERE guest_key IS NOT NULL`);
+  for (const sql of [
+    `ALTER TABLE public.chat_room_messages ALTER COLUMN user_id DROP NOT NULL`,
+    `ALTER TABLE public.chat_room_topics ALTER COLUMN creator_id DROP NOT NULL`,
+    `ALTER TABLE public.chat_room_presence ALTER COLUMN user_id DROP NOT NULL`,
+  ]) {
+    try { await db.query(sql); } catch { /* see note above */ }
+  }
+  guestChatSchemaReady = true;
+}
+
+async function touchGuestPresence(db, roomId, guest) {
+  // Best effort: if the presence table cannot hold a NULL user_id, guest
+  // presence silently no-ops and only the online count is affected.
+  try {
+    await db.query(`
+      INSERT INTO public.chat_room_presence(room_id,user_id,guest_key,last_seen)
+      VALUES($1::uuid,NULL,$2,now())
+      ON CONFLICT(room_id,guest_key) WHERE guest_key IS NOT NULL
+      DO UPDATE SET last_seen=EXCLUDED.last_seen
+    `, [roomId, guest.id]);
+  } catch { /* presence is cosmetic */ }
+}
+
 async function ensureChatSafetySchema(db) {
   if (chatSafetySchemaReady) return;
   await ensureDdl(db, `
@@ -267,7 +320,7 @@ async function listMessages(db, roomId, url, viewerId = null) {
   values.push(limit);
   const result = await db.query(`
     SELECT * FROM (
-      SELECT m.id,m.room_id,m.user_id,m.content,m.reply_to_id,m.topic_id,m.edited_at,m.created_at,
+      SELECT m.id,m.room_id,m.user_id,m.guest_key,m.guest_name,m.content,m.reply_to_id,m.topic_id,m.edited_at,m.created_at,
              u.name AS author_name,u.avatar_url AS author_avatar
         FROM public.chat_room_messages m
         LEFT JOIN public.users u ON u.id=m.user_id
@@ -290,12 +343,13 @@ async function listMessages(db, roomId, url, viewerId = null) {
     const mutedIds = new Set(muted.rows.map(row => String(row.muted_user_id)));
     rows = rows.filter(row => !mutedIds.has(String(row.user_id)));
   }
-  const numberLabels = await visitorNumbersFor(db, rows.filter(row => !firstNameOf(row.author_name)).map(row => row.user_id));
+  const numberLabels = await visitorNumbersFor(db, rows.filter(row => row.user_id && !firstNameOf(row.author_name)).map(row => row.user_id));
   return rows.map(row => ({
     id: row.id,
     roomId: row.room_id,
     userId: row.user_id,
-    authorName: firstNameOf(row.author_name) || numberLabels.get(String(row.user_id)) || derivedVisitorLabel(row.user_id),
+    authorName: firstNameOf(row.author_name) || row.guest_name || numberLabels.get(String(row.user_id)) || derivedVisitorLabel(row.user_id),
+    guestKey: row.guest_key || null,
     authorAvatar: row.author_avatar || '',
     content: row.content,
     replyToId: row.reply_to_id,
@@ -327,10 +381,12 @@ async function touchPresence(db, roomId, userId) {
 export async function handleCommunityChatRequest(request, env, url) {
   if (!url.pathname.startsWith('/api/community-chat')) return null;
   const auth = await session(request, env);
+  const guest = auth ? null : guestIdentity(request);
 
   try {
     return await withDb(env, async db => {
       await ensureChatSafetySchema(db);
+      await ensureGuestChatSchema(db);
 
       if (url.pathname === '/api/community-chat/rooms' && request.method === 'GET') {
         const scope = url.searchParams.get('scope') === 'lgbtq' ? 'lgbtq' : 'general';
@@ -347,7 +403,7 @@ export async function handleCommunityChatRequest(request, env, url) {
         if (request.method === 'GET') {
           const result = await db.query(`
             SELECT t.id,t.room_id,t.creator_id,t.title,t.is_locked,t.created_at,t.updated_at,
-                   COALESCE(u.name,'One2OneLove Member') AS creator_name,
+                   COALESCE(u.name,t.guest_name,'One2OneLove Member') AS creator_name,
                    count(m.id) FILTER (WHERE m.is_deleted=false AND m.moderation_status='approved')::int AS message_count
               FROM public.chat_room_topics t
               LEFT JOIN public.users u ON u.id=t.creator_id
@@ -364,7 +420,7 @@ export async function handleCommunityChatRequest(request, env, url) {
         }
 
         if (request.method === 'POST') {
-          if (!auth) return fail('Sign in to start a chat topic.', 401, 'unauthorized');
+          if (!auth && !guest) return fail('Sign in to start a chat topic.', 401, 'unauthorized');
           const input = await readJson(request);
           const title = String(input?.title || '').trim();
           if (title.length < 3) return fail('Topic title must be at least 3 characters.', 400, 'invalid_topic_title');
@@ -375,22 +431,23 @@ export async function handleCommunityChatRequest(request, env, url) {
           await db.query('BEGIN');
           try {
             const created = await db.query(`
-              INSERT INTO public.chat_room_topics(room_id,creator_id,title)
-              VALUES($1::uuid,$2::uuid,$3)
+              INSERT INTO public.chat_room_topics(room_id,creator_id,guest_key,guest_name,title)
+              VALUES($1::uuid,$2::uuid,$3,$4,$5)
               RETURNING *
-            `, [roomId,auth.user.id,title]);
+            `, [roomId,auth?.user.id || null,guest?.id || null,guest?.name || null,title]);
 
             if (opening) {
               await db.query(`
-                INSERT INTO public.chat_room_messages(room_id,user_id,content,topic_id,moderation_status)
-                VALUES($1::uuid,$2::uuid,$3,$4::uuid,'approved')
-              `, [roomId,auth.user.id,opening,created.rows[0].id]);
+                INSERT INTO public.chat_room_messages(room_id,user_id,guest_key,guest_name,content,topic_id,moderation_status)
+                VALUES($1::uuid,$2::uuid,$3,$4,$5,$6::uuid,'approved')
+              `, [roomId,auth?.user.id || null,guest?.id || null,guest?.name || null,opening,created.rows[0].id]);
             }
-            await touchPresence(db,roomId,auth.user.id);
+            if (auth) await touchPresence(db,roomId,auth.user.id);
+            else if (guest) await touchGuestPresence(db,roomId,guest);
             await db.query('COMMIT');
             const row=created.rows[0];
             return json({ ok:true, topic:{
-              id:row.id, roomId:row.room_id, creatorId:row.creator_id, title:row.title,
+              id:row.id, roomId:row.room_id, creatorId:row.creator_id, creatorName:row.guest_name || undefined, title:row.title,
               isLocked:row.is_locked, messageCount:opening?1:0, createdAt:row.created_at, updatedAt:row.updated_at,
             }},201);
           } catch (error) {
@@ -410,11 +467,12 @@ export async function handleCommunityChatRequest(request, env, url) {
 
         if (request.method === 'GET') {
           if (auth) await touchPresence(db, roomId, auth.user.id);
+          else if (guest) await touchGuestPresence(db, roomId, guest);
           return json({ ok: true, messages: await listMessages(db, roomId, url, auth?.user?.id || null) });
         }
 
         if (request.method === 'POST') {
-          if (!auth) return fail('Sign in to join the conversation.', 401, 'unauthorized');
+          if (!auth && !guest) return fail('Sign in to join the conversation.', 401, 'unauthorized');
           const input = await readJson(request);
           const content = cleanMessage(input.content);
           const replyToId = input.reply_to_id || null;
@@ -437,12 +495,19 @@ export async function handleCommunityChatRequest(request, env, url) {
             if (!reply.rowCount) return fail('Reply message not found.', 404, 'not_found');
           }
 
-          const recent = await db.query(
-            `SELECT created_at,content FROM public.chat_room_messages
-              WHERE room_id=$1::uuid AND user_id=$2::uuid AND is_deleted=false
-              ORDER BY created_at DESC LIMIT 1`,
-            [roomId, auth.user.id],
-          );
+          const recent = auth
+            ? await db.query(
+                `SELECT created_at,content FROM public.chat_room_messages
+                  WHERE room_id=$1::uuid AND user_id=$2::uuid AND is_deleted=false
+                  ORDER BY created_at DESC LIMIT 1`,
+                [roomId, auth.user.id],
+              )
+            : await db.query(
+                `SELECT created_at,content FROM public.chat_room_messages
+                  WHERE room_id=$1::uuid AND guest_key=$2 AND is_deleted=false
+                  ORDER BY created_at DESC LIMIT 1`,
+                [roomId, guest.id],
+              );
           if (recent.rows[0]) {
             const ageMs = Date.now() - new Date(recent.rows[0].created_at).getTime();
             if (ageMs < 1500) return fail('Please wait a moment before sending another message.', 429, 'rate_limited');
@@ -450,23 +515,32 @@ export async function handleCommunityChatRequest(request, env, url) {
           }
 
           const inserted = await db.query(`
-            INSERT INTO public.chat_room_messages(room_id,user_id,content,reply_to_id,topic_id,moderation_status)
-            VALUES($1::uuid,$2::uuid,$3,$4::uuid,$5::uuid,'approved')
-            RETURNING id,room_id,user_id,content,reply_to_id,topic_id,edited_at,created_at
-          `, [roomId, auth.user.id, content, replyToId, topicId]);
+            INSERT INTO public.chat_room_messages(room_id,user_id,guest_key,guest_name,content,reply_to_id,topic_id,moderation_status)
+            VALUES($1::uuid,$2::uuid,$3,$4,$5,$6::uuid,$7::uuid,'approved')
+            RETURNING id,room_id,user_id,guest_key,content,reply_to_id,topic_id,edited_at,created_at
+          `, [roomId, auth?.user.id || null, guest?.id || null, guest?.name || null, content, replyToId, topicId]);
           if (topicId) await db.query('UPDATE public.chat_room_topics SET updated_at=now() WHERE id=$1::uuid', [topicId]);
-          await touchPresence(db, roomId, auth.user.id);
-          const profile = await db.query('SELECT name,avatar_url FROM public.users WHERE id=$1::uuid', [auth.user.id]);
           const row = inserted.rows[0];
-          const firstName = firstNameOf(profile.rows[0]?.name || auth.user.name);
-          const ownNumber = firstName ? null : await visitorNumbersFor(db, [auth.user.id]);
-          const displayName = firstName || ownNumber?.get(String(auth.user.id)) || derivedVisitorLabel(auth.user.id);
+          let displayName;
+          let avatar = '';
+          if (auth) {
+            await touchPresence(db, roomId, auth.user.id);
+            const profile = await db.query('SELECT name,avatar_url FROM public.users WHERE id=$1::uuid', [auth.user.id]);
+            avatar = profile.rows[0]?.avatar_url || '';
+            const firstName = firstNameOf(profile.rows[0]?.name || auth.user.name);
+            const ownNumber = firstName ? null : await visitorNumbersFor(db, [auth.user.id]);
+            displayName = firstName || ownNumber?.get(String(auth.user.id)) || derivedVisitorLabel(auth.user.id);
+          } else {
+            await touchGuestPresence(db, roomId, guest);
+            displayName = guest.name;
+          }
           return json({ ok: true, message: {
             id: row.id,
             roomId: row.room_id,
             userId: row.user_id,
+            guestKey: row.guest_key || null,
             authorName: displayName,
-            authorAvatar: profile.rows[0]?.avatar_url || '',
+            authorAvatar: avatar,
             content: row.content,
             replyToId: row.reply_to_id,
             editedAt: row.edited_at,
@@ -479,11 +553,12 @@ export async function handleCommunityChatRequest(request, env, url) {
 
       const presenceMatch = url.pathname.match(/^\/api\/community-chat\/rooms\/([0-9a-f-]{36})\/presence$/i);
       if (presenceMatch && request.method === 'POST') {
-        if (!auth) return fail('Authentication required.', 401, 'unauthorized');
+        if (!auth && !guest) return fail('Authentication required.', 401, 'unauthorized');
         const roomId = presenceMatch[1];
         const room = await db.query('SELECT 1 FROM public.chat_rooms WHERE id=$1::uuid AND is_active=true', [roomId]);
         if (!room.rowCount) return fail('Chat room not found.', 404, 'not_found');
-        await touchPresence(db, roomId, auth.user.id);
+        if (auth) await touchPresence(db, roomId, auth.user.id);
+        else await touchGuestPresence(db, roomId, guest);
         return json({ ok: true });
       }
 
@@ -495,11 +570,18 @@ export async function handleCommunityChatRequest(request, env, url) {
       // (often a sendBeacon during page teardown) as cheap as possible.
       const leaveMatch = url.pathname.match(/^\/api\/community-chat\/rooms\/([0-9a-f-]{36})\/leave$/i);
       if (leaveMatch && request.method === 'POST') {
-        if (!auth) return fail('Authentication required.', 401, 'unauthorized');
-        await db.query(
-          'DELETE FROM public.chat_room_presence WHERE room_id=$1::uuid AND user_id=$2::uuid',
-          [leaveMatch[1], auth.user.id],
-        );
+        if (!auth && !guest) return fail('Authentication required.', 401, 'unauthorized');
+        if (auth) {
+          await db.query(
+            'DELETE FROM public.chat_room_presence WHERE room_id=$1::uuid AND user_id=$2::uuid',
+            [leaveMatch[1], auth.user.id],
+          );
+        } else {
+          await db.query(
+            'DELETE FROM public.chat_room_presence WHERE room_id=$1::uuid AND guest_key=$2',
+            [leaveMatch[1], guest.id],
+          ).catch(() => {});
+        }
         return json({ ok: true });
       }
 
@@ -560,13 +642,20 @@ export async function handleCommunityChatRequest(request, env, url) {
 
       const messageMatch = url.pathname.match(/^\/api\/community-chat\/messages\/([0-9a-f-]{36})$/i);
       if (messageMatch && request.method === 'DELETE') {
-        if (!auth) return fail('Authentication required.', 401, 'unauthorized');
-        const removed = await db.query(`
-          UPDATE public.chat_room_messages
-             SET is_deleted=true,updated_at=now()
-           WHERE id=$1::uuid AND user_id=$2::uuid
-           RETURNING id
-        `, [messageMatch[1], auth.user.id]);
+        if (!auth && !guest) return fail('Authentication required.', 401, 'unauthorized');
+        const removed = auth
+          ? await db.query(`
+              UPDATE public.chat_room_messages
+                 SET is_deleted=true,updated_at=now()
+               WHERE id=$1::uuid AND user_id=$2::uuid
+               RETURNING id
+            `, [messageMatch[1], auth.user.id])
+          : await db.query(`
+              UPDATE public.chat_room_messages
+                 SET is_deleted=true,updated_at=now()
+               WHERE id=$1::uuid AND guest_key=$2
+               RETURNING id
+            `, [messageMatch[1], guest.id]);
         return removed.rowCount ? json({ ok: true }) : fail('Message not found.', 404, 'not_found');
       }
 

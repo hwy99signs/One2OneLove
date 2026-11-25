@@ -360,7 +360,11 @@ export default function LikeMinded() {
   // Renew them at no charge; never display a purchase or Credit dialog.
   const ensurePremiumAccess=async()=>{
     if(!isAuthenticated){
-      window.location.assign('/SignUp?source=like-minded&type=individual');
+      // 2026-11-25 all-free conversion: no forced signup redirect anywhere.
+      // Like Minded MULTIPLAYER stays member-only because matches pair two
+      // member accounts (rooms, blocks and reports are keyed to accounts);
+      // guests keep the browse/solo paths and just see this notice.
+      setApiError(t.signinBody);
       return false;
     }
     if(gamePass&&new Date(gamePass.expires_at).getTime()>Date.now())return true;

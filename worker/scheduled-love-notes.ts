@@ -256,6 +256,10 @@ async function markFailed(db,note,error){
 }
 
 export async function dispatchDueScheduledLoveNotes(env) {
+  // RETIRED 2026-11-25 (all-free conversion): Love Note SMS is off, so
+  // the scheduled dispatcher never sends. Notes already queued stay in
+  // the table untouched (data preserved); they simply never dispatch.
+  return {ready:false,retired:true,claimed:0,sent:0,failed:0,retried:0};
   if (env.O2OL_PRELAUNCH_NO_OUTBOUND === 'true') return {ready:false,claimed:0,sent:0,failed:0,retried:0};
   if(!scheduledSmsReady(env))return {ready:false,claimed:0,sent:0,failed:0,retried:0};
 

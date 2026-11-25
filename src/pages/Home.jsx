@@ -26,11 +26,11 @@ const OPEN_HOUSE_COPY = {
 };
 
 const AMORA_COPY = {
-  en:{eyebrow:'MEET AMORA',title:'Your One2OneLove Relationship Coach',body:'Talk naturally with Amora about communication, conflict, boundaries, connection, expectations, or whatever is on your mind.',cta:'Talk with Amora',token:'Short $0.10 · Medium $0.15 · Long $0.20'},
-  es:{eyebrow:'CONOCE A AMORA',title:'Tu Coach de Relaciones One2OneLove',body:'Habla naturalmente con Amora sobre comunicación, conflictos, límites, conexión, expectativas o lo que tengas en mente.',cta:'Hablar con Amora',token:'Short $0.10 · Medium $0.15 · Long $0.20'},
-  fr:{eyebrow:'DÉCOUVREZ AMORA',title:'Votre Coach Relationnelle One2OneLove',body:'Parlez naturellement avec Amora de communication, conflit, limites, connexion, attentes ou de ce qui vous préoccupe.',cta:'Parler avec Amora',token:'Short $0.10 · Medium $0.15 · Long $0.20'},
-  it:{eyebrow:'CONOSCI AMORA',title:'La Tua Coach Relazionale One2OneLove',body:'Parla naturalmente con Amora di comunicazione, conflitti, confini, connessione, aspettative o di ciò che hai in mente.',cta:'Parla con Amora',token:'Short $0.10 · Medium $0.15 · Long $0.20'},
-  de:{eyebrow:'LERNE AMORA KENNEN',title:'Deine One2OneLove Beziehungscoachin',body:'Sprich natürlich mit Amora über Kommunikation, Konflikte, Grenzen, Verbindung, Erwartungen oder was dir gerade durch den Kopf geht.',cta:'Mit Amora sprechen',token:'Short $0.10 · Medium $0.15 · Long $0.20'}
+  en:{eyebrow:'MEET AMORA',title:'Your One2OneLove Relationship Coach',body:'Amora\'s AI chat has been retired — it cost money on every message. Everything else on One2OneLove is now 100% free: tools, games, Studio, podcasts and chat rooms, with no signup, no card and no Credit.',cta:'See what\'s free',token:'AI CHAT RETIRED — EVERYTHING ELSE IS FREE'},
+  es:{eyebrow:'CONOCE A AMORA',title:'Tu Coach de Relaciones One2OneLove',body:'El chat con IA de Amora se retiró: costaba dinero en cada mensaje. Todo lo demás en One2OneLove ahora es 100% gratis: herramientas, juegos, Studio, podcasts y salas de chat, sin registro, sin tarjeta y sin Crédito.',cta:'Ver qué es gratis',token:'CHAT CON IA RETIRADO — TODO LO DEMÁS ES GRATIS'},
+  fr:{eyebrow:'DÉCOUVREZ AMORA',title:'Votre Coach Relationnelle One2OneLove',body:'Le chat IA d\'Amora a été retiré — il coûtait de l\'argent à chaque message. Tout le reste sur One2OneLove est désormais 100 % gratuit : outils, jeux, Studio, podcasts et salons de discussion, sans inscription, sans carte et sans Crédit.',cta:'Voir ce qui est gratuit',token:'CHAT IA RETIRÉ — TOUT LE RESTE EST GRATUIT'},
+  it:{eyebrow:'CONOSCI AMORA',title:'La Tua Coach Relazionale One2OneLove',body:'La chat IA di Amora è stata ritirata: costava denaro a ogni messaggio. Tutto il resto su One2OneLove ora è gratuito al 100%: strumenti, giochi, Studio, podcast e sale chat, senza registrazione, senza carta e senza Credito.',cta:'Vedi cosa è gratis',token:'CHAT IA RITIRATA — TUTTO IL RESTO È GRATIS'},
+  de:{eyebrow:'LERNE AMORA KENNEN',title:'Deine One2OneLove Beziehungscoachin',body:'Amoras KI-Chat wurde eingestellt — er kostete bei jeder Nachricht Geld. Alles andere auf One2OneLove ist jetzt 100 % kostenlos: Tools, Spiele, Studio, Podcasts und Chaträume — ohne Anmeldung, ohne Karte und ohne Credit.',cta:'Sieh, was kostenlos ist',token:'KI-CHAT EINGESTELLT — ALLES ANDERE IST KOSTENLOS'}
 };
 
 const STUDIO_COPY = {
@@ -222,7 +222,7 @@ export default function Home() {
               <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600">{amora.body}</p>
               <div className="mt-5 flex flex-wrap items-center gap-3">
                 <span className="rounded-full bg-gradient-to-r from-rose-500 to-fuchsia-600 px-5 py-2.5 text-sm font-black text-white shadow-md">{amora.cta}</span>
-                <span className="text-xs font-black uppercase tracking-wide text-amber-700">🪙 {amora.token}</span>
+                <span className="text-xs font-black uppercase tracking-wide text-emerald-700">{amora.token}</span>
               </div>
             </div>
           </button>
