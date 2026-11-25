@@ -37,7 +37,7 @@ const UI = {
     keepPlaying:'Keep Playing', finish:'Finish Self-Check', yourAnswer:'Your answer', waiting:'Waiting for the other player…',
     room:'Game Room', roomCode:'Room code', copyInvite:'Copy Invite Link', copied:'Copied', player2:'Waiting for Player 2',
     createRoom:'Create Invitation', joinRoom:'Join a Room', join:'Join', codePlaceholder:'Enter room code',
-    signin:'Sign in to use multiplayer', signinBody:'Create a free verified O2OL account to play Like Minded for free forever.',
+    signin:'Multiplayer is switched off', signinBody:'One2OneLove is a free platform with no accounts right now, so Like Minded multiplayer is off. The Solo Self-Check is free for everyone — no account needed.',
     available:'Available now', lobbyEmpty:'No other players are available right now.', leaveLobby:'Leave Player Lobby',
     location:'General location', city:'City', state:'State / Region (optional)', country:'Country', enterLobby:'Enter Player Lobby',
     locationNote:'Only your first name and general location are shown. Never your street address or precise location.',
@@ -64,7 +64,7 @@ const UI = {
     keepPlaying:'Seguir Jugando', finish:'Finalizar', yourAnswer:'Tu respuesta', waiting:'Esperando al otro jugador…',
     room:'Sala de Juego', roomCode:'Código', copyInvite:'Copiar Enlace', copied:'Copiado', player2:'Esperando al Jugador 2',
     createRoom:'Crear Invitación', joinRoom:'Unirse a una Sala', join:'Unirse', codePlaceholder:'Ingresa el código',
-    signin:'Inicia sesión para multijugador', signinBody:'Crea una cuenta O2OL gratuita y verificada para jugar gratis para siempre.',
+    signin:'El multijugador está desactivado', signinBody:'One2OneLove es una plataforma gratuita y sin cuentas por ahora, así que el multijugador de Like Minded está desactivado. La Autoevaluación en solitario es gratis para todos, sin cuenta.',
     available:'Disponibles ahora', lobbyEmpty:'No hay otros jugadores disponibles ahora.', leaveLobby:'Salir de la Sala',
     location:'Ubicación general', city:'Ciudad', state:'Estado / Región (opcional)', country:'País', enterLobby:'Entrar a la Sala',
     locationNote:'Solo se muestra tu nombre y ubicación general. Nunca tu dirección ni ubicación exacta.',
@@ -91,7 +91,7 @@ const UI = {
     keepPlaying:'Continuer', finish:'Terminer', yourAnswer:'Votre réponse', waiting:'En attente de l’autre joueur…',
     room:'Salle de Jeu', roomCode:'Code', copyInvite:'Copier le Lien', copied:'Copié', player2:'En attente du Joueur 2',
     createRoom:'Créer une Invitation', joinRoom:'Rejoindre une Salle', join:'Rejoindre', codePlaceholder:'Entrez le code',
-    signin:'Connectez-vous pour le multijoueur', signinBody:'Créez un compte O2OL gratuit et vérifié pour jouer gratuitement pour toujours.',
+    signin:'Le multijoueur est désactivé', signinBody:'One2OneLove est une plateforme gratuite et sans comptes pour le moment, le multijoueur de Like Minded est donc désactivé. L’auto-évaluation en solo est gratuite pour tout le monde, sans compte.',
     available:'Disponibles maintenant', lobbyEmpty:'Aucun autre joueur n’est disponible.', leaveLobby:'Quitter le Salon',
     location:'Localisation générale', city:'Ville', state:'État / Région (facultatif)', country:'Pays', enterLobby:'Entrer dans le Salon',
     locationNote:'Seuls votre prénom et votre localisation générale sont visibles. Jamais votre adresse précise.',
@@ -118,7 +118,7 @@ const UI = {
     keepPlaying:'Continua', finish:'Termina', yourAnswer:'La tua risposta', waiting:'In attesa dell’altro giocatore…',
     room:'Stanza di Gioco', roomCode:'Codice', copyInvite:'Copia Link', copied:'Copiato', player2:'In attesa del Giocatore 2',
     createRoom:'Crea Invito', joinRoom:'Entra in una Stanza', join:'Entra', codePlaceholder:'Inserisci il codice',
-    signin:'Accedi per il multigiocatore', signinBody:'Crea un account O2OL gratuito e verificato per giocare gratis per sempre.',
+    signin:'Il multigiocatore è disattivato', signinBody:'One2OneLove è una piattaforma gratuita e senza account per ora, quindi il multigiocatore di Like Minded è disattivato. L’auto-valutazione in solitaria è gratuita per tutti, senza account.',
     available:'Disponibili ora', lobbyEmpty:'Nessun altro giocatore è disponibile.', leaveLobby:'Esci dalla Lobby',
     location:'Posizione generale', city:'Città', state:'Stato / Regione (opzionale)', country:'Paese', enterLobby:'Entra nella Lobby',
     locationNote:'Vengono mostrati solo nome e posizione generale. Mai indirizzo o posizione precisa.',
@@ -145,7 +145,7 @@ const UI = {
     keepPlaying:'Weiterspielen', finish:'Selbst-Check Beenden', yourAnswer:'Deine Antwort', waiting:'Warte auf die andere Person…',
     room:'Spielraum', roomCode:'Raumcode', copyInvite:'Einladungslink Kopieren', copied:'Kopiert', player2:'Warte auf Spieler 2',
     createRoom:'Einladung Erstellen', joinRoom:'Raum Beitreten', join:'Beitreten', codePlaceholder:'Raumcode eingeben',
-    signin:'Für Mehrspieler anmelden', signinBody:'Erstelle ein kostenloses verifiziertes O2OL-Konto und spiele für immer kostenlos.',
+    signin:'Mehrspieler ist deaktiviert', signinBody:'One2OneLove ist derzeit eine kostenlose Plattform ohne Konten, daher ist der Like-Minded-Mehrspieler deaktiviert. Der Solo-Selbst-Check ist für alle kostenlos — ganz ohne Konto.',
     available:'Jetzt verfügbar', lobbyEmpty:'Zurzeit sind keine anderen Spieler verfügbar.', leaveLobby:'Lobby Verlassen',
     location:'Allgemeiner Standort', city:'Stadt', state:'Bundesland / Region (optional)', country:'Land', enterLobby:'Lobby Betreten',
     locationNote:'Nur Vorname und allgemeiner Standort werden gezeigt. Niemals Straße oder genauer Standort.',
@@ -360,10 +360,11 @@ export default function LikeMinded() {
   // Renew them at no charge; never display a purchase or Credit dialog.
   const ensurePremiumAccess=async()=>{
     if(!isAuthenticated){
-      // 2026-11-25 all-free conversion: no forced signup redirect anywhere.
-      // Like Minded MULTIPLAYER stays member-only because matches pair two
-      // member accounts (rooms, blocks and reports are keyed to accounts);
-      // guests keep the browse/solo paths and just see this notice.
+      // Member system disabled (2026-11-25): there are no accounts, so
+      // Like Minded MULTIPLAYER is switched off for everyone (matches
+      // pair two member accounts; rooms, blocks and reports are keyed
+      // to accounts). Guests keep the browse/solo paths and see this
+      // notice. The multiplayer code stays for future re-activation.
       setApiError(t.signinBody);
       return false;
     }
@@ -745,7 +746,7 @@ export default function LikeMinded() {
               {!isAuthenticated ? (
                 <>
                   <h2 className="text-2xl font-black text-slate-950">{t.signin}</h2><p className="mt-2 text-sm leading-6 text-slate-600">{t.signinBody}</p>
-                  <Link to={createPageUrl('SignIn') + (roomCode ? ('?redirect=' + encodeURIComponent(createPageUrl('LikeMinded') + '?room=' + roomCode)) : '')} className="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-slate-950 px-5 py-4 font-black text-white">{t.signin}</Link>
+                  <button onClick={startSolo} className="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-slate-950 px-5 py-4 font-black text-white">{t.solo}</button>
                 </>
               ) : (
                 <>
@@ -830,7 +831,7 @@ export default function LikeMinded() {
         {modeHeader}
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
           {!isAuthenticated ? (
-            <div className="mx-auto max-w-xl rounded-[30px] bg-white p-8 text-center shadow-xl"><UserRound className="mx-auto h-12 w-12 text-violet-600"/><h1 className="mt-4 text-2xl font-black">{t.signin}</h1><p className="mt-2 text-slate-600">{t.signinBody}</p><Link to={createPageUrl('SignIn')} className="mt-6 inline-flex rounded-2xl bg-slate-950 px-6 py-4 font-black text-white">{t.signin}</Link></div>
+            <div className="mx-auto max-w-xl rounded-[30px] bg-white p-8 text-center shadow-xl"><UserRound className="mx-auto h-12 w-12 text-violet-600"/><h1 className="mt-4 text-2xl font-black">{t.signin}</h1><p className="mt-2 text-slate-600">{t.signinBody}</p><button onClick={startSolo} className="mt-6 inline-flex rounded-2xl bg-slate-950 px-6 py-4 font-black text-white">{t.solo}</button></div>
           ) : !inLobby ? (
             <div className="mx-auto max-w-xl rounded-[30px] bg-white p-8 shadow-xl">
               <Users className="h-10 w-10 text-violet-600"/><h1 className="mt-4 text-3xl font-black">{t.lobby}</h1><p className="mt-2 text-slate-600">{t.locationNote}</p>
@@ -904,7 +905,7 @@ export default function LikeMinded() {
           <div className="mx-auto mt-4 w-full max-w-5xl rounded-2xl border border-amber-300/30 bg-amber-300/10 p-4 text-left text-amber-50">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div><div className="inline-flex items-center gap-2 font-black"><Sparkles className="h-5 w-5"/>{t.premium}</div><p className="mt-1 text-xs leading-5 text-amber-50/80">{t.premiumBody}</p></div>
-              {!isAuthenticated && <Link to="/SignUp?source=like-minded&type=individual" className="rounded-xl bg-amber-300 px-4 py-2 text-sm font-black text-amber-950">{t.signin}</Link>}
+              {<span className="rounded-xl bg-amber-300 px-4 py-2 text-sm font-black text-amber-950">{t.signin}</span>}
             </div>
           </div>
 

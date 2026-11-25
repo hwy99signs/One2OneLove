@@ -452,32 +452,13 @@ function LanguageContent({ children, currentPageName }) {
               )}
             </div>
 
-            {isAuthenticated ? (
-              <>
-                <Link to={createPageUrl("Invite")} className={'hover:text-yellow-200'}>{t.nav.invite}</Link>
-                <Link to={createPageUrl("Chat")} className={`${'hover:text-yellow-200'} relative`}>
-                  💬 {t.nav.chat}
-                  {totalUnreadCount > 0 && (
-                    <span className="absolute -top-2 -right-3 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
-                      {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
-                    </span>
-                  )}
-                </Link>
-                <Link to={createPageUrl("Profile")} className={'hover:text-yellow-200'}>👤 {t.nav.profile}</Link>
-                <button onClick={handleSignOut} className={'hover:text-yellow-200'}>{t.nav.signOut}</button>
-              </>
-            ) : isLoading ? (
-              // Session still resolving: neutral space, never a flash
-              // of Sign In / Sign Up at a signed-in member (click-pass
-              // session watch, 2026-10-12).
-              <span className="inline-block h-9 w-28" aria-hidden="true" />
-            ) : (
-              <>
-                <Link to={createPageUrl("Invite")} className={'hover:text-yellow-200'}>{t.nav.invite}</Link>
-                <button data-guest-allow onClick={handleSignIn} aria-label={`${t.nav.signIn} — navigation`} className={'hover:text-yellow-200'}>{t.nav.signIn}</button>
-                {<button data-guest-allow onClick={handleSignUp} className={'text-yellow-300 text-xl hover:text-yellow-100'}>{t.nav.signUp}</button>}
-              </>
-            )}
+            {/* Member system disabled (owner ruling, 2026-11-25): there
+                are no members in the 100% free platform, so the header
+                carries NO account entry points at all — no Sign In, no
+                Sign Up, no Invite, no Profile, no Sign Out, and no DM
+                unread badge. Everyone is a guest; Chat Rooms are reached
+                through the Action menu's Community link. The handlers
+                below stay in the file for future re-activation. */}
 
             <div className="relative">
               <Select value={currentLanguage} onValueChange={changeLanguage}>
@@ -512,14 +493,12 @@ function LanguageContent({ children, currentPageName }) {
             <button
               ref={mobileMenuButtonRef}
               type="button"
-              // The homepage guest gate swallows every tap that is not
-              // marked data-guest-allow and opens the create-account
-              // panel instead — without this mark, a signed-out visitor
-              // could never open the menu at all (owner report,
-              // 2026-10-12: "Hamburger takes me straight to create
-              // account and not sign in"). The menu itself is built for
-              // guests: its Sign In / Sign Up buttons carry the same
-              // mark, and member links inside stay gated by design.
+              // Historical note: this mark once kept the old homepage
+              // guest gate from swallowing the tap (owner report,
+              // 2026-10-12). The gate and the menu's account buttons are
+              // gone — the platform has no accounts (2026-11-25) and the
+              // menu is built for guests only — but the mark is harmless
+              // and stays for consistency with the other header controls.
               data-guest-allow
               aria-label={mobileMenuOpen ? t.nav.closeMenu : t.nav.openMenu}
               aria-expanded={mobileMenuOpen}
@@ -600,90 +579,12 @@ function LanguageContent({ children, currentPageName }) {
                   <Rainbow className="w-4 h-4" />
                   {t.nav.lgbtq}
                 </Link>
-                {isAuthenticated && (
-                  <Link
-                    to={createPageUrl("Profile")}
-                    className="flex items-center gap-2 text-white hover:bg-white/10 px-3 py-2.5 rounded-lg transition-all"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <User className="w-4 h-4" />
-                    {t.nav.profile}
-                  </Link>
-                )}
-                <div className="border-t border-white/20 my-1.5"></div>
-
-                {/* Chat - Only show when authenticated */}
-                {isAuthenticated && (
-                  <Link
-                    to={createPageUrl("Chat")}
-                    className="flex items-center gap-2 text-white hover:bg-white/10 px-3 py-2.5 rounded-lg transition-all relative"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                    {t.nav.chat}
-                    {totalUnreadCount > 0 && (
-                      <span className="ml-auto bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold">
-                        {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
-                      </span>
-                    )}
-                  </Link>
-                )}
-
-                {/* Sign Out - Only show when authenticated */}
-                {isAuthenticated && (
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setMobileMenuOpen(false);
-                      handleSignOut(e);
-                    }}
-                    className="flex items-center gap-2 text-white hover:bg-white/10 px-3 py-2.5 rounded-lg transition-all w-full text-left"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    {t.nav.signOut}
-                  </button>
-                )}
-                
-                {/* Invite belongs to members too (it was guest-only,
-                    which hid it from every signed-in member —
-                    click-pass defect, 2026-10-12). Sign In/Sign Up
-                    remain guest-only below. */}
-                <Link
-                  to={createPageUrl("Invite")}
-                  className="flex items-center gap-2 text-white hover:bg-white/10 px-3 py-2.5 rounded-lg transition-all"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <UserCheck className="w-4 h-4" />
-                  {t.nav.invite}
-                </Link>
-                {!isAuthenticated && (
-                  <>
-                    {<button
-                      data-guest-allow
-                      onClick={() => {
-                        handleSignUp();
-                        setMobileMenuOpen(false);
-                      }}
-                      className="flex items-center gap-2 text-white bg-white/20 hover:bg-white/30 px-3 py-2.5 rounded-lg transition-all font-semibold"
-                    >
-                      <UserPlus className="w-4 h-4" />
-                      {t.nav.signUp}
-                    </button>}
-                    <button
-                      data-guest-allow
-                      aria-label={`${t.nav.signIn} — navigation`}
-                      onClick={() => {
-                        handleSignIn();
-                        setMobileMenuOpen(false);
-                      }}
-                      className="flex items-center gap-2 text-white hover:bg-white/10 px-3 py-2.5 rounded-lg transition-all"
-                    >
-                      <LogIn className="w-4 h-4" />
-                      {t.nav.signIn}
-                    </button>
-                  </>
-                )}
+                {/* Member system disabled (owner ruling, 2026-11-25):
+                    the mobile menu carries no account entry points —
+                    the Profile, DM Chat, Sign Out, Invite, Sign Up and
+                    Sign In items that used to live here are removed.
+                    Everyone is a guest; Chat Rooms are under Community
+                    above. */}
               </nav>
             </div>
           )}

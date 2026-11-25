@@ -1,24 +1,22 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { DoorOpen, ShieldCheck } from 'lucide-react';
 import { useLanguage } from '@/Layout';
-import { useAuth } from '@/contexts/AuthContext';
 
-
+// Member system disabled (owner ruling, 2026-11-25): there are no
+// accounts on the free platform, so this notice no longer invites
+// anyone to sign in or create an account. It simply explains that
+// everything is open and that personal entries stay in this browser.
 const COPY = {
-  en:{ eyebrow:'ONE2ONELOVE OPEN HOUSE', title:'Explore this feature free', body:'You can look around without an account. Sign in or create an account when you want to save personal information, post, or use protected member actions.', signIn:'Sign In', signUp:'Create Account', memberAction:'Membership Options', protected:'Personal actions stay private and protected.' },
-  es:{ eyebrow:'JORNADA DE PUERTAS ABIERTAS ONE2ONELOVE', title:'Explora esta función gratis', body:'Puedes explorar sin una cuenta. Inicia sesión o crea una cuenta cuando quieras guardar información personal, publicar o usar acciones protegidas para miembros.', signIn:'Iniciar sesión', signUp:'Crear cuenta', memberAction:'Opciones de Membresía', protected:'Las acciones personales permanecen privadas y protegidas.' },
-  fr:{ eyebrow:'PORTES OUVERTES ONE2ONELOVE', title:'Explorez cette fonction gratuitement', body:'Vous pouvez parcourir cette fonction sans compte. Connectez-vous ou créez un compte pour enregistrer des informations personnelles, publier ou utiliser des actions membres protégées.', signIn:'Se connecter', signUp:'Créer un compte', memberAction:'Options d’Abonnement', protected:'Les actions personnelles restent privées et protégées.' },
-  it:{ eyebrow:'OPEN HOUSE ONE2ONELOVE', title:'Esplora questa funzione gratis', body:'Puoi esplorare senza un account. Accedi o crea un account quando vuoi salvare informazioni personali, pubblicare o usare azioni protette per i membri.', signIn:'Accedi', signUp:'Crea account', memberAction:'Opzioni di Abbonamento', protected:'Le azioni personali restano private e protette.' },
-  de:{ eyebrow:'ONE2ONELOVE OPEN HOUSE', title:'Diese Funktion kostenlos erkunden', body:'Du kannst diese Funktion ohne Konto ansehen. Melde dich an oder erstelle ein Konto, wenn du persönliche Informationen speichern, posten oder geschützte Mitgliederaktionen nutzen möchtest.', signIn:'Anmelden', signUp:'Konto erstellen', memberAction:'Mitgliedschaftsoptionen', protected:'Persönliche Aktionen bleiben privat und geschützt.' }
+  en:{ eyebrow:'ONE2ONELOVE OPEN HOUSE', title:'Explore this feature free', body:'One2OneLove is a free platform with no accounts. Everything here is open to everyone — your personal entries save privately in this browser, on this device.', protected:'No sign-up, no card — just start using it.' },
+  es:{ eyebrow:'JORNADA DE PUERTAS ABIERTAS ONE2ONELOVE', title:'Explora esta función gratis', body:'One2OneLove es una plataforma gratuita y sin cuentas. Todo está abierto para todos: tus entradas personales se guardan de forma privada en este navegador, en este dispositivo.', protected:'Sin registro y sin tarjeta: empieza a usarlo ya.' },
+  fr:{ eyebrow:'PORTES OUVERTES ONE2ONELOVE', title:'Explorez cette fonction gratuitement', body:'One2OneLove est une plateforme gratuite et sans comptes. Tout est ouvert à tous : vos entrées personnelles sont enregistrées en privé dans ce navigateur, sur cet appareil.', protected:'Aucune inscription, aucune carte — commencez tout de suite.' },
+  it:{ eyebrow:'OPEN HOUSE ONE2ONELOVE', title:'Esplora questa funzione gratis', body:'One2OneLove è una piattaforma gratuita e senza account. Tutto è aperto a tutti: le tue voci personali si salvano in privato in questo browser, su questo dispositivo.', protected:'Nessuna registrazione, nessuna carta: inizia subito a usarla.' },
+  de:{ eyebrow:'ONE2ONELOVE OPEN HOUSE', title:'Diese Funktion kostenlos erkunden', body:'One2OneLove ist eine kostenlose Plattform ohne Konten. Alles ist für alle offen — deine persönlichen Einträge werden privat in diesem Browser auf diesem Gerät gespeichert.', protected:'Keine Registrierung, keine Karte — einfach loslegen.' }
 };
 
 export default function OpenHouseBrowseNotice({ compact=false }) {
   const { currentLanguage } = useLanguage();
-  const { user } = useAuth();
   const t = COPY[currentLanguage] || COPY.en;
-  // Launch policy: guests browsing open features see this gentle, non-blocking
-  // invitation to create a free account. It never blocks the page.
   return (
     <section className={`rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 via-white to-cyan-50 ${compact?'p-3':'p-4 sm:p-5'} shadow-sm`}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -27,16 +25,6 @@ export default function OpenHouseBrowseNotice({ compact=false }) {
           <h2 className="mt-1 text-lg font-black text-slate-900">{t.title}</h2>
           <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">{t.body}</p>
           <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500"><ShieldCheck className="h-3.5 w-3.5"/>{t.protected}</p>
-        </div>
-        <div className="flex shrink-0 flex-wrap gap-2">
-          {user?.id ? (
-            <Link to="/Subscription?source=open-house" className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-black text-white shadow-sm hover:bg-slate-800">{t.memberAction}</Link>
-          ) : (
-            <>
-              <Link to="/SignIn?source=open-house" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm hover:bg-slate-50">{t.signIn}</Link>
-              <Link to="/SignUp?source=open-house" className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-black text-white shadow-sm hover:bg-slate-800">{t.signUp}</Link>
-            </>
-          )}
         </div>
       </div>
     </section>

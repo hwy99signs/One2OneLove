@@ -16,8 +16,20 @@ const COPY = {
   it: { eyebrow: 'ONE2ONELOVE', title: 'Questa Funzione È Stata Ritirata', body: 'One2OneLove ora è una piattaforma relazionale completamente gratuita. Questa funzione costava denaro a ogni utilizzo, quindi è stata disattivata — tutto il resto del sito è gratuito per tutti, senza registrazione e senza carta.', home: 'Vai alla Home', back: 'Indietro', features: 'Vedi tutto ciò che è gratuito' },
   de: { eyebrow: 'ONE2ONELOVE', title: 'Diese Funktion Wurde Eingestellt', body: 'One2OneLove ist jetzt eine komplett kostenlose Beziehungsplattform. Diese Funktion kostete bei jeder Nutzung Geld und wurde daher abgeschaltet — alles andere auf der Seite ist für alle kostenlos, ohne Anmeldung und ohne Karte.', home: 'Zur Startseite', back: 'Zurück', features: 'Alles Kostenlose ansehen' },
 };
-export default function RetiredFeature({ feature }) {
-  const { currentLanguage } = useLanguage(); const t = COPY[currentLanguage] || COPY.en;
+// Accounts variant (owner ruling, 2026-11-25 10:58 CT): "There are NO
+// MEMBERS or CREDIT SYSTEM in the 100% FREE. Keep them disabled and I
+// will re-activate them at a future date as needed." Sign-in, sign-up,
+// profile and other account surfaces land here: accounts are switched
+// off (not deleted) and everyone uses the platform as a guest.
+const ACCOUNTS_COPY = {
+  en: { eyebrow: 'ONE2ONELOVE', title: 'Accounts Are Off Right Now', body: 'One2OneLove is a completely free relationship platform with no accounts: there is no sign-up and no sign-in, and everything here is open to everyone as a guest. Member accounts and profiles are switched off for now and may return in the future.', home: 'Go to Home', back: 'Go Back', features: 'See everything that is free' },
+  es: { eyebrow: 'ONE2ONELOVE', title: 'Las Cuentas Están Desactivadas', body: 'One2OneLove es una plataforma de relaciones completamente gratuita y sin cuentas: no hay registro ni inicio de sesión, y todo está abierto para todos como invitados. Las cuentas y los perfiles de miembros están desactivados por ahora y podrían volver en el futuro.', home: 'Ir al Inicio', back: 'Volver', features: 'Ver todo lo que es gratis' },
+  fr: { eyebrow: 'ONE2ONELOVE', title: 'Les Comptes Sont Désactivés', body: 'One2OneLove est une plateforme relationnelle entièrement gratuite et sans comptes : aucune inscription, aucune connexion, et tout est ouvert à tous en tant qu’invité. Les comptes et profils membres sont désactivés pour le moment et pourront revenir à l’avenir.', home: 'Accueil', back: 'Retour', features: 'Voir tout ce qui est gratuit' },
+  it: { eyebrow: 'ONE2ONELOVE', title: 'Gli Account Sono Disattivati', body: 'One2OneLove è una piattaforma relazionale completamente gratuita e senza account: non c’è registrazione né accesso, e tutto è aperto a tutti come ospiti. Account e profili dei membri sono disattivati per ora e potrebbero tornare in futuro.', home: 'Vai alla Home', back: 'Indietro', features: 'Vedi tutto ciò che è gratuito' },
+  de: { eyebrow: 'ONE2ONELOVE', title: 'Konten Sind Derzeit Deaktiviert', body: 'One2OneLove ist eine komplett kostenlose Beziehungsplattform ohne Konten: keine Registrierung, keine Anmeldung — alles ist für alle als Gast offen. Mitgliederkonten und Profile sind vorerst deaktiviert und könnten in Zukunft zurückkehren.', home: 'Zur Startseite', back: 'Zurück', features: 'Alles Kostenlose ansehen' },
+};
+export default function RetiredFeature({ feature, variant }) {
+  const { currentLanguage } = useLanguage(); const t = (variant === 'accounts' ? (ACCOUNTS_COPY[currentLanguage] || ACCOUNTS_COPY.en) : (COPY[currentLanguage] || COPY.en));
   return <main className="min-h-[68vh] bg-gradient-to-b from-rose-50 via-white to-sky-50 px-4 py-16">
     <section className="mx-auto max-w-2xl rounded-3xl border border-rose-200 bg-white p-8 text-center shadow-xl">
       <Heart className="mx-auto h-14 w-14 text-rose-500" />

@@ -1,12 +1,12 @@
 // Browser-local data store for guest mode (owner decision, 2026-11-25).
 //
-// One2OneLove is free with no signup: when a visitor has no account, the
-// personal features (Journals, Memories, Milestones, Goals, Calendar,
-// Love Notes, custom Date Ideas) keep their data in this browser's local
-// storage instead of demanding an account. Members keep using the server
-// APIs exactly as before — the services below call the API first and only
-// fall back here when the API answers 401 (no session). Records stored
-// here never leave the device and are not shared with a partner account.
+// One2OneLove is free with no signup, and the member system is disabled
+// (owner ruling, 2026-11-25 10:58 CT), so guest mode is the ONLY mode:
+// the personal features (Journals, Memories, Milestones, Goals,
+// Calendar, Love Notes, custom Date Ideas) keep their data in this
+// browser's local storage, and their services use this store directly —
+// they never call the member API. Records stored here never leave the
+// device and are not shared with a partner account.
 
 const PREFIX = 'o2ol_guest_store_';
 
@@ -64,6 +64,8 @@ export function getRecord(name, id) {
   return loadCollection(name).find(row => String(row.id) === String(id)) || null;
 }
 
+// Retained for compatibility with older call sites; guest-only services
+// no longer branch on API errors because they make no member API calls.
 export function isUnauthorized(error) {
   return Number(error?.status) === 401;
 }

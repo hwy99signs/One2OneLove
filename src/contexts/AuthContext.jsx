@@ -128,7 +128,12 @@ export function AuthProvider({ children }) {
         // Hold the loading state and keep asking. A session found
         // resolves instantly; a genuinely ended one clears its marker
         // and presents signed-out after one window, once.
-        if (!current && wasKnown) {
+        // The marker recheck matters now that accounts are disabled
+        // (2026-11-25): a definitive signed-out answer clears the marker
+        // inside refreshUserProfile, so a device that once held a member
+        // session must not sit through the backoff window below for a
+        // session that can never come back.
+        if (!current && wasKnown && sessionWasKnown()) {
           for (const waitMs of [2000, 4000, 8000]) {
             await new Promise((resolve) => setTimeout(resolve, waitMs));
             if (!mounted) return;

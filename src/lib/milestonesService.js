@@ -1,17 +1,13 @@
 import { calendarDayDifference, formatLocalDateInput, parseLocalDate } from '@/utils/localDate';
-import { apiRequest } from './apiClient';
-import { loadCollection, insertRecord, updateRecord, deleteRecord, getRecord, isUnauthorized, fileToDataUrl } from './guestStore';
+import { loadCollection, insertRecord, updateRecord, deleteRecord, getRecord, fileToDataUrl } from './guestStore';
 
-// Guest mode (2026-11-25): with no account, milestones live in the
-// browser-local guest store and photos are kept as data URLs. Members keep
-// the server API. Calls try the API first and fall back locally only on a
-// 401 (no session).
+// Guest mode is the ONLY mode (owner ruling, 2026-11-25): there are no
+// members in the 100% free platform, so milestones live in the
+// browser-local guest store and photos are kept as data URLs. This
+// service never calls the member API — the server milestones API still
+// exists in the worker but is switched off (410) with the rest of the
+// member system, ready for future re-activation.
 const LOCAL = 'milestones';
-
-function fileIdFromUrl(photoUrl) {
-  const match = String(photoUrl || '').match(/\/api\/media\/milestones\/[0-9a-f-]{36}\/([0-9a-f-]{36})/i);
-  return match?.[1] || null;
-}
 
 function sortMilestones(rows, orderBy) {
   const raw = String(orderBy || '-date');
@@ -24,35 +20,20 @@ function sortMilestones(rows, orderBy) {
   });
 }
 
-export async function uploadMilestonePhoto(file, milestoneId = null) {
+export async function uploadMilestonePhoto(file, _milestoneId = null) {
   if (!file?.type?.startsWith('image/')) throw new Error('Milestone photo must be an image.');
   if (file.size > 10 * 1024 * 1024) throw new Error('Milestone photo must be 10MB or smaller.');
-  const query = milestoneId ? `?milestoneId=${encodeURIComponent(milestoneId)}` : '';
-  try {
-    const payload = await apiRequest(`/api/milestones/media${query}`, {
-      method: 'POST',
-      headers: { 'content-type': file.type },
-      rawBody: file,
-    });
-    return payload?.url || null;
-  } catch (error) {
-    if (!isUnauthorized(error)) throw error;
-    return fileToDataUrl(file);
-  }
+  // Photos stay in the browser as data URLs — no server upload exists
+  // in guest mode.
+  return fileToDataUrl(file);
 }
 
 export async function uploadMilestonePhotos(files, milestoneId = null) {
   return Promise.all((files || []).map((file) => uploadMilestonePhoto(file, milestoneId)));
 }
 
-export async function deleteMilestonePhoto(photoUrl) {
-  const id = fileIdFromUrl(photoUrl);
-  if (!id) return; // local data URLs need no server delete
-  try {
-    await apiRequest(`/api/milestones/media/${id}`, { method: 'DELETE' });
-  } catch (error) {
-    if (!isUnauthorized(error)) throw error;
-  }
+export async function deleteMilestonePhoto(_photoUrl) {
+  // Local data URLs need no server delete.
 }
 
 export async function deleteMilestonePhotos(photoUrls) {
@@ -60,75 +41,34 @@ export async function deleteMilestonePhotos(photoUrls) {
 }
 
 export async function getMilestones(orderBy = '-date') {
-  try {
-    const payload = await apiRequest(`/api/milestones?order=${encodeURIComponent(orderBy)}`);
-    return payload?.milestones || [];
-  } catch (error) {
-    if (!isUnauthorized(error)) throw error;
-    return sortMilestones(loadCollection(LOCAL), orderBy);
-  }
+  return sortMilestones(loadCollection(LOCAL), orderBy);
 }
 
 export async function getMilestoneById(milestoneId) {
-  try {
-    const payload = await apiRequest(`/api/milestones/${milestoneId}`);
-    return payload?.milestone || null;
-  } catch (error) {
-    if (!isUnauthorized(error)) throw error;
-    return getRecord(LOCAL, milestoneId);
-  }
+  return getRecord(LOCAL, milestoneId);
 }
 
 export async function createMilestone(milestoneData) {
-  try {
-    const payload = await apiRequest('/api/milestones', { method: 'POST', body: milestoneData });
-    return payload?.milestone || null;
-  } catch (error) {
-    if (!isUnauthorized(error)) throw error;
-    return insertRecord(LOCAL, milestoneData || {});
-  }
+  return insertRecord(LOCAL, milestoneData || {});
 }
 
 export async function updateMilestone(milestoneId, updates) {
   const { user_id, id, created_at, updated_at, ...allowed } = updates || {};
   void user_id; void id; void created_at; void updated_at;
-  try {
-    const payload = await apiRequest(`/api/milestones/${milestoneId}`, { method: 'PATCH', body: allowed });
-    return payload?.milestone || null;
-  } catch (error) {
-    if (!isUnauthorized(error)) throw error;
-    return updateRecord(LOCAL, milestoneId, allowed);
-  }
+  return updateRecord(LOCAL, milestoneId, allowed);
 }
 
 export async function deleteMilestone(milestoneId) {
-  try {
-    await apiRequest(`/api/milestones/${milestoneId}`, { method: 'DELETE' });
-  } catch (error) {
-    if (!isUnauthorized(error)) throw error;
-    deleteRecord(LOCAL, milestoneId);
-  }
+  deleteRecord(LOCAL, milestoneId);
 }
 
 export async function getUpcomingMilestones(daysAhead = 60) {
   const today = new Date();
   const future = new Date(today);
   future.setDate(today.getDate() + daysAhead);
-  const params = new URLSearchParams({
-    startDate: formatLocalDateInput(today),
-    endDate: formatLocalDateInput(future),
-    order: 'date',
-  });
-  let direct = [];
-  try {
-    const payload = await apiRequest(`/api/milestones?${params}`);
-    direct = payload?.milestones || [];
-  } catch (error) {
-    if (!isUnauthorized(error)) throw error;
-    const start = formatLocalDateInput(today);
-    const end = formatLocalDateInput(future);
-    direct = loadCollection(LOCAL).filter(m => String(m?.date || '') >= start && String(m?.date || '') <= end);
-  }
+  const start = formatLocalDateInput(today);
+  const end = formatLocalDateInput(future);
+  const direct = loadCollection(LOCAL).filter(m => String(m?.date || '') >= start && String(m?.date || '') <= end);
   const all = await getMilestones('date');
   const recurring = all.filter((m) => m.is_recurring).map((m) => {
     const next = getNextAnniversary(m.date);
@@ -153,14 +93,7 @@ export async function getPastMilestones() {
 }
 
 export async function getMilestonesByType(milestoneType) {
-  try {
-    const params = new URLSearchParams({ type: milestoneType, order: '-date' });
-    const payload = await apiRequest(`/api/milestones?${params}`);
-    return payload?.milestones || [];
-  } catch (error) {
-    if (!isUnauthorized(error)) throw error;
-    return sortMilestones(loadCollection(LOCAL).filter(m => (m?.milestone_type || m?.type) === milestoneType), '-date');
-  }
+  return sortMilestones(loadCollection(LOCAL).filter(m => (m?.milestone_type || m?.type) === milestoneType), '-date');
 }
 
 export async function markCelebrationCompleted(milestoneId) {

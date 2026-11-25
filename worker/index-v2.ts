@@ -365,13 +365,46 @@ async function handleFetchV2(request, env, ctx) {
     // handler, gate, or provider call. The Stripe billing webhook is the
     // one exception — it stays live so legacy events still settle; it
     // spends nothing and sells nothing.
+    //
+    // Member system + Credit system (owner ruling, 2026-11-25 10:58 CT):
+    // "There are NO MEMBERS or CREDIT SYSTEM in the 100% FREE. Keep them
+    // disabled and I will re-activate them at a future date as needed."
+    // Auth/session issuance, signup, member profiles and onboarding,
+    // direct messages, Like Minded multiplayer, buddies, invites, and
+    // the member personal-data APIs (journals, memories, milestones,
+    // goals, calendar, custom date ideas) are therefore refused here
+    // too. The handlers, schemas and data stay in place untouched —
+    // re-activation is removing prefixes from this block. Guest mode is
+    // the only mode: personal features run on the browser-local guest
+    // store, and Chat Rooms / public Communities carry their own guest
+    // paths below. Review writes are refused the same way (reading
+    // reviews stays public).
     if (
       url.pathname.startsWith('/api/ai') ||
       url.pathname.startsWith('/api/support-chat') ||
       url.pathname.startsWith('/api/phone-verification') ||
       url.pathname.startsWith('/api/tokens') ||
       url.pathname === '/api/billing/change-plan' ||
-      (url.pathname.startsWith('/api/billing') && url.pathname !== '/api/billing/webhook')
+      (url.pathname.startsWith('/api/billing') && url.pathname !== '/api/billing/webhook') ||
+      url.pathname.startsWith('/api/auth') ||
+      url.pathname.startsWith('/api/launch-signup') ||
+      url.pathname.startsWith('/api/professional-signup') ||
+      url.pathname.startsWith('/api/chat') ||
+      url.pathname.startsWith('/api/like-minded') ||
+      url.pathname.startsWith('/api/buddies') ||
+      url.pathname.startsWith('/api/invites/') ||
+      url.pathname.startsWith('/api/onboarding') ||
+      url.pathname.startsWith('/api/profile') ||
+      url.pathname.startsWith('/api/media/profile/') ||
+      url.pathname.startsWith('/api/journals') ||
+      url.pathname.startsWith('/api/memories') ||
+      url.pathname.startsWith('/api/media/memories/') ||
+      url.pathname.startsWith('/api/milestones') ||
+      url.pathname.startsWith('/api/media/milestones/') ||
+      url.pathname.startsWith('/api/goals') ||
+      url.pathname.startsWith('/api/calendar-events') ||
+      url.pathname.startsWith('/api/date-ideas') ||
+      (url.pathname.startsWith('/api/reviews') && request.method !== 'GET' && request.method !== 'HEAD')
     ) {
       return retiredFeatureResponse();
     }

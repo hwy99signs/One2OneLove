@@ -110,6 +110,13 @@ async function userIdentityState(env, userId) {
 }
 
 export async function enforceLaunchIdentity(request, env, url) {
+  // Member system disabled (owner ruling, 2026-11-25): there are no
+  // members in the 100% free platform, so no request is ever held to a
+  // member-identity check and nothing waits on the (also disabled) auth
+  // service. The checks below stay in place, untouched, for the day the
+  // owner re-activates accounts — re-activation removes this return.
+  return null;
+
   if (isPublicIdentityRoute(request, url) || requiresApiEntitlement(url.pathname)) return null;
 
   // Phone verification retired 2026-11-25 (all-free conversion): the old

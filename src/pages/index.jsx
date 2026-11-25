@@ -3,8 +3,6 @@ import Layout from './Layout.jsx';
 import Home from './Home';
 import PublicCatalog from './PublicCatalog';
 import AboutUs from './AboutUs';
-import SignIn from './SignIn';
-import SignUp from './SignUp';
 import AdminAccess from './AdminAccess';
 import Admin from './Admin';
 import Analytics from './Analytics';
@@ -14,19 +12,13 @@ import LoveNotes from './LoveNotes';
 import CoupleSupport from './CoupleSupport';
 import LoveLanguageQuiz from './LoveLanguageQuiz';
 import DateIdeas from './DateIdeas';
-import Profile from './Profile';
-import Invite from './Invite';
-import InviteLanding from './InviteLanding';
 import PodcastsSupport from './PodcastsSupport';
 import ArticlesSupport from './ArticlesSupport';
 import RelationshipQuizzes from './RelationshipQuizzes';
 import AnniversaryTracker from './AnniversaryTracker';
-import ForgotPassword from './ForgotPassword';
-import Dashboard from './Dashboard';
 import RelationshipMilestones from './RelationshipMilestones';
 import RelationshipGoals from './RelationshipGoals';
 import CommunicationPractice from './CommunicationPractice';
-import CouplesProfile from './CouplesProfile';
 import CoupleActivities from './CoupleActivities';
 import CooperativeGames from './CooperativeGames';
 import Pests from './Pests';
@@ -38,7 +30,6 @@ import GlobalWhatShouldTheyDoPreview from '@/features/whatShouldTheyDo/WhatShoul
 import ScratchGame from './ScratchGame';
 import LikeMinded from './LikeMinded';
 import SharedJournals from './SharedJournals';
-import CouplesDashboard from './CouplesDashboard';
 import CouplesCalendar from './CouplesCalendar';
 import LGBTQSupport from './LGBTQSupport';
 import HelpCenter from './HelpCenter';
@@ -46,14 +37,10 @@ import ContactUs from './ContactUs';
 import PrivacyPolicy from './PrivacyPolicy';
 import TermsOfService from './TermsOfService';
 import Reviews from './Reviews';
-import LeaveReview from './LeaveReview';
 import Suggestions from './Suggestions';
 import Chat from './Chat';
 import TokenSystemDashboard from './TokenSystemDashboard';
 import Professionals from './Professionals';
-import ProfessionalSignup from './ProfessionalSignup';
-import TherapistSignup from './TherapistSignup';
-import InfluencerSignup from './InfluencerSignup';
 import FeaturePricing from './FeaturePricing';
 import PaidGameSessionGate from '@/components/pricing/PaidGameSessionGate';
 import ExternalMyMatchIQRedirect from './ExternalMyMatchIQRedirect';
@@ -68,13 +55,13 @@ import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'r
 import { trackPageView } from '@/lib/interactionAnalytics';
 
 const PAGES = {
-  Home, PublicCatalog, AboutUs, SignIn, SignUp, AdminAccess, Admin, Analytics, TokenSystemDashboard, MemoryLane, LoveNotes, CoupleSupport,
-  LoveLanguageQuiz, DateIdeas, Profile, Invite, PodcastsSupport, ArticlesSupport, RelationshipQuizzes,
-  AnniversaryTracker, ForgotPassword, Dashboard, RelationshipMilestones, RelationshipGoals,
-  CommunicationPractice, CouplesProfile, CoupleActivities, CooperativeGames, Pests, PoolPingPong, IThoughtSo, Scrabluko, WhatShouldTheyDo, ScratchGame, LikeMinded, SharedJournals, CouplesDashboard,
+  Home, PublicCatalog, AboutUs, AdminAccess, Admin, Analytics, TokenSystemDashboard, MemoryLane, LoveNotes, CoupleSupport,
+  LoveLanguageQuiz, DateIdeas, PodcastsSupport, ArticlesSupport, RelationshipQuizzes,
+  AnniversaryTracker, RelationshipMilestones, RelationshipGoals,
+  CommunicationPractice, CoupleActivities, CooperativeGames, Pests, PoolPingPong, IThoughtSo, Scrabluko, WhatShouldTheyDo, ScratchGame, LikeMinded, SharedJournals,
   CouplesCalendar, LGBTQSupport, HelpCenter, ContactUs, PrivacyPolicy, TermsOfService, Reviews,
-  LeaveReview, Suggestions, Chat,
-  Professionals, ProfessionalSignup, TherapistSignup, InfluencerSignup, FeaturePricing, O2OLStudio, Episodes: O2OLStudioEpisodes,
+  Suggestions, Chat,
+  Professionals, FeaturePricing, O2OLStudio, Episodes: O2OLStudioEpisodes,
 };
 
 function _getCurrentPage(url) {
@@ -108,10 +95,15 @@ function PagesContent() {
           <Route path="/Catalog" element={<PublicCatalog />} />
           <Route path="/AboutUs" element={<AboutUs />} />
           <Route path="/About" element={<AboutUs />} />
-          <Route path="/SignIn" element={<SignIn />} />
-          <Route path="/login" element={<SignIn />} />
-          <Route path="/SignUp" element={<SignUp />} />
-          <Route path="/signup" element={<SignUp />} />
+          {/* Member system disabled (owner ruling, 2026-11-25): there are
+              no members in the 100% free platform. Sign-in, sign-up,
+              profile, invite and other account surfaces land on the
+              accounts-off notice — the pages and systems stay in the
+              codebase, switched off, for future re-activation. */}
+          <Route path="/SignIn" element={<RetiredFeature variant="accounts" />} />
+          <Route path="/login" element={<RetiredFeature variant="accounts" />} />
+          <Route path="/SignUp" element={<RetiredFeature variant="accounts" />} />
+          <Route path="/signup" element={<RetiredFeature variant="accounts" />} />
           <Route path="/AdminAccess" element={<AdminAccess />} />
           <Route path="/Admin" element={<AdminMfaGate><Admin /></AdminMfaGate>} />
           <Route path="/Analytics" element={<AdminMfaGate><Analytics /></AdminMfaGate>} />
@@ -123,23 +115,23 @@ function PagesContent() {
           <Route path="/CoupleSupport" element={<CoupleSupport />} />
           <Route path="/LoveLanguageQuiz" element={<LoveLanguageQuiz />} />
           <Route path="/DateIdeas" element={<DateIdeas />} />
-          <Route path="/Profile" element={<Profile />} />
-          <Route path="/Invite" element={<Invite />} />
-          <Route path="/i/:code" element={<InviteLanding />} />
+          <Route path="/Profile" element={<RetiredFeature variant="accounts" />} />
+          <Route path="/Invite" element={<RetiredFeature variant="accounts" />} />
+          <Route path="/i/:code" element={<RetiredFeature variant="accounts" />} />
           <Route path="/PodcastsSupport" element={<PodcastsSupport />} />
           <Route path="/Podcasts" element={<PodcastsSupport />} />
           <Route path="/Podcast" element={<PodcastsSupport />} />
           <Route path="/ArticlesSupport" element={<ArticlesSupport />} />
           <Route path="/RelationshipQuizzes" element={<RelationshipQuizzes />} />
           <Route path="/AnniversaryTracker" element={<AnniversaryTracker />} />
-          <Route path="/ForgotPassword" element={<ForgotPassword />} />
-          <Route path="/Dashboard" element={<Dashboard />} />
+          <Route path="/ForgotPassword" element={<RetiredFeature variant="accounts" />} />
+          <Route path="/Dashboard" element={<RetiredFeature variant="accounts" />} />
           <Route path="/Community" element={<Chat />} />
           <Route path="/Communities" element={<Chat />} />
           <Route path="/RelationshipMilestones" element={<RelationshipMilestones />} />
           <Route path="/RelationshipGoals" element={<RelationshipGoals />} />
           <Route path="/CommunicationPractice" element={<CommunicationPractice />} />
-          <Route path="/CouplesProfile" element={<CouplesProfile />} />
+          <Route path="/CouplesProfile" element={<RetiredFeature variant="accounts" />} />
           <Route path="/CoupleActivities" element={<CoupleActivities />} />
           <Route path="/CooperativeGames" element={<CooperativeGames />} />
           <Route path="/Pests" element={<PaidGameSessionGate image="/game-cards/card-pests.jpg" backdrop="#0b2e1d" game="pests" title="PEST'S"><Pests /></PaidGameSessionGate>} />
@@ -152,7 +144,7 @@ function PagesContent() {
           <Route path="/ScratchGame" element={<ScratchGame />} />
           <Route path="/LikeMinded" element={<LikeMinded />} />
           <Route path="/SharedJournals" element={<SharedJournals />} />
-          <Route path="/CouplesDashboard" element={<CouplesDashboard />} />
+          <Route path="/CouplesDashboard" element={<RetiredFeature variant="accounts" />} />
           <Route path="/CouplesCalendar" element={<CouplesCalendar />} />
           <Route path="/LGBTQSupport" element={<LGBTQSupport />} />
           <Route path="/HelpCenter" element={<HelpCenter />} />
@@ -160,7 +152,7 @@ function PagesContent() {
           <Route path="/PrivacyPolicy" element={<PrivacyPolicy />} />
           <Route path="/TermsOfService" element={<TermsOfService />} />
           <Route path="/Reviews" element={<Reviews />} />
-          <Route path="/LeaveReview" element={<LeaveReview />} />
+          <Route path="/LeaveReview" element={<RetiredFeature variant="accounts" />} />
           <Route path="/Suggestions" element={<Suggestions />} />
           <Route path="/Chat" element={<Chat />} />
           <Route path="/ChatRooms" element={<Chat />} />
@@ -173,9 +165,9 @@ function PagesContent() {
           <Route path="/MyMatchIQ/Subscription" element={<ExternalMyMatchIQRedirect />} />
           <Route path="/VerifyPhone" element={<Navigate to="/Home" replace />} />
           <Route path="/Professionals" element={<Professionals />} />
-          <Route path="/ProfessionalSignup" element={<ProfessionalSignup />} />
-          <Route path="/TherapistSignup" element={<TherapistSignup />} />
-          <Route path="/InfluencerSignup" element={<InfluencerSignup />} />
+          <Route path="/ProfessionalSignup" element={<RetiredFeature variant="accounts" />} />
+          <Route path="/TherapistSignup" element={<RetiredFeature variant="accounts" />} />
+          <Route path="/InfluencerSignup" element={<RetiredFeature variant="accounts" />} />
           <Route path="/O2OLStudio" element={<O2OLStudio />} />
           <Route path="/OnAir" element={<O2OLStudio />} />
           <Route path="/O2OLStudio/Episodes" element={<O2OLStudioEpisodes />} />
@@ -206,8 +198,8 @@ function PagesContent() {
           <Route path="/Leaderboard" element={<FeatureUnavailable feature="Leaderboard" />} />
           <Route path="/Achievements" element={<FeatureUnavailable feature="Achievements" />} />
           <Route path="/PremiumFeatures" element={<Navigate to="/FeaturePricing" replace />} />
-          <Route path="/FindFriends" element={<FeatureUnavailable feature="Find Friends" />} />
-          <Route path="/FriendRequests" element={<FeatureUnavailable feature="Friend Requests" />} />
+          <Route path="/FindFriends" element={<RetiredFeature variant="accounts" />} />
+          <Route path="/FriendRequests" element={<RetiredFeature variant="accounts" />} />
           <Route path="/Blog" element={<Navigate to="/ArticlesSupport" replace />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
