@@ -43,7 +43,7 @@ const UI = {
     locationNote:'Only your first name and general location are shown. Never your street address or precise location.',
     inviteToPlay:'Invite to Play', block:'Block', report:'Report', score:'Like-Minded Score', matches:'matches',
     talk:'Talk About It', talkPrompt:'What made each of you choose that answer?', difference:'Different answers', match:'You matched', back:'Back to Relationship Games',
-    category:'Category', questionDepth:'Depth', reset:'Start Over', unavailable:'Multiplayer service is not available in this preview yet.', premium:'FREE FOREVER',premiumBody:"Like Minded is permanently FREE. Each session lasts 2 hours; you can start another for free whenever you like.",buyTokens:'Start a Free Session',startPremium:'Play FREE',
+    category:'Category', questionDepth:'Depth', reset:'Start Over', unavailable:'Multiplayer service is not available in this preview yet.', premium:'FREE DURING LAUNCH',premiumBody:"Like Minded is FREE during our launch period. Each session lasts 2 hours; you can start another for free whenever you like.",buyTokens:'Start a Free Session',startPremium:'Play FREE',
     categoriesList:['Relationship Goals','Communication','Values','Family','Lifestyle','Money & Ambition','Boundaries','Future Priorities','Fun Scenarios','Humor','Activities','Food & Travel','Entertainment','Daily Preferences','Wild Card']
   },
   es: {
@@ -70,7 +70,7 @@ const UI = {
     locationNote:'Solo se muestra tu nombre y ubicación general. Nunca tu dirección ni ubicación exacta.',
     inviteToPlay:'Invitar a Jugar', block:'Bloquear', report:'Reportar', score:'Puntuación Like-Minded', matches:'coincidencias',
     talk:'Hablar de Esto', talkPrompt:'¿Qué hizo que cada uno eligiera esa respuesta?', difference:'Respuestas diferentes', match:'Coincidieron', back:'Volver a Juegos',
-    category:'Categoría', questionDepth:'Profundidad', reset:'Empezar de Nuevo', unavailable:'El servicio multijugador aún no está disponible en esta vista previa.', premium:'GRATIS PARA SIEMPRE',premiumBody:"Like Minded es gratis para siempre. Cada sesión dura 2 horas; puedes iniciar otra sin pagar.",buyTokens:'Iniciar sesión gratis',startPremium:'Jugar GRATIS',
+    category:'Categoría', questionDepth:'Profundidad', reset:'Empezar de Nuevo', unavailable:'El servicio multijugador aún no está disponible en esta vista previa.', premium:'GRATIS DURANTE EL LANZAMIENTO',premiumBody:"Like Minded es gratis durante el lanzamiento. Cada sesión dura 2 horas; puedes iniciar otra sin pagar.",buyTokens:'Iniciar sesión gratis',startPremium:'Jugar GRATIS',
     categoriesList:['Metas de Relación','Comunicación','Valores','Familia','Estilo de Vida','Dinero y Ambición','Límites','Prioridades Futuras','Escenarios Divertidos','Humor','Actividades','Comida y Viajes','Entretenimiento','Preferencias Diarias','Comodín']
   },
   fr: {
@@ -97,7 +97,7 @@ const UI = {
     locationNote:'Seuls votre prénom et votre localisation générale sont visibles. Jamais votre adresse précise.',
     inviteToPlay:'Inviter à Jouer', block:'Bloquer', report:'Signaler', score:'Score Like-Minded', matches:'accords',
     talk:'En Parler', talkPrompt:'Pourquoi chacun de vous a-t-il choisi cette réponse ?', difference:'Réponses différentes', match:'Vous êtes d’accord', back:'Retour aux Jeux',
-    category:'Catégorie', questionDepth:'Profondeur', reset:'Recommencer', unavailable:'Le service multijoueur n’est pas encore disponible dans cet aperçu.', premium:'GRATUIT POUR TOUJOURS',premiumBody:"Like Minded est gratuit pour toujours. Chaque session dure 2 heures ; vous pouvez en commencer une autre gratuitement.",buyTokens:'Démarrer gratuitement',startPremium:'Jouer GRATUITEMENT',
+    category:'Catégorie', questionDepth:'Profondeur', reset:'Recommencer', unavailable:'Le service multijoueur n’est pas encore disponible dans cet aperçu.', premium:'GRATUIT PENDANT LE LANCEMENT',premiumBody:"Like Minded est gratuit pendant le lancement. Chaque session dure 2 heures ; vous pouvez en commencer une autre gratuitement.",buyTokens:'Démarrer gratuitement',startPremium:'Jouer GRATUITEMENT',
     categoriesList:['Objectifs Relationnels','Communication','Valeurs','Famille','Style de Vie','Argent & Ambition','Limites','Priorités Futures','Scénarios Amusants','Humour','Activités','Cuisine & Voyage','Divertissement','Préférences Quotidiennes','Joker']
   },
   it: {
@@ -124,7 +124,7 @@ const UI = {
     locationNote:'Vengono mostrati solo nome e posizione generale. Mai indirizzo o posizione precisa.',
     inviteToPlay:'Invita a Giocare', block:'Blocca', report:'Segnala', score:'Punteggio Like-Minded', matches:'corrispondenze',
     talk:'Parlatene', talkPrompt:'Cosa ha portato ciascuno di voi a scegliere quella risposta?', difference:'Risposte diverse', match:'Corrispondenza', back:'Torna ai Giochi',
-    category:'Categoria', questionDepth:'Profondità', reset:'Ricomincia', unavailable:'Il servizio multigiocatore non è ancora disponibile in questa anteprima.', premium:'GRATIS PER SEMPRE',premiumBody:"Like Minded è gratis per sempre. Ogni sessione dura 2 ore; puoi avviarne un’altra gratuitamente.",buyTokens:'Inizia sessione gratis',startPremium:'Gioca GRATIS',
+    category:'Categoria', questionDepth:'Profondità', reset:'Ricomincia', unavailable:'Il servizio multigiocatore non è ancora disponibile in questa anteprima.', premium:'GRATIS DURANTE IL LANCIO',premiumBody:"Like Minded è gratis durante il lancio. Ogni sessione dura 2 ore; puoi avviarne un’altra gratuitamente.",buyTokens:'Inizia sessione gratis',startPremium:'Gioca GRATIS',
     categoriesList:['Obiettivi di Coppia','Comunicazione','Valori','Famiglia','Stile di Vita','Denaro & Ambizione','Confini','Priorità Future','Scenari Divertenti','Umorismo','Attività','Cibo & Viaggi','Intrattenimento','Preferenze Quotidiane','Jolly']
   },
   de: {
@@ -151,7 +151,7 @@ const UI = {
     locationNote:'Nur Vorname und allgemeiner Standort werden gezeigt. Niemals Straße oder genauer Standort.',
     inviteToPlay:'Zum Spielen Einladen', block:'Blockieren', report:'Melden', score:'Like-Minded Score', matches:'Treffer',
     talk:'Darüber Reden', talkPrompt:'Was hat euch jeweils zu dieser Antwort gebracht?', difference:'Unterschiedliche Antworten', match:'Ihr stimmt überein', back:'Zurück zu Spielen',
-    category:'Kategorie', questionDepth:'Tiefe', reset:'Neu Starten', unavailable:'Der Mehrspieler-Dienst ist in dieser Vorschau noch nicht verfügbar.', premium:'FÜR IMMER KOSTENLOS',premiumBody:"Like Minded ist für immer kostenlos. Jede Sitzung dauert 2 Stunden; neue Sitzungen sind ebenfalls kostenlos.",buyTokens:'Gratis-Sitzung starten',startPremium:'GRATIS spielen',
+    category:'Kategorie', questionDepth:'Tiefe', reset:'Neu Starten', unavailable:'Der Mehrspieler-Dienst ist in dieser Vorschau noch nicht verfügbar.', premium:'KOSTENLOS IN DER STARTPHASE',premiumBody:"Like Minded ist in der Startphase kostenlos. Jede Sitzung dauert 2 Stunden; neue Sitzungen sind ebenfalls kostenlos.",buyTokens:'Gratis-Sitzung starten',startPremium:'GRATIS spielen',
     categoriesList:['Beziehungsziele','Kommunikation','Werte','Familie','Lebensstil','Geld & Ehrgeiz','Grenzen','Zukunftsprioritäten','Spaßszenarien','Humor','Aktivitäten','Essen & Reisen','Unterhaltung','Alltagsvorlieben','Wildcard']
   }
 };
@@ -487,7 +487,7 @@ export default function LikeMinded() {
   };
 
   const startSolo = async () => {
-    // Solo self-check is a permanently free game; keep multiplayer
+    // Solo self-check is a free during our launch period game; keep multiplayer
     // verification and pre-chat Credit entitlements unchanged.
     if(!(isGuestBrowseEnabled() && !isAuthenticated) && !(await ensurePremiumAccess()))return;
     setScreen('solo'); setQuestionNo(1); setSetNo(1); setSelected(null); setLocked(false); setCheckpoint(false);

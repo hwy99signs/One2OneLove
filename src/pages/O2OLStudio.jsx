@@ -12,7 +12,7 @@ const COPY={
     unavailable:'This episode is temporarily unavailable. Please try again shortly.',
     chat:'Enter Chat Room to Comment',
     explore:'Explore MyMatchIQ',episodes:'Previous Episodes',
-    note:'Both O2OL Studio episodes are FREE FOREVER — no account or Credit needed.',
+    note:'Both O2OL Studio episodes are FREE DURING LAUNCH — no account or Credit needed.',
     replay:'Public replay opens',freeNow:'Create a FREE account to watch now',signIn:'Sign In'
   },
   es:{
@@ -22,7 +22,7 @@ const COPY={
     unavailable:'Este episodio no está disponible temporalmente. Inténtalo de nuevo en unos momentos.',
     chat:'Entrar al Chat para Comentar',
     explore:'Explorar MyMatchIQ',episodes:'Episodios Anteriores',
-    note:'Los dos episodios de O2OL Studio son GRATIS PARA SIEMPRE — sin cuenta ni Crédito.',
+    note:'Los dos episodios de O2OL Studio son GRATIS DURANTE EL LANZAMIENTO — sin cuenta ni Crédito.',
     replay:'La repetición pública abre',freeNow:'Crea una cuenta GRATIS para verlo ahora',signIn:'Iniciar Sesión'
   },
   fr:{
@@ -32,7 +32,7 @@ const COPY={
     unavailable:'Cet épisode est temporairement indisponible. Veuillez réessayer dans quelques instants.',
     chat:'Entrer dans le Chat pour Commenter',
     explore:'Explorer MyMatchIQ',episodes:'Épisodes Précédents',
-    note:'Les deux épisodes O2OL Studio sont GRATUITS POUR TOUJOURS — sans compte ni Crédit.',
+    note:'Les deux épisodes O2OL Studio sont GRATUITS PENDANT LE LANCEMENT — sans compte ni Crédit.',
     replay:'La rediffusion publique ouvre',freeNow:'Créez un compte GRATUIT pour regarder maintenant',signIn:'Se Connecter'
   },
   it:{
@@ -42,7 +42,7 @@ const COPY={
     unavailable:'Questo episodio non è temporaneamente disponibile. Riprova tra poco.',
     chat:'Entra nella Chat per Commentare',
     explore:'Esplora MyMatchIQ',episodes:'Episodi Precedenti',
-    note:'Entrambi gli episodi O2OL Studio sono GRATIS PER SEMPRE — senza account né Credito.',
+    note:'Entrambi gli episodi O2OL Studio sono GRATIS DURANTE IL LANCIO — senza account né Credito.',
     replay:'La replica pubblica apre',freeNow:'Crea un account GRATUITO per guardare ora',signIn:'Accedi'
   },
   de:{
@@ -52,7 +52,7 @@ const COPY={
     unavailable:'Diese Folge ist vorübergehend nicht verfügbar. Bitte versuche es in Kürze erneut.',
     chat:'Chatraum Betreten und Kommentieren',
     explore:'MyMatchIQ Entdecken',episodes:'Frühere Folgen',
-    note:'Beide O2OL-Studio-Folgen sind FÜR IMMER KOSTENLOS — ohne Konto oder Credit.',
+    note:'Beide O2OL-Studio-Folgen sind KOSTENLOS IN DER STARTPHASE — ohne Konto oder Credit.',
     replay:'Öffentliche Wiederholung ab',freeNow:'KOSTENLOSES Konto erstellen und jetzt ansehen',signIn:'Anmelden'
   }
 };

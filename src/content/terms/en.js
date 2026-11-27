@@ -85,7 +85,7 @@ export default [
   ],
   [
     "22. No Credit and No Usage-Based Charges",
-    "One2OneLove has retired Credit, wallets, and every usage-based charge. Nothing on the platform is metered and nothing can be bought. Features that cost money on every use — AI chat replies, the AI Content Creator, AI-generated Love Notes and reports, and One2OneLove-delivered SMS — have been retired and are no longer offered. All current and future One2OneLove games are free forever for everyone, including guests, with no per-play charges. Sharing through your own apps is free."
+    "One2OneLove has retired Credit, wallets, and every usage-based charge. Nothing on the platform is metered and nothing can be bought. Features that cost money on every use — AI chat replies, the AI Content Creator, AI-generated Love Notes and reports, and One2OneLove-delivered SMS — have been retired and are no longer offered. All One2OneLove games are free for everyone during our launch period, including guests, with no per-play charges. Sharing through your own apps is free."
   ],
   [
     "23. Game Credits",

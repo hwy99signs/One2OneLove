@@ -85,7 +85,7 @@ export default [
   ],
   [
     "22. Sin Crédito y Sin Cargos por Uso",
-    "One2OneLove retiró el Crédito, las billeteras y todo cargo por uso. Nada en la plataforma se mide por uso y nada puede comprarse. Las funciones que costaban dinero en cada uso — respuestas de chat con IA, el Creador de Contenido IA, Notas de Amor e informes generados por IA y los SMS enviados por One2OneLove — se retiraron y ya no se ofrecen. Todos los juegos actuales y futuros de One2OneLove son gratis para siempre para todos, incluidos los invitados, sin cargos por partida. Compartir mediante tus propias aplicaciones es gratis."
+    "One2OneLove retiró el Crédito, las billeteras y todo cargo por uso. Nada en la plataforma se mide por uso y nada puede comprarse. Las funciones que costaban dinero en cada uso — respuestas de chat con IA, el Creador de Contenido IA, Notas de Amor e informes generados por IA y los SMS enviados por One2OneLove — se retiraron y ya no se ofrecen. Todos los juegos de One2OneLove son gratis para todos durante nuestro período de lanzamiento, incluidos los invitados, sin cargos por partida. Compartir mediante tus propias aplicaciones es gratis."
   ],
   [
     "23. Juegos y Créditos de Juego",

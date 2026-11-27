@@ -85,7 +85,7 @@ export default [
   ],
   [
     "22. Aucun Crédit et Aucun Frais à l’Usage",
-    "One2OneLove a retiré le Crédit, les portefeuilles et tout frais à l’usage. Rien sur la plateforme n’est mesuré à l’usage et rien ne peut être acheté. Les fonctionnalités qui coûtaient de l’argent à chaque utilisation — réponses de chat IA, Créateur de Contenu IA, Notes d’Amour et rapports générés par IA, et SMS envoyés par One2OneLove — ont été retirées et ne sont plus proposées. Tous les jeux One2OneLove actuels et futurs sont gratuits pour toujours pour tout le monde, y compris les invités, sans frais par partie. Le partage via vos propres applications est gratuit."
+    "One2OneLove a retiré le Crédit, les portefeuilles et tout frais à l’usage. Rien sur la plateforme n’est mesuré à l’usage et rien ne peut être acheté. Les fonctionnalités qui coûtaient de l’argent à chaque utilisation — réponses de chat IA, Créateur de Contenu IA, Notes d’Amour et rapports générés par IA, et SMS envoyés par One2OneLove — ont été retirées et ne sont plus proposées. Tous les jeux One2OneLove sont gratuits pour tout le monde pendant notre période de lancement, y compris les invités, sans frais par partie. Le partage via vos propres applications est gratuit."
   ],
   [
     "23. Jeux et Crédits de Jeu",

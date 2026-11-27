@@ -5,17 +5,17 @@ import { useLanguage } from './Layout';
 import { useAuth } from '@/contexts/AuthContext';
 
 const COPY={
-  en:{title:'Previous Episodes',sub:'Watch both O2OL Studio videos FREE FOREVER — no account or Credit needed.',back:'Back to O2OL Studio',season:'Season',episode:'Episode',watch:'Watch Episode',locked:'Replay not available yet',opens:'Public replay opens',empty:'No Studio episodes are available yet.',loading:'Loading episodes…'},
-  es:{title:'Episodios Anteriores',sub:'Mira ambos vídeos de O2OL Studio GRATIS PARA SIEMPRE, sin cuenta ni Crédito.',back:'Volver a O2OL Studio',season:'Temporada',episode:'Episodio',watch:'Ver Episodio',locked:'La repetición aún no está disponible',opens:'La repetición pública abre',empty:'Aún no hay episodios de Studio disponibles.',loading:'Cargando episodios…'},
-  fr:{title:'Épisodes Précédents',sub:'Regardez les deux vidéos O2OL Studio GRATUITEMENT POUR TOUJOURS, sans compte ni Crédit.',back:'Retour à O2OL Studio',season:'Saison',episode:'Épisode',watch:'Regarder l’épisode',locked:'La rediffusion n’est pas encore disponible',opens:'La rediffusion publique ouvre',empty:'Aucun épisode Studio n’est encore disponible.',loading:'Chargement des épisodes…'},
-  it:{title:'Episodi Precedenti',sub:'Guarda entrambi i video O2OL Studio GRATIS PER SEMPRE, senza account né Credito.',back:'Torna a O2OL Studio',season:'Stagione',episode:'Episodio',watch:'Guarda Episodio',locked:'La replica non è ancora disponibile',opens:'La replica pubblica apre',empty:'Non ci sono ancora episodi Studio disponibili.',loading:'Caricamento episodi…'},
-  de:{title:'Frühere Folgen',sub:'Beide O2OL-Studio-Videos sind FÜR IMMER KOSTENLOS — ohne Konto oder Credit.',back:'Zurück zu O2OL Studio',season:'Staffel',episode:'Folge',watch:'Folge ansehen',locked:'Wiederholung noch nicht verfügbar',opens:'Öffentliche Wiederholung ab',empty:'Noch keine Studio-Folgen verfügbar.',loading:'Folgen werden geladen…'}
+  en:{title:'Previous Episodes',sub:'Watch both O2OL Studio videos FREE DURING LAUNCH — no account or Credit needed.',back:'Back to O2OL Studio',season:'Season',episode:'Episode',watch:'Watch Episode',locked:'Replay not available yet',opens:'Public replay opens',empty:'No Studio episodes are available yet.',loading:'Loading episodes…'},
+  es:{title:'Episodios Anteriores',sub:'Mira ambos vídeos de O2OL Studio GRATIS DURANTE EL LANZAMIENTO, sin cuenta ni Crédito.',back:'Volver a O2OL Studio',season:'Temporada',episode:'Episodio',watch:'Ver Episodio',locked:'La repetición aún no está disponible',opens:'La repetición pública abre',empty:'Aún no hay episodios de Studio disponibles.',loading:'Cargando episodios…'},
+  fr:{title:'Épisodes Précédents',sub:'Regardez les deux vidéos O2OL Studio GRATUITEMENT PENDANT LE LANCEMENT, sans compte ni Crédit.',back:'Retour à O2OL Studio',season:'Saison',episode:'Épisode',watch:'Regarder l’épisode',locked:'La rediffusion n’est pas encore disponible',opens:'La rediffusion publique ouvre',empty:'Aucun épisode Studio n’est encore disponible.',loading:'Chargement des épisodes…'},
+  it:{title:'Episodi Precedenti',sub:'Guarda entrambi i video O2OL Studio GRATIS DURANTE IL LANCIO, senza account né Credito.',back:'Torna a O2OL Studio',season:'Stagione',episode:'Episodio',watch:'Guarda Episodio',locked:'La replica non è ancora disponibile',opens:'La replica pubblica apre',empty:'Non ci sono ancora episodi Studio disponibili.',loading:'Caricamento episodi…'},
+  de:{title:'Frühere Folgen',sub:'Beide O2OL-Studio-Videos sind KOSTENLOS IN DER STARTPHASE — ohne Konto oder Credit.',back:'Zurück zu O2OL Studio',season:'Staffel',episode:'Folge',watch:'Folge ansehen',locked:'Wiederholung noch nicht verfügbar',opens:'Öffentliche Wiederholung ab',empty:'Noch keine Studio-Folgen verfügbar.',loading:'Folgen werden geladen…'}
 };
 
 const FREE_EPISODE_NOTE = {
-  en:'FREE FOREVER for everyone',es:'GRATIS PARA SIEMPRE para todos',
-  fr:'GRATUIT POUR TOUJOURS pour tous',it:'GRATIS PER SEMPRE per tutti',
-  de:'FÜR IMMER KOSTENLOS für alle'
+  en:'FREE DURING LAUNCH for everyone',es:'GRATIS DURANTE EL LANZAMIENTO para todos',
+  fr:'GRATUIT PENDANT LE LANCEMENT pour tous',it:'GRATIS DURANTE IL LANCIO per tutti',
+  de:'KOSTENLOS IN DER STARTPHASE für alle'
 };
 const EPISODE_TITLES={
   en:{'season-1-episode-1':'Who Should Apologize First?','season-1-episode-2':'Who Pays for the First Date?'},

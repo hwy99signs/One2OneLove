@@ -85,7 +85,7 @@ export default [
   ],
   [
     "22. Kein Credit und Keine Nutzungsbasierten Gebühren",
-    "One2OneLove hat Credit, Wallets und jede nutzungsbasierte Gebühr eingestellt. Auf der Plattform wird nichts nach Nutzung abgerechnet und nichts kann gekauft werden. Funktionen, die bei jeder Nutzung Geld kosteten — KI-Chat-Antworten, der KI-Content-Creator, KI-generierte Liebesbotschaften und Berichte sowie von One2OneLove zugestellte SMS — wurden eingestellt und werden nicht mehr angeboten. Alle aktuellen und zukünftigen One2OneLove-Spiele sind für alle, einschließlich Gäste, für immer kostenlos, ohne Gebühren pro Spiel. Das Teilen über eigene Apps ist kostenlos."
+    "One2OneLove hat Credit, Wallets und jede nutzungsbasierte Gebühr eingestellt. Auf der Plattform wird nichts nach Nutzung abgerechnet und nichts kann gekauft werden. Funktionen, die bei jeder Nutzung Geld kosteten — KI-Chat-Antworten, der KI-Content-Creator, KI-generierte Liebesbotschaften und Berichte sowie von One2OneLove zugestellte SMS — wurden eingestellt und werden nicht mehr angeboten. Alle One2OneLove-Spiele sind für alle, einschließlich Gäste, während unserer Startphase kostenlos, ohne Gebühren pro Spiel. Das Teilen über eigene Apps ist kostenlos."
   ],
   [
     "23. Spiele und Spielguthaben",

@@ -85,7 +85,7 @@ export default [
   ],
   [
     "22. Nessun Credito e Nessun Costo a Consumo",
-    "One2OneLove ha ritirato Credito, portafogli e ogni costo a consumo. Nulla sulla piattaforma è a consumo e nulla può essere acquistato. Le funzioni che costavano denaro a ogni utilizzo — risposte chat IA, Creatore di Contenuti IA, Note d’Amore e rapporti generati dall’IA e SMS inviati da One2OneLove — sono state ritirate e non sono più offerte. Tutti i giochi One2OneLove presenti e futuri sono gratis per sempre per tutti, ospiti inclusi, senza costi per partita. La condivisione tramite le proprie app è gratuita."
+    "One2OneLove ha ritirato Credito, portafogli e ogni costo a consumo. Nulla sulla piattaforma è a consumo e nulla può essere acquistato. Le funzioni che costavano denaro a ogni utilizzo — risposte chat IA, Creatore di Contenuti IA, Note d’Amore e rapporti generati dall’IA e SMS inviati da One2OneLove — sono state ritirate e non sono più offerte. Tutti i giochi One2OneLove sono gratis per tutti durante il nostro periodo di lancio, ospiti inclusi, senza costi per partita. La condivisione tramite le proprie app è gratuita."
   ],
   [
     "23. Giochi e Crediti di Gioco",

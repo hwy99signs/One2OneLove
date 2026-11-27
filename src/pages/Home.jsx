@@ -33,13 +33,13 @@ const STUDIO_COPY = {
   de:{eyebrow:'O2OL STUDIO SHOW',season:'Staffel 1 • Folge 1',title:'Wer sollte sich zuerst entschuldigen?',body:'Sieh dir Folge 1 KOSTENLOS an — das O2OL-Studio-Gespräch, das die Staffel eröffnete — und betrachte eine echte Beziehungsfrage aus mehreren Perspektiven.',watch:'Folge 1 Ansehen'}
 };
 
-// Both published O2OL Studio episodes are FREE FOREVER, with no account required.
+// Both published O2OL Studio episodes are FREE DURING LAUNCH, with no account required.
 const STUDIO_E2_COPY = {
-  en:{eyebrow:'O2OL STUDIO SHOW',badge:'NEW EPISODE',season:'Season 1 • Episode 2',title:'Who Pays for the First Date?',body:'Watch the latest O2OL Studio conversation FREE FOREVER. No signup or Credit required.',watch:'Watch Episode 2 FREE',lockNote:'FREE FOREVER • Watch anytime'},
-  es:{eyebrow:'O2OL STUDIO SHOW',badge:'NUEVO EPISODIO',season:'Temporada 1 • Episodio 2',title:'¿Quién paga en la primera cita?',body:'Mira la última conversación de O2OL Studio GRATIS PARA SIEMPRE. Sin registro ni Crédito.',watch:'Ver Episodio 2 GRATIS',lockNote:'GRATIS PARA SIEMPRE • Míralo cuando quieras'},
-  fr:{eyebrow:'O2OL STUDIO SHOW',badge:'NOUVEL ÉPISODE',season:'Saison 1 • Épisode 2',title:'Qui paie au premier rendez-vous ?',body:'Regardez le dernier épisode O2OL Studio GRATUITEMENT POUR TOUJOURS, sans inscription ni Crédit.',watch:'Voir l’Épisode 2 GRATUITEMENT',lockNote:'GRATUIT POUR TOUJOURS • À voir à tout moment'},
-  it:{eyebrow:'O2OL STUDIO SHOW',badge:'NUOVO EPISODIO',season:'Stagione 1 • Episodio 2',title:'Chi paga al primo appuntamento?',body:'Guarda l’ultimo episodio O2OL Studio GRATIS PER SEMPRE, senza registrazione né Credito.',watch:'Guarda Episodio 2 GRATIS',lockNote:'GRATIS PER SEMPRE • Guarda quando vuoi'},
-  de:{eyebrow:'O2OL STUDIO SHOW',badge:'NEUE FOLGE',season:'Staffel 1 • Folge 2',title:'Wer zahlt beim ersten Date?',body:'Sieh die neueste O2OL-Studio-Folge FÜR IMMER KOSTENLOS – ohne Anmeldung oder Credit.',watch:'Folge 2 GRATIS ansehen',lockNote:'FÜR IMMER KOSTENLOS • Jederzeit ansehen'}
+  en:{eyebrow:'O2OL STUDIO SHOW',badge:'NEW EPISODE',season:'Season 1 • Episode 2',title:'Who Pays for the First Date?',body:'Watch the latest O2OL Studio conversation FREE DURING LAUNCH. No signup or Credit required.',watch:'Watch Episode 2 FREE',lockNote:'FREE DURING LAUNCH • Watch anytime'},
+  es:{eyebrow:'O2OL STUDIO SHOW',badge:'NUEVO EPISODIO',season:'Temporada 1 • Episodio 2',title:'¿Quién paga en la primera cita?',body:'Mira la última conversación de O2OL Studio GRATIS DURANTE EL LANZAMIENTO. Sin registro ni Crédito.',watch:'Ver Episodio 2 GRATIS',lockNote:'GRATIS DURANTE EL LANZAMIENTO • Míralo cuando quieras'},
+  fr:{eyebrow:'O2OL STUDIO SHOW',badge:'NOUVEL ÉPISODE',season:'Saison 1 • Épisode 2',title:'Qui paie au premier rendez-vous ?',body:'Regardez le dernier épisode O2OL Studio GRATUITEMENT PENDANT LE LANCEMENT, sans inscription ni Crédit.',watch:'Voir l’Épisode 2 GRATUITEMENT',lockNote:'GRATUIT PENDANT LE LANCEMENT • À voir à tout moment'},
+  it:{eyebrow:'O2OL STUDIO SHOW',badge:'NUOVO EPISODIO',season:'Stagione 1 • Episodio 2',title:'Chi paga al primo appuntamento?',body:'Guarda l’ultimo episodio O2OL Studio GRATIS DURANTE IL LANCIO, senza registrazione né Credito.',watch:'Guarda Episodio 2 GRATIS',lockNote:'GRATIS DURANTE IL LANCIO • Guarda quando vuoi'},
+  de:{eyebrow:'O2OL STUDIO SHOW',badge:'NEUE FOLGE',season:'Staffel 1 • Folge 2',title:'Wer zahlt beim ersten Date?',body:'Sieh die neueste O2OL-Studio-Folge KOSTENLOS IN DER STARTPHASE – ohne Anmeldung oder Credit.',watch:'Folge 2 GRATIS ansehen',lockNote:'KOSTENLOS IN DER STARTPHASE • Jederzeit ansehen'}
 };
 const HOME_PROMO_TOOL_CODES = {
   MemoryLane:'memories_unlock',

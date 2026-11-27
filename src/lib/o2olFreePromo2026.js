@@ -1,4 +1,4 @@
-// One2OneLove is now a permanently free platform (owner decision, 2026-11-25).
+// One2OneLove is a free platform during its launch period (owner decision, 2026-11-25; wording rule 2026-11-27: never promise FREE DURING LAUNCH — charging may return).
 //
 // This module used to describe the temporary Oct 29 – Dec 31, 2026 free
 // promotion (with a Jan 1, 2027 relock). That promotion is over because the
@@ -7,10 +7,10 @@
 // (AI replies, AI content generation, AI reports, SMS sending) were retired
 // instead of charged for. The exports keep their historical names so existing
 // imports keep working, but the semantics are now PERMANENT, not a window:
-// "promo active" always reads true and every listed feature is free forever.
+// "promo active" always reads true and every listed feature is free during our launch period.
 // There is no relock date.
 export const O2OL_FREE_PROMO_START = '2026-10-29T05:00:00.000Z'; // historical: midnight CDT
-export const O2OL_FREE_PROMO_END_EXCLUSIVE = null; // permanent — no end, no relock
+export const O2OL_FREE_PROMO_END_EXCLUSIVE = null; // no end date in code — ending the free period is an owner decision (100-user trigger, 2026-11-27)
 export const O2OL_FREE_PROMO_MESSAGE = 'One2OneLove is 100% FREE — every feature is free for everyone. No signup, no card, no Credit.';
 
 export const O2OL_FREE_PROMO_MESSAGES = Object.freeze({
@@ -38,7 +38,7 @@ export const O2OL_FREE_PROMO_FEATURES = Object.freeze([
 const freeFeatureSet = new Set(O2OL_FREE_PROMO_FEATURES);
 
 export function isO2OLFreePromoActive(now = new Date()) {
-  // Permanent free platform (2026-11-25): the "promotion" never ends.
+  // Free platform (2026-11-25): the free period has no coded end date; the owner ends it by decision.
   void now;
   return true;
 }
