@@ -16,14 +16,14 @@ export const O2OL_FREE_PROMO_END_EXCLUSIVE = null; // no end date in code — en
 // GRANDFATHERED FREE — charging applies to new joiners after the trigger only.
 export const O2OL_SUBSCRIPTION_TRIGGER_USERS = 100;
 export const O2OL_EARLY_MEMBERS_GRANDFATHERED_FREE = true;
-export const O2OL_FREE_PROMO_MESSAGE = 'One2OneLove is 100% FREE — every feature is free for everyone. No signup, no card, no Credit.';
+export const O2OL_FREE_PROMO_MESSAGE = 'One2OneLove is 100% FREE during our launch period — every feature is free for everyone. No signup, no card, no Credit.';
 
 export const O2OL_FREE_PROMO_MESSAGES = Object.freeze({
   en: O2OL_FREE_PROMO_MESSAGE,
-  es: 'One2OneLove es 100% GRATIS — todas las funciones son gratuitas para todos. Sin registro, sin tarjeta, sin Crédito.',
-  fr: 'One2OneLove est 100 % GRATUIT — chaque fonctionnalité est gratuite pour tout le monde. Sans inscription, sans carte, sans Crédit.',
-  it: 'One2OneLove è 100% GRATIS — ogni funzione è gratuita per tutti. Nessuna registrazione, nessuna carta, nessun Credito.',
-  de: 'One2OneLove ist 100 % KOSTENLOS — jede Funktion ist für alle kostenlos. Keine Anmeldung, keine Karte, kein Credit.',
+  es: 'One2OneLove es 100% GRATIS durante nuestro período de lanzamiento — todas las funciones son gratuitas para todos. Sin registro, sin tarjeta, sin Crédito.',
+  fr: 'One2OneLove est 100 % GRATUIT pendant notre période de lancement — chaque fonctionnalité est gratuite pour tout le monde. Sans inscription, sans carte, sans Crédit.',
+  it: 'One2OneLove è 100% GRATIS durante il nostro periodo di lancio — ogni funzione è gratuita per tutti. Nessuna registrazione, nessuna carta, nessun Credito.',
+  de: 'One2OneLove ist 100 % KOSTENLOS während unserer Startphase — jede Funktion ist für alle kostenlos. Keine Anmeldung, keine Karte, kein Credit.',
 });
 export const freePromoMessage = (language = 'en') => O2OL_FREE_PROMO_MESSAGES[language] || O2OL_FREE_PROMO_MESSAGE;
 
