@@ -23,3 +23,6 @@ requested_by_owner=2026-11-08
 promotion=o2ol_fixes_20261111
 source_commit=ccfe34b8
 requested_by_owner=2026-11-11
+promotion=o2ol_all_free_launch
+source_commit=fdceb39c
+requested_by_owner=2026-11-27
