@@ -115,7 +115,7 @@ jobs:
             exit 1
           fi
 
-      - name: Verify Free plus Credit production contract
+      - name: Verify All-Free production contract
         shell: bash
         run: |
           set -euo pipefail
@@ -126,10 +126,7 @@ jobs:
           grep -F "releaseTokenReservation" worker/o2ol-tokens.ts >/dev/null
           grep -F "maybeAutoReplenish" worker/o2ol-tokens.ts >/dev/null
           grep -F "recordOpenAICostEvent" worker/o2ol-cost-ledger.ts >/dev/null
-          grep -F '<Route path="/Credit" element={<Credit />} />' src/pages/index.jsx >/dev/null
-          grep -F '<Route path="/Tokens" element={<Navigate to="/Credit" replace />} />' src/pages/index.jsx >/dev/null
           grep -F '<Navigate to="/Credit" replace' src/pages/Subscription.jsx >/dev/null
-          grep -F 'BUY CREDIT' src/pages/Layout.jsx >/dev/null
           grep -F 'CREDIT · US DOLLARS · $1.00 = $1.00' src/pages/Credit.jsx >/dev/null
           grep -F "custom_credit" src/pages/Credit.jsx src/lib/tokenService.js worker/o2ol-tokens.ts >/dev/null
           grep -F "lg:grid-cols-5" src/pages/Credit.jsx >/dev/null
@@ -153,7 +150,6 @@ jobs:
           grep -F "USERNAME_TAKEN_CODE" worker/launch-auth.ts >/dev/null
           grep -F "'username_taken'" worker/username-rules.js >/dev/null
           grep -F "QuickAccountGate" src/components/launch/LaunchAccessGate.jsx >/dev/null
-          grep -F "Registered Free is the site access identity." src/components/launch/LaunchAccessGate.jsx >/dev/null
 
           # Legal contract is canonical, Credit-based, and adults-only.
           grep -F "const TERMS_VERSION = '2026-10-09';" src/components/signup/LaunchRegularUserForm.jsx >/dev/null
@@ -170,8 +166,6 @@ jobs:
           grep -F "1. Idoneità — Adulti di 18 anni o più" src/content/terms/it.js >/dev/null
           grep -F "1. Teilnahmeberechtigung — Erwachsene ab 18 Jahren" src/content/terms/de.js >/dev/null
           grep -F "adults-only platform intended exclusively for people age 18 or older" src/pages/PrivacyPolicy.jsx >/dev/null
-          grep -F 'Credit balances are displayed in U.S. dollars and cents in $0.00 format' src/pages/PrivacyPolicy.jsx >/dev/null
-          grep -F '$1.00 of Credit represents $1.00 of One2OneLove service value' src/content/terms/en.js >/dev/null
           if grep -RInE 'under 13|menores? de 13|moins de 13|minori di 13|unter 13' src/pages/PrivacyPolicy.jsx src/pages/TermsOfService.jsx src/content/terms 2>/dev/null; then
             echo "Under-18 legal eligibility drift remains in active legal sources." >&2
             exit 1
@@ -191,7 +185,28 @@ jobs:
             exit 1
           fi
 
-          # Customer surfaces must use Credit wording, not the retired Token presentation.
+          # All-Free model (owner ruling 2026-11-25; wording + subscription triggers 2026-11-27).
+          grep -F "export const O2OL_SUBSCRIPTION_TRIGGER_USERS = 100;" src/lib/o2olFreePromo2026.js >/dev/null
+          grep -F "export const O2OL_EARLY_MEMBERS_GRANDFATHERED_FREE = true;" src/lib/o2olFreePromo2026.js >/dev/null
+          grep -F "FREE DURING LAUNCH" src/lib/featurePricing.js >/dev/null
+          grep -F "No Purchases" src/pages/PrivacyPolicy.jsx >/dev/null
+          grep -F "they have no cash value, are not money, and cannot be withdrawn" src/content/terms/en.js >/dev/null
+          grep -F "feature_retired" worker/index-v2.ts >/dev/null
+          grep -F "guestIdentity" src/lib/communityChatService.js >/dev/null
+          if grep -RInE 'FREE FOREVER|Free forever|free forever|GRATIS PARA SIEMPRE|permanently free' src 2>/dev/null; then
+            echo "Permanent-free promise remains in active sources (owner wording rule 2026-11-27)." >&2
+            exit 1
+          fi
+          if grep -F 'path="/Credit" element={<Credit' src/pages/index.jsx 2>/dev/null; then
+            echo "Retired Credit route is routed again." >&2
+            exit 1
+          fi
+          if grep -F 'BUY CREDIT' src/pages/Layout.jsx 2>/dev/null; then
+            echo "Retired BUY CREDIT entry point remains in Layout." >&2
+            exit 1
+          fi
+
+          # Kept surfaces must not carry the retired Token presentation.
           ACTIVE_CREDIT_SURFACES=(
             src/pages/Home.jsx
             src/pages/Layout.jsx
@@ -210,20 +225,18 @@ jobs:
             exit 1
           fi
 
-      - name: Verify Credit metered-feature settlement and verification contract
+      - name: Verify All-Free retired-feature contract
         shell: bash
         run: |
           set -euo pipefail
           grep -F "/api/love-notes/categories" worker/love-note-entitlements.ts >/dev/null
           grep -F "/api/love-notes/send-sms" worker/love-note-entitlements.ts >/dev/null
-          grep -F "sendLoveNoteSms" src/pages/LoveNotes.jsx >/dev/null
-          grep -F "getLoveNotePriceQuote" src/pages/LoveNotes.jsx >/dev/null
-          grep -F "One2OneLove Credit" src/pages/LoveNotes.jsx >/dev/null
           grep -F "Each Amora response uses Credit." src/pages/Amora.jsx >/dev/null
           grep -F "Credit" src/pages/LikeMinded.jsx >/dev/null
-          grep -F "Credit" src/pages/DateIdeas.jsx >/dev/null
           grep -F "code: 'email_verification_required'" worker/identity-gate.ts >/dev/null
-          grep -F "code: 'phone_verification_required'" worker/identity-gate.ts >/dev/null
+          grep -F "feature_retired" worker/love-note-entitlements.ts >/dev/null
+          grep -F "feature_retired" worker/phone-verification.ts >/dev/null
+          ! grep -F "Unlock" src/pages/DateIdeas.jsx >/dev/null
           ! grep -F "setInterval(" src/pages/Subscription.jsx >/dev/null
 
       - name: Verify production deployment configuration
