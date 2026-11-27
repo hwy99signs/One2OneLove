@@ -26,3 +26,6 @@ requested_by_owner=2026-11-11
 promotion=o2ol_all_free_launch
 source_commit=fdceb39c
 requested_by_owner=2026-11-27
+promotion=o2ol_all_free_launch_retry1
+source_commit=fdceb39c
+requested_by_owner=2026-11-27
