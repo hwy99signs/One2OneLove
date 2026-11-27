@@ -91,12 +91,22 @@ async function launchScratch(db,env,auth,input){
 export async function handleGameAccessRequest(request,env,url){
   if(!url.pathname.startsWith('/api/games/'))return null;
   const auth=await authSession(request,env);
-  if(!auth)return fail('Sign in with a verified One2OneLove account.',401,'unauthorized');
+  // 2026-11-25 all-free conversion: games are free for everyone and never
+  // charge (chargeGameAndCreatePass hard-codes price 0). Catalog,
+  // leaderboard, and promotion reads are public so guests can browse and
+  // play; score submissions and session-pass launches stay member-only
+  // because passes and leaderboard rows are keyed to member accounts.
+  const guestReadable = request.method==='GET' && (
+    url.pathname==='/api/games/catalog' ||
+    url.pathname==='/api/games/leaderboard' ||
+    url.pathname==='/api/games/promotion'
+  );
+  if(!auth&&!guestReadable)return fail('Sign in with a verified One2OneLove account.',401,'unauthorized');
   try{
     return await withDb(env,async db=>{
       await ensureGameEconomySchema(db);
       if(url.pathname==='/api/games/catalog'&&request.method==='GET'){
-        const games=[];for(const def of publicGameRegistry()){games.push({...def,...await gamePriceQuote(db,auth.user.id,def.id)});}
+        const games=[];for(const def of publicGameRegistry()){games.push({...def,...await gamePriceQuote(db,auth?.user.id||null,def.id)});}
         return json({ok:true,games});
       }
       if(url.pathname==='/api/games/timezone'&&request.method==='POST'){
@@ -106,10 +116,10 @@ export async function handleGameAccessRequest(request,env,url){
       if(url.pathname==='/api/games/promotion'&&request.method==='GET'){
         const game=url.searchParams.get('game')||'what_should_they_do';
         if(!gameDefinition(game))return fail('Unknown game.',400,'game_invalid');
-        return json({ok:true,promotion:await resolveGamePromotion(db,auth.user.id,game)});
+        return json({ok:true,promotion:await resolveGamePromotion(db,auth?.user.id||null,game)});
       }
       if(url.pathname==='/api/games/leaderboard'&&request.method==='GET'){
-        const game=url.searchParams.get('game')||'';return json({ok:true,...await gameLeaderboard(db,auth.user.id,game)});
+        const game=url.searchParams.get('game')||'';return json({ok:true,...await gameLeaderboard(db,auth?.user.id||null,game)});
       }
       if(url.pathname==='/api/games/scores'&&request.method==='POST'){
         const input=await request.json().catch(()=>({}));

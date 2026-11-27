@@ -138,6 +138,11 @@ export async function getAuthSessionState(attempts = 3, delayMs = 250) {
     } catch (error) {
       lastError = error;
       if (error?.status === 401) definitive = true;
+      // Member system disabled (2026-11-25): the auth routes answer 410
+      // feature_retired. That is the checker speaking definitively —
+      // there are no accounts, so every visitor is signed out. Return
+      // at once instead of retrying a switched-off service.
+      if (error?.status === 410) return { state: 'signed_out' };
       if (error?.status === 429 && attempt < attempts - 1) {
         await wait(Math.min(Math.max(error.retryAfterMs || delayMs * 2, 500), 2500));
         continue;

@@ -110,17 +110,19 @@ async function userIdentityState(env, userId) {
 }
 
 export async function enforceLaunchIdentity(request, env, url) {
+  // Member system disabled (owner ruling, 2026-11-25): there are no
+  // members in the 100% free platform, so no request is ever held to a
+  // member-identity check and nothing waits on the (also disabled) auth
+  // service. The checks below stay in place, untouched, for the day the
+  // owner re-activates accounts — re-activation removes this return.
+  return null;
+
   if (isPublicIdentityRoute(request, url) || requiresApiEntitlement(url.pathname)) return null;
 
-  if (!phoneProviderConfigured(env)) return null;
-
-  if (!(await phoneSchemaReady(env))) {
-    return json({
-      ok: false,
-      error: { code: 'phone_verification_not_ready', message: 'Phone verification is not ready.' },
-    }, 503);
-  }
-
+  // Phone verification retired 2026-11-25 (all-free conversion): the old
+  // Twilio-configured early return, the phone-schema 503 gate, and the
+  // phone_verified 428 below are gone. What remains is account hygiene
+  // for signed-in members: email verification and ban/active checks.
   const auth = await session(request, env);
   if (!auth) return null;
 
@@ -145,13 +147,6 @@ export async function enforceLaunchIdentity(request, env, url) {
           : 'This account has been suspended by an administrator. Contact One2OneLove support for assistance.',
       },
     }, 403);
-  }
-
-  if (identity.phone_verified !== true) {
-    return json({
-      ok: false,
-      error: { code: 'phone_verification_required', message: 'Phone verification is required.' },
-    }, 428);
   }
 
   return null;

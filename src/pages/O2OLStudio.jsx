@@ -1,34 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { BrainCircuit, CreditCard, Film, Loader2, MessageCircle, PlayCircle, Sparkles, LockKeyhole, UserPlus, Clock } from 'lucide-react';
+import { Film, MessageCircle, PlayCircle, Sparkles, Clock } from 'lucide-react';
 import { useLanguage } from './Layout';
 import { useAuth } from '@/contexts/AuthContext';
-import { getTokenWallet, isTokensRequiredError, tokenRequiredDetails, unlockTokenContent } from '@/lib/tokenService';
-import UnlockPriceDialog from '@/components/pricing/UnlockPriceDialog';
-import { isO2OLFreePromoActive, isO2OLPromoFreeFeature } from '@/lib/o2olFreePromo2026';
-import { isGuestBrowseEnabled } from '@/lib/guestAccessPolicy';
 
-const freeStudioAccessCopy = {
-  en:{title:'FREE for everyone',body:'Both Studio episodes are FREE FOREVER. Watch without signing up or using Credit.',retry:'Check free access',join:'Create free account'},
-  es:{title:'GRATIS para todos',body:'Ambos episodios de Studio son GRATIS PARA SIEMPRE. Míralos sin registrarte ni pagar Crédito.',retry:'Comprobar acceso gratis',join:'Crear cuenta gratis'},
-  fr:{title:'GRATUIT pour tous',body:'Les deux épisodes de Studio sont GRATUITS POUR TOUJOURS. Regardez sans inscription ni Crédit.',retry:'Vérifier l’accès gratuit',join:'Créer un compte gratuit'},
-  it:{title:'GRATIS per tutti',body:'Entrambi gli episodi di Studio sono GRATIS PER SEMPRE. Guardali senza registrarti né pagare Credito.',retry:'Controlla accesso gratuito',join:'Crea account gratis'},
-  de:{title:'KOSTENLOS für alle',body:'Beide Studio-Folgen sind FÜR IMMER KOSTENLOS. Ohne Anmeldung und Credit ansehen.',retry:'Gratis-Zugang prüfen',join:'Kostenloses Konto erstellen'},
-};
-const studioGuestPreviewCopy = {
-  en:'Both published Studio episodes are permanently free. Watch without creating an account.',
-  es:'Los dos episodios publicados de Studio son gratis para siempre. Míralos sin crear una cuenta.',
-  fr:'Les deux épisodes Studio publiés sont gratuits pour toujours. Regardez sans compte.',
-  it:'Entrambi gli episodi pubblicati di Studio sono gratis per sempre. Nessun account richiesto.',
-  de:'Beide veröffentlichten Studio-Folgen sind dauerhaft kostenlos. Kein Konto nötig.',
-};
-const studioPromoNote = {
-  en: 'Both O2OL Studio episodes are FREE FOREVER without signup. Other paid AI actions still use Credit.',
-  es: 'Los dos episodios de O2OL Studio son GRATIS PARA SIEMPRE y no requieren registro. Las funciones de IA de pago siguen usando Crédito.',
-  fr: 'Les deux épisodes O2OL Studio sont GRATUITS POUR TOUJOURS et accessibles sans inscription. Les fonctions IA payantes utilisent toujours des Crédits.',
-  it: 'Entrambi gli episodi O2OL Studio sono GRATIS PER SEMPRE, senza registrazione. Le funzioni IA a pagamento usano ancora Credito.',
-  de: 'Beide O2OL-Studio-Folgen sind FÜR IMMER KOSTENLOS und ohne Anmeldung verfügbar. Kostenpflichtige KI-Funktionen benötigen weiterhin Credit.',
-};
 const COPY={
   en:{
     eyebrow:'O2OL Studio Show',seasonLabel:'Season',episodeLabel:'Episode',
@@ -37,9 +12,8 @@ const COPY={
     unavailable:'This episode is temporarily unavailable. Please try again shortly.',
     chat:'Enter Chat Room to Comment',
     explore:'Explore MyMatchIQ',episodes:'Previous Episodes',
-    note:'Both O2OL Studio episodes are FREE FOREVER. Other metered premium actions still use Credit.',
-    replay:'Public replay opens',freeNow:'Create a FREE account to watch now',signIn:'Sign In',
-    unlockTitle:'Unlock this episode',unlockNote:'One-time $1.00 in Credit — unlock once, watch anytime, yours to keep.',unlockBtn:'Unlock for $1 Credit',unlocking:'Unlocking…',joinToUnlock:'Create a FREE account to unlock',needCredit:'You need {required} Credit to unlock this episode. Your balance: {balance}.',addCredit:'Add Credit',unlockFailed:'Unable to unlock this episode. Please try again.'
+    note:'Both O2OL Studio episodes are FREE DURING LAUNCH — no account or Credit needed.',
+    replay:'Public replay opens',freeNow:'Create a FREE account to watch now',signIn:'Sign In'
   },
   es:{
     eyebrow:'O2OL Studio Show',seasonLabel:'Temporada',episodeLabel:'Episodio',
@@ -48,9 +22,8 @@ const COPY={
     unavailable:'Este episodio no está disponible temporalmente. Inténtalo de nuevo en unos momentos.',
     chat:'Entrar al Chat para Comentar',
     explore:'Explorar MyMatchIQ',episodes:'Episodios Anteriores',
-    note:'Los dos episodios de O2OL Studio son GRATIS PARA SIEMPRE. Otras funciones premium todavía usan Crédito.',
-    replay:'La repetición pública abre',freeNow:'Crea una cuenta GRATIS para verlo ahora',signIn:'Iniciar Sesión',
-    unlockTitle:'Desbloquea este episodio',unlockNote:'Un solo pago de $1.00 en Crédito — desbloquea una vez y míralo cuando quieras, tuyo para siempre.',unlockBtn:'Desbloquear por $1 de Crédito',unlocking:'Desbloqueando…',joinToUnlock:'Crea una cuenta GRATIS para desbloquear',needCredit:'Necesitas {required} de Crédito para desbloquear este episodio. Tu saldo: {balance}.',addCredit:'Añadir Crédito',unlockFailed:'No se pudo desbloquear este episodio. Inténtalo de nuevo.'
+    note:'Los dos episodios de O2OL Studio son GRATIS DURANTE EL LANZAMIENTO — sin cuenta ni Crédito.',
+    replay:'La repetición pública abre',freeNow:'Crea una cuenta GRATIS para verlo ahora',signIn:'Iniciar Sesión'
   },
   fr:{
     eyebrow:'O2OL Studio Show',seasonLabel:'Saison',episodeLabel:'Épisode',
@@ -59,9 +32,8 @@ const COPY={
     unavailable:'Cet épisode est temporairement indisponible. Veuillez réessayer dans quelques instants.',
     chat:'Entrer dans le Chat pour Commenter',
     explore:'Explorer MyMatchIQ',episodes:'Épisodes Précédents',
-    note:'Les deux épisodes O2OL Studio sont GRATUITS POUR TOUJOURS. Les autres fonctions premium utilisent toujours des Crédits.',
-    replay:'La rediffusion publique ouvre',freeNow:'Créez un compte GRATUIT pour regarder maintenant',signIn:'Se Connecter',
-    unlockTitle:'Débloquez cet épisode',unlockNote:'Un seul paiement de 1,00 $ en Crédit — débloquez une fois, regardez quand vous voulez, à vous pour toujours.',unlockBtn:'Débloquer pour 1 $ de Crédit',unlocking:'Déblocage…',joinToUnlock:'Créez un compte GRATUIT pour débloquer',needCredit:'Il vous faut {required} de Crédit pour débloquer cet épisode. Votre solde : {balance}.',addCredit:'Ajouter du Crédit',unlockFailed:'Impossible de débloquer cet épisode. Veuillez réessayer.'
+    note:'Les deux épisodes O2OL Studio sont GRATUITS PENDANT LE LANCEMENT — sans compte ni Crédit.',
+    replay:'La rediffusion publique ouvre',freeNow:'Créez un compte GRATUIT pour regarder maintenant',signIn:'Se Connecter'
   },
   it:{
     eyebrow:'O2OL Studio Show',seasonLabel:'Stagione',episodeLabel:'Episodio',
@@ -70,9 +42,8 @@ const COPY={
     unavailable:'Questo episodio non è temporaneamente disponibile. Riprova tra poco.',
     chat:'Entra nella Chat per Commentare',
     explore:'Esplora MyMatchIQ',episodes:'Episodi Precedenti',
-    note:'Entrambi gli episodi O2OL Studio sono GRATIS PER SEMPRE. Altre funzioni premium usano ancora Credito.',
-    replay:'La replica pubblica apre',freeNow:'Crea un account GRATUITO per guardare ora',signIn:'Accedi',
-    unlockTitle:'Sblocca questo episodio',unlockNote:'Un solo pagamento di $1,00 in Credito — sblocca una volta e guardalo quando vuoi, tuo per sempre.',unlockBtn:'Sblocca con $1 di Credito',unlocking:'Sblocco in corso…',joinToUnlock:'Crea un account GRATUITO per sbloccare',needCredit:'Ti servono {required} di Credito per sbloccare questo episodio. Il tuo saldo: {balance}.',addCredit:'Aggiungi Credito',unlockFailed:'Impossibile sbloccare questo episodio. Riprova.'
+    note:'Entrambi gli episodi O2OL Studio sono GRATIS DURANTE IL LANCIO — senza account né Credito.',
+    replay:'La replica pubblica apre',freeNow:'Crea un account GRATUITO per guardare ora',signIn:'Accedi'
   },
   de:{
     eyebrow:'O2OL Studio Show',seasonLabel:'Staffel',episodeLabel:'Folge',
@@ -81,9 +52,8 @@ const COPY={
     unavailable:'Diese Folge ist vorübergehend nicht verfügbar. Bitte versuche es in Kürze erneut.',
     chat:'Chatraum Betreten und Kommentieren',
     explore:'MyMatchIQ Entdecken',episodes:'Frühere Folgen',
-    note:'Beide O2OL-Studio-Folgen sind FÜR IMMER KOSTENLOS. Andere Premium-Aktionen nutzen weiterhin Credit.',
-    replay:'Öffentliche Wiederholung ab',freeNow:'KOSTENLOSES Konto erstellen und jetzt ansehen',signIn:'Anmelden',
-    unlockTitle:'Diese Folge freischalten',unlockNote:'Einmalig 1,00 $ in Credit — einmal freischalten, jederzeit ansehen, für immer deine.',unlockBtn:'Für 1 $ Credit freischalten',unlocking:'Wird freigeschaltet…',joinToUnlock:'KOSTENLOSES Konto erstellen zum Freischalten',needCredit:'Du brauchst {required} Credit, um diese Folge freizuschalten. Dein Guthaben: {balance}.',addCredit:'Credit hinzufügen',unlockFailed:'Diese Folge konnte nicht freigeschaltet werden. Bitte versuche es erneut.'
+    note:'Beide O2OL-Studio-Folgen sind KOSTENLOS IN DER STARTPHASE — ohne Konto oder Credit.',
+    replay:'Öffentliche Wiederholung ab',freeNow:'KOSTENLOSES Konto erstellen und jetzt ansehen',signIn:'Anmelden'
   }
 };
 
@@ -101,23 +71,11 @@ export default function O2OLStudio(){
   const [searchParams]=useSearchParams();
   const requestedEpisodeId=searchParams.get('episode');
   const t=COPY[currentLanguage]||COPY.en;
-  const promoEpisodeFree=isO2OLPromoFreeFeature('studio_episode_unlock');
-  const previewGuest = !isAuthenticated && isGuestBrowseEnabled();
-  const freeStudioCopy=freeStudioAccessCopy[currentLanguage]||freeStudioAccessCopy.en;
   const [videoUnavailable,setVideoUnavailable]=useState(false);
   const [episode,setEpisode]=useState(null);
   const [loading,setLoading]=useState(true);
   const [refreshKey,setRefreshKey]=useState(0);
-  const [unlocking,setUnlocking]=useState(false);
-  const [unlockError,setUnlockError]=useState('');
-  const [showUnlockConfirm,setShowUnlockConfirm]=useState(false);
-  const [creditBalance,setCreditBalance]=useState(null);
 
-  useEffect(()=>{
-    let active=true;
-    if(isAuthenticated)getTokenWallet().then(data=>{if(active)setCreditBalance(Number(data?.wallet?.balance||0));}).catch(()=>{});
-    return()=>{active=false};
-  },[isAuthenticated,refreshKey]);
 
   useEffect(()=>{
     let active=true;
@@ -134,31 +92,6 @@ export default function O2OLStudio(){
       .finally(()=>{if(active)setLoading(false);});
     return()=>{active=false};
   },[isAuthenticated,requestedEpisodeId,refreshKey]);
-
-  const handleUnlock=async()=>{
-    if(!episode||!user?.id||unlocking)return;
-    setUnlocking(true);
-    setUnlockError('');
-    try{
-      await unlockTokenContent({
-        featureCode:'studio_episode_unlock',
-        contentKey:episode.id,
-        source:'o2ol_studio',
-        idempotencyKey:`studio:${user.id}:${episode.id}`,
-      });
-      setRefreshKey(key=>key+1);
-      getTokenWallet().then(data=>setCreditBalance(Number(data?.wallet?.balance||0))).catch(()=>{});
-    }catch(error){
-      if(isTokensRequiredError(error)){
-        const info=tokenRequiredDetails(error);
-        setUnlockError(t.needCredit.replace('{required}',(Number(info.required||episode.unlockPriceCents||0)/100).toFixed(2)).replace('{balance}',(Number(info.balance||0)/100).toFixed(2)));
-      }else{
-        setUnlockError(error?.message||t.unlockFailed);
-      }
-    }finally{
-      setUnlocking(false);
-    }
-  };
 
   const localizedTitle=EPISODE_TITLES[currentLanguage]?.[episode?.id]||EPISODE_TITLES.en[episode?.id]||episode?.title||'O2OL Studio';
   const chatRoom=episode?.chatRoom||'studio-who-should-apologize-first';
@@ -193,52 +126,12 @@ export default function O2OLStudio(){
               >
                 Your browser does not support HTML5 video.
               </video>
-            ) : promoEpisodeFree && episode?.unlockPriceCents ? (
-              <div className="flex aspect-video items-center justify-center bg-[radial-gradient(circle_at_center,rgba(124,58,237,0.35),transparent_45%),#030712] p-8 text-center">
-                <div className="max-w-xl">
-                  {previewGuest ? <PlayCircle className="mx-auto h-14 w-14 text-emerald-300"/> : <UserPlus className="mx-auto h-14 w-14 text-emerald-300"/>}
-                  <p className="mt-5 text-xl font-black text-white">{previewGuest ? t.studio : freeStudioCopy.title}</p>
-                  <p className="mt-2 text-sm text-white/75">{previewGuest ? (studioGuestPreviewCopy[currentLanguage] || studioGuestPreviewCopy.en) : freeStudioCopy.body}</p>
-                  {previewGuest ? null : isAuthenticated
-                    ? <button type="button" onClick={()=>setRefreshKey(k=>k+1)} className="mt-5 rounded-full bg-emerald-600 px-5 py-3 font-black text-white">{freeStudioCopy.retry}</button>
-                    : <Link to="/SignUp?source=o2ol-studio&type=individual" className="mt-5 inline-flex rounded-full bg-emerald-600 px-5 py-3 font-black text-white">{freeStudioCopy.join}</Link>}
-                </div>
-              </div>
-            ) : episode?.unlockPriceCents ? (
-              <div className="flex aspect-video items-center justify-center bg-[radial-gradient(circle_at_center,rgba(124,58,237,0.35),transparent_45%),#030712] p-8 text-center">
-                <div className="max-w-xl">
-                  <LockKeyhole className="mx-auto h-14 w-14 text-amber-300"/>
-                  <p className="mt-5 text-xl font-black text-white">{t.unlockTitle}</p>
-                  <p className="mt-2 text-sm text-white/60">{t.unlockNote}</p>
-                  {isAuthenticated ? (
-                    <div className="mt-6">
-                      <button type="button" onClick={()=>setShowUnlockConfirm(true)} disabled={unlocking} className="inline-flex items-center gap-2 rounded-full bg-fuchsia-600 px-5 py-3 font-black text-white transition hover:brightness-110 disabled:opacity-60">
-                        {unlocking?<Loader2 className="h-4 w-4 animate-spin"/>:<CreditCard className="h-4 w-4"/>}{unlocking?t.unlocking:t.unlockBtn}
-                      </button>
-                      {unlockError && (
-                        <p className="mt-4 text-sm font-bold text-amber-200">{unlockError} <Link to="/Credit" className="underline">{t.addCredit}</Link></p>
-                      )}
-                    </div>
-                  ) : previewGuest ? (
-                    <p className="mt-6 text-sm text-white/75">{studioGuestPreviewCopy[currentLanguage] || studioGuestPreviewCopy.en}</p>
-                  ) : (
-                    <div className="mt-6 flex flex-wrap justify-center gap-3">
-                      <Link to="/SignUp?source=o2ol-studio&type=individual" className="inline-flex items-center gap-2 rounded-full bg-fuchsia-600 px-5 py-3 font-black text-white"><UserPlus className="h-4 w-4"/>{t.joinToUnlock}</Link>
-                      <Link to="/SignIn?source=o2ol-studio" className="rounded-full border border-white/25 bg-white/10 px-5 py-3 font-black text-white">{t.signIn}</Link>
-                    </div>
-                  )}
-                </div>
-              </div>
             ) : episode && !episode.publicAvailable && !episode.memberAvailable ? (
               <div className="flex aspect-video items-center justify-center bg-[radial-gradient(circle_at_center,rgba(124,58,237,0.35),transparent_45%),#030712] p-8 text-center">
                 <div className="max-w-xl">
                   <Clock className="mx-auto h-14 w-14 text-amber-300"/>
-                  <p className="mt-5 text-xl font-black text-white">{previewGuest ? t.unavailable : t.freeNow}</p>
+                  <p className="mt-5 text-xl font-black text-white">{t.unavailable}</p>
                   <p className="mt-2 text-sm text-white/60">{t.replay}: {new Date(episode.publicAvailableAt).toLocaleDateString()}</p>
-                  {!previewGuest ? <div className="mt-6 flex flex-wrap justify-center gap-3">
-                    <Link to="/SignUp?source=o2ol-studio&type=individual" className="inline-flex items-center gap-2 rounded-full bg-fuchsia-600 px-5 py-3 font-black text-white"><UserPlus className="h-4 w-4"/>{t.freeNow}</Link>
-                    <Link to="/SignIn?source=o2ol-studio" className="rounded-full border border-white/25 bg-white/10 px-5 py-3 font-black text-white">{t.signIn}</Link>
-                  </div> : <p className="mt-6 text-sm text-white/75">{studioGuestPreviewCopy[currentLanguage] || studioGuestPreviewCopy.en}</p>}
                 </div>
               </div>
             ) : (
@@ -270,20 +163,9 @@ export default function O2OLStudio(){
             <Link to="/O2OLStudio/Episodes" className="inline-flex items-center gap-2 rounded-full border border-fuchsia-200/30 bg-fuchsia-500/15 px-5 py-3 text-sm font-black text-white hover:bg-fuchsia-500/25"><Film className="h-4 w-4"/>{t.episodes}</Link>
             <a href="https://mymatchiq.com" target="_blank" rel="noreferrer" className="inline-flex rounded-full border border-white/20 bg-white/10 px-5 py-3 text-sm font-black text-white hover:bg-white/15">{t.explore}</a>
           </div>
-          <p className="mx-auto mt-5 max-w-3xl text-center text-xs leading-5 text-white/70">{isO2OLFreePromoActive() ? (studioPromoNote[currentLanguage] || studioPromoNote.en) : t.note}</p>
+          <p className="mx-auto mt-5 max-w-3xl text-center text-xs leading-5 text-white/70">{t.note}</p>
         </div>
       </section>
-      <UnlockPriceDialog
-        open={showUnlockConfirm}
-        title={episode?.title ? 'Unlock '+episode.title : 'Unlock O2OL Studio Episode'}
-        priceCents={Number(episode?.unlockPriceCents||100)}
-        terms="One-time unlock — yours forever."
-        balanceCents={creditBalance}
-        busy={unlocking}
-        error={unlockError}
-        onUnlock={handleUnlock}
-        onClose={()=>{setShowUnlockConfirm(false);setUnlockError('');}}
-      />
     </main>
   );
 }

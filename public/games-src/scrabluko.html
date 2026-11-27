@@ -440,7 +440,6 @@ function renderNameFields(){
     const inp = document.createElement("input");
     inp.className = "name-input"; inp.maxLength = 16;
     inp.placeholder = setupState.count===1 ? "Your name" : ("Player " + (i+1) + " name");
-    if(i===0) inp.value = "Eisenhower";
     inp.id = "name" + i;
     wrap.appendChild(inp);
   }

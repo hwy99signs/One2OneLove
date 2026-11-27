@@ -185,6 +185,10 @@ async function fileEscalationTicket(db, { name, email, transcript, reason }) {
 
 export async function handleSupportChatRequest(request, env, url) {
   if (!url.pathname.startsWith('/api/support-chat')) return null;
+  // RETIRED 2026-11-25 (all-free conversion): the AI support chat calls
+  // OpenAI per message — permanently off. Support runs through the
+  // Suggestions/Contact pages instead. index-v2 also refuses the route.
+  return fail('This feature has been retired. One2OneLove is now 100% free.', 410, 'feature_retired');
   if (url.pathname !== '/api/support-chat/message') return fail('Support chat route not found.', 404, 'not_found');
   if (request.method !== 'POST') return fail('Method not allowed.', 405, 'method_not_allowed');
 

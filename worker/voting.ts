@@ -10,12 +10,14 @@ import { Client } from 'pg';
 // adding one entry in BOTH places — config only, no new code paths.
 //
 // Access rule (owner decision, 2026-10-06): voting is a free feature.
-// Guests may fill the card in the UI, but casting requires a verified
-// signed-in member — the same session() pattern as worker/community-chat.ts
-// (Neon Auth session with emailVerified + an active session). One ballot
-// per member per topic: re-casting updates the member's existing ballot
-// (upsert on the partial unique index below), so a vote stays revisable
-// until the question's closesAt.
+// UPDATED by the no-members ruling (owner, 2026-11-25): member accounts are
+// disabled in the free model, so casting accepts the browser guest identity
+// (x-o2ol-guest-id / x-o2ol-guest-name headers — the same pattern as
+// worker/community-chat.ts) keyed by the guest UUID; a verified member
+// session is still accepted when one exists. One ballot per identity per
+// topic: re-casting updates the existing ballot (upsert on the partial
+// unique index below), so a vote stays revisable until the question's
+// closesAt.
 
 const HEADERS = {
   'content-type': 'application/json; charset=utf-8',
@@ -66,6 +68,28 @@ async function session(request, env) {
   const user = payload?.user ?? payload?.data?.user ?? null;
   const active = payload?.session ?? payload?.data?.session ?? null;
   return user?.id && user?.emailVerified === true && active ? { user, session: active } : null;
+}
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// Browser guest identity — mirrors guestIdentity in worker/community-chat.ts.
+function guestIdentity(request) {
+  const id = String(request.headers.get('x-o2ol-guest-id') || '').trim();
+  if (!UUID_RE.test(id)) return null;
+  const name = String(request.headers.get('x-o2ol-guest-name') || '')
+    .replace(/[\u0000-\u001f\u007f]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 40);
+  return { id, name: name || 'Guest' };
+}
+// Who is voting: a verified member session when one exists, otherwise the
+// browser guest identity. Returns { userId, guest } (guest null for members),
+// or null when neither identity is present.
+async function voterIdentity(request, env) {
+  const auth = await session(request, env);
+  if (auth) return { userId: auth.user.id, guest: null };
+  const guest = guestIdentity(request);
+  if (guest) return { userId: guest.id, guest };
+  return null;
 }
 async function withDb(env, fn) {
   const db = new Client({ connectionString: env.HYPERDRIVE.connectionString });
@@ -380,8 +404,9 @@ export async function handleVotingRequest(request, env, url) {
 
   try {
     if (url.pathname === '/api/voting/ballots' && request.method === 'POST') {
-      const auth = await session(request, env);
-      if (!auth) return fail('Sign in to cast your vote.', 401, 'unauthorized');
+      const voter = await voterIdentity(request, env);
+      if (!voter) return fail('Voting needs a browser identity — please reload the page and try again.', 401, 'unauthorized');
+      const auth = { user: { id: voter.userId } };
 
       const body = await readJson(request);
       const question = QUESTIONS[String(body?.topicSlug || body?.topic || '')];
@@ -426,8 +451,9 @@ export async function handleVotingRequest(request, env, url) {
     }
 
     if (url.pathname === '/api/voting/ballots/me' && request.method === 'GET') {
-      const auth = await session(request, env);
-      if (!auth) return fail('Sign in to see your ballot.', 401, 'unauthorized');
+      const voter = await voterIdentity(request, env);
+      if (!voter) return fail('Voting needs a browser identity — please reload the page and try again.', 401, 'unauthorized');
+      const auth = { user: { id: voter.userId } };
       const question = QUESTIONS[String(url.searchParams.get('topic') || '')];
       if (!question) return fail('Unknown voting question.', 404, 'not_found');
 
@@ -449,8 +475,9 @@ export async function handleVotingRequest(request, env, url) {
     }
 
     if (url.pathname === '/api/voting/click/me' && request.method === 'GET') {
-      const auth = await session(request, env);
-      if (!auth) return fail('Sign in to see your votes.', 401, 'unauthorized');
+      const voter = await voterIdentity(request, env);
+      if (!voter) return fail('Voting needs a browser identity — please reload the page and try again.', 401, 'unauthorized');
+      const auth = { user: { id: voter.userId } };
       return await withDb(env, async (db) => {
         await ensureVotingSchema(db);
         const result = await db.query(
@@ -466,8 +493,9 @@ export async function handleVotingRequest(request, env, url) {
     }
 
     if (url.pathname === '/api/voting/click/ballots' && request.method === 'POST') {
-      const auth = await session(request, env);
-      if (!auth) return fail('Sign in to cast your vote.', 401, 'unauthorized');
+      const voter = await voterIdentity(request, env);
+      if (!voter) return fail('Voting needs a browser identity — please reload the page and try again.', 401, 'unauthorized');
+      const auth = { user: { id: voter.userId } };
       const body = await readJson(request);
       const question = CHOICE_QUESTIONS[String(body?.topicSlug || '')];
       if (!question) return fail('Unknown voting question.', 404, 'not_found');
@@ -509,27 +537,46 @@ export async function handleVotingRequest(request, env, url) {
           );
           const roomId = room.rows[0]?.id;
           if (roomId) {
-            if (castOrChanged) {
-              const dupe = await db.query(
-                `SELECT 1 FROM public.chat_room_messages
-                  WHERE room_id=$1::uuid AND user_id=$2::uuid AND content LIKE '🗳️ Click-to-Vote%'
-                    AND created_at > now() - interval '2 minutes' LIMIT 1`,
-                [roomId, auth.user.id],
-              );
-              if (!dupe.rowCount) {
+            // Guest ballots post into the room under the guest identity
+            // (user_id NULL + guest_key/guest_name), mirroring
+            // worker/community-chat.ts; member ballots keep their user_id.
+            const postRoomMessage = async (content) => {
+              if (voter.guest) {
+                await ensureDdl(db, `ALTER TABLE public.chat_room_messages ADD COLUMN IF NOT EXISTS guest_key text`);
+                await ensureDdl(db, `ALTER TABLE public.chat_room_messages ADD COLUMN IF NOT EXISTS guest_name text`);
+                await db.query(
+                  `INSERT INTO public.chat_room_messages (room_id, user_id, guest_key, guest_name, content, moderation_status)
+                   VALUES ($1::uuid, NULL, $2, $3, $4, 'approved')`,
+                  [roomId, voter.guest.id, voter.guest.name, content],
+                );
+              } else {
                 await db.query(
                   `INSERT INTO public.chat_room_messages (room_id, user_id, content, moderation_status)
                    VALUES ($1::uuid, $2::uuid, $3, 'approved')`,
-                  [roomId, auth.user.id, `🗳️ Click-to-Vote — I voted “${question.choices[choice]}”: ${question.question}`],
+                  [roomId, auth.user.id, content],
                 );
+              }
+            };
+            if (castOrChanged) {
+              const dupe = voter.guest
+                ? await db.query(
+                    `SELECT 1 FROM public.chat_room_messages
+                      WHERE room_id=$1::uuid AND guest_key=$2 AND content LIKE '🗳️ Click-to-Vote%'
+                        AND created_at > now() - interval '2 minutes' LIMIT 1`,
+                    [roomId, voter.guest.id],
+                  )
+                : await db.query(
+                    `SELECT 1 FROM public.chat_room_messages
+                      WHERE room_id=$1::uuid AND user_id=$2::uuid AND content LIKE '🗳️ Click-to-Vote%'
+                        AND created_at > now() - interval '2 minutes' LIMIT 1`,
+                    [roomId, auth.user.id],
+                  );
+              if (!dupe.rowCount) {
+                await postRoomMessage(`🗳️ Click-to-Vote — I voted “${question.choices[choice]}”: ${question.question}`);
               }
             }
             if (comment) {
-              await db.query(
-                `INSERT INTO public.chat_room_messages (room_id, user_id, content, moderation_status)
-                 VALUES ($1::uuid, $2::uuid, $3, 'approved')`,
-                [roomId, auth.user.id, comment],
-              );
+              await postRoomMessage(comment);
             }
             postedToRoom = true;
 
@@ -550,7 +597,7 @@ export async function handleVotingRequest(request, env, url) {
                   );
                   if (!recent.rowCount) {
                     let label = 'a member';
-                    try { label = await clickVoterLabel(db, auth.user.id); }
+                    try { label = voter.guest ? voter.guest.name : await clickVoterLabel(db, auth.user.id); }
                     catch (labelError) { console.error('Amora label stage failed:', labelError); }
                     const stance = choice === question.amoraChoice ? 'agrees' : 'disagrees';
                     await db.query(

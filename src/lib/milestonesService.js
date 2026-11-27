@@ -1,31 +1,39 @@
 import { calendarDayDifference, formatLocalDateInput, parseLocalDate } from '@/utils/localDate';
-import { apiRequest } from './apiClient';
+import { loadCollection, insertRecord, updateRecord, deleteRecord, getRecord, fileToDataUrl } from './guestStore';
 
-function fileIdFromUrl(photoUrl) {
-  const match = String(photoUrl || '').match(/\/api\/media\/milestones\/[0-9a-f-]{36}\/([0-9a-f-]{36})/i);
-  return match?.[1] || null;
+// Guest mode is the ONLY mode (owner ruling, 2026-11-25): there are no
+// members in the 100% free platform, so milestones live in the
+// browser-local guest store and photos are kept as data URLs. This
+// service never calls the member API — the server milestones API still
+// exists in the worker but is switched off (410) with the rest of the
+// member system, ready for future re-activation.
+const LOCAL = 'milestones';
+
+function sortMilestones(rows, orderBy) {
+  const raw = String(orderBy || '-date');
+  const field = raw.replace(/^-/, '') || 'date';
+  const desc = raw.startsWith('-');
+  return [...(rows || [])].sort((a, b) => {
+    const av = String(a?.[field] || a?.date || a?.created_at || '');
+    const bv = String(b?.[field] || b?.date || b?.created_at || '');
+    return desc ? bv.localeCompare(av) : av.localeCompare(bv);
+  });
 }
 
-export async function uploadMilestonePhoto(file, milestoneId = null) {
+export async function uploadMilestonePhoto(file, _milestoneId = null) {
   if (!file?.type?.startsWith('image/')) throw new Error('Milestone photo must be an image.');
   if (file.size > 10 * 1024 * 1024) throw new Error('Milestone photo must be 10MB or smaller.');
-  const query = milestoneId ? `?milestoneId=${encodeURIComponent(milestoneId)}` : '';
-  const payload = await apiRequest(`/api/milestones/media${query}`, {
-    method: 'POST',
-    headers: { 'content-type': file.type },
-    rawBody: file,
-  });
-  return payload?.url || null;
+  // Photos stay in the browser as data URLs — no server upload exists
+  // in guest mode.
+  return fileToDataUrl(file);
 }
 
 export async function uploadMilestonePhotos(files, milestoneId = null) {
   return Promise.all((files || []).map((file) => uploadMilestonePhoto(file, milestoneId)));
 }
 
-export async function deleteMilestonePhoto(photoUrl) {
-  const id = fileIdFromUrl(photoUrl);
-  if (!id) return;
-  await apiRequest(`/api/milestones/media/${id}`, { method: 'DELETE' });
+export async function deleteMilestonePhoto(_photoUrl) {
+  // Local data URLs need no server delete.
 }
 
 export async function deleteMilestonePhotos(photoUrls) {
@@ -33,41 +41,34 @@ export async function deleteMilestonePhotos(photoUrls) {
 }
 
 export async function getMilestones(orderBy = '-date') {
-  const payload = await apiRequest(`/api/milestones?order=${encodeURIComponent(orderBy)}`);
-  return payload?.milestones || [];
+  return sortMilestones(loadCollection(LOCAL), orderBy);
 }
 
 export async function getMilestoneById(milestoneId) {
-  const payload = await apiRequest(`/api/milestones/${milestoneId}`);
-  return payload?.milestone || null;
+  return getRecord(LOCAL, milestoneId);
 }
 
 export async function createMilestone(milestoneData) {
-  const payload = await apiRequest('/api/milestones', { method: 'POST', body: milestoneData });
-  return payload?.milestone || null;
+  return insertRecord(LOCAL, milestoneData || {});
 }
 
 export async function updateMilestone(milestoneId, updates) {
   const { user_id, id, created_at, updated_at, ...allowed } = updates || {};
-  const payload = await apiRequest(`/api/milestones/${milestoneId}`, { method: 'PATCH', body: allowed });
-  return payload?.milestone || null;
+  void user_id; void id; void created_at; void updated_at;
+  return updateRecord(LOCAL, milestoneId, allowed);
 }
 
 export async function deleteMilestone(milestoneId) {
-  await apiRequest(`/api/milestones/${milestoneId}`, { method: 'DELETE' });
+  deleteRecord(LOCAL, milestoneId);
 }
 
 export async function getUpcomingMilestones(daysAhead = 60) {
   const today = new Date();
   const future = new Date(today);
   future.setDate(today.getDate() + daysAhead);
-  const params = new URLSearchParams({
-    startDate: formatLocalDateInput(today),
-    endDate: formatLocalDateInput(future),
-    order: 'date',
-  });
-  const payload = await apiRequest(`/api/milestones?${params}`);
-  const direct = payload?.milestones || [];
+  const start = formatLocalDateInput(today);
+  const end = formatLocalDateInput(future);
+  const direct = loadCollection(LOCAL).filter(m => String(m?.date || '') >= start && String(m?.date || '') <= end);
   const all = await getMilestones('date');
   const recurring = all.filter((m) => m.is_recurring).map((m) => {
     const next = getNextAnniversary(m.date);
@@ -92,9 +93,7 @@ export async function getPastMilestones() {
 }
 
 export async function getMilestonesByType(milestoneType) {
-  const params = new URLSearchParams({ type: milestoneType, order: '-date' });
-  const payload = await apiRequest(`/api/milestones?${params}`);
-  return payload?.milestones || [];
+  return sortMilestones(loadCollection(LOCAL).filter(m => (m?.milestone_type || m?.type) === milestoneType), '-date');
 }
 
 export async function markCelebrationCompleted(milestoneId) {

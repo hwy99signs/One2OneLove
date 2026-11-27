@@ -1,28 +1,35 @@
 import { formatLocalDateInput } from '@/utils/localDate';
-import { apiRequest } from '@/lib/apiClient';
+import { loadCollection, insertRecord, updateRecord, deleteRecord, getRecord } from './guestStore';
 
-export const getCalendarEvents = async (_userId, options = {}) => {
-  const params = new URLSearchParams();
-  if (options.eventType) params.set('eventType', options.eventType);
-  if (options.startDate) params.set('startDate', options.startDate);
-  if (options.endDate) params.set('endDate', options.endDate);
-  if (options.sortBy) params.set('sortBy', options.sortBy);
-  if (options.sortOrder) params.set('sortOrder', options.sortOrder);
-  if (options.limit) params.set('limit', String(options.limit));
-  const suffix = params.toString() ? `?${params.toString()}` : '';
+// Guest mode is the ONLY mode (owner ruling, 2026-11-25): there are no
+// members in the 100% free platform, so calendar events live in the
+// browser-local guest store and this service never calls the member
+// API. The server calendar API still exists in the worker but is
+// switched off (410) with the rest of the member system, ready for
+// future re-activation. User-id arguments are accepted for call-site
+// compatibility and ignored.
+const LOCAL = 'calendar_events';
 
-  const payload = await apiRequest(`/api/calendar-events${suffix}`);
-  return payload?.events || [];
-};
+function localEvents(options = {}) {
+  let rows = loadCollection(LOCAL);
+  if (options.eventType) rows = rows.filter(event => event?.event_type === options.eventType);
+  if (options.startDate) rows = rows.filter(event => String(event?.event_date || '') >= String(options.startDate));
+  if (options.endDate) rows = rows.filter(event => String(event?.event_date || '') <= String(options.endDate));
+  const sortBy = options.sortBy || 'event_date';
+  const dir = String(options.sortOrder || 'asc').toLowerCase() === 'desc' ? -1 : 1;
+  rows = [...rows].sort((a, b) => String(a?.[sortBy] || '').localeCompare(String(b?.[sortBy] || '')) * dir);
+  if (options.limit) rows = rows.slice(0, Number(options.limit));
+  return rows;
+}
+
+export const getCalendarEvents = async (_userId, options = {}) => localEvents(options);
 
 export const getCalendarEvent = async (eventId, _userId) => {
   if (!eventId) throw new Error('Calendar event ID is required');
-  const payload = await apiRequest(`/api/calendar-events/${encodeURIComponent(eventId)}`);
-  return payload?.event || null;
+  return getRecord(LOCAL, eventId);
 };
 
-export const createCalendarEvent = async (userId, eventData) => {
-  if (!userId) throw new Error('User ID is required');
+export const createCalendarEvent = async (_userId, eventData) => {
   if (!eventData?.title?.trim()) throw new Error('Event title is required');
   if (!eventData?.event_date) throw new Error('Event date is required');
 
@@ -43,22 +50,17 @@ export const createCalendarEvent = async (userId, eventData) => {
     recurrence_pattern: eventData.recurrence_pattern || null,
   };
 
-  const payload = await apiRequest('/api/calendar-events', { method: 'POST', body });
-  return payload?.event || null;
+  return insertRecord(LOCAL, body);
 };
 
 export const updateCalendarEvent = async (eventId, _userId, updates) => {
   if (!eventId) throw new Error('Calendar event ID is required');
-  const payload = await apiRequest(`/api/calendar-events/${encodeURIComponent(eventId)}`, {
-    method: 'PATCH',
-    body: updates,
-  });
-  return payload?.event || null;
+  return updateRecord(LOCAL, eventId, updates || {});
 };
 
 export const deleteCalendarEvent = async (eventId, _userId) => {
   if (!eventId) throw new Error('Calendar event ID is required');
-  await apiRequest(`/api/calendar-events/${encodeURIComponent(eventId)}`, { method: 'DELETE' });
+  deleteRecord(LOCAL, eventId);
 };
 
 export const getUpcomingEvents = async (userId, limit = 10) => {

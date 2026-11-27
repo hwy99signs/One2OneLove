@@ -282,6 +282,10 @@ async function createContent(db, env, auth, input) {
 
 export async function handleAiRequest(request, env, url) {
   if (!url.pathname.startsWith('/api/ai')) return null;
+  // RETIRED 2026-11-25 (all-free conversion): AI coach/content generation
+  // costs money per use (OpenAI) — permanently off, before any provider
+  // call. index-v2 also refuses /api/ai before dispatch.
+  return fail('This feature has been retired. One2OneLove is now 100% free.', 410, 'feature_retired');
   const auth = await session(request, env);
   if (!auth) return fail('Authentication required.', 401, 'unauthorized');
 

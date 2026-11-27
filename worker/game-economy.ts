@@ -154,11 +154,11 @@ function promoCoversGame(games,game){
   return false;
 }
 export async function resolveGamePromotion(db,userId,game,now=new Date()){
-  // Owner ruling: all current and future registered O2OL games are free forever.
+  // Owner rulings: all registered O2OL games are free during the launch period (all-free, 2026-11-25; no FREE FOREVER promises, 2026-11-27).
   if(!PERMANENT_FREE_GAMES)throw new Error('Permanent game access policy is disabled.');
   // This is NOT the Dec 31 feature promotion; there is no expiry or Jan 1 relock.
   if(!gameDefinition(game))return null;
-  return {id:null,name:'ALL GAMES FREE FOREVER',kind:'free_play',free:true,percent:100,
+  return {id:null,name:'ALL GAMES FREE DURING LAUNCH',kind:'free_play',free:true,percent:100,
     endsAt:null,temporary:false,permanent:true};
 }
 

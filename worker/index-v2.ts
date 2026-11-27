@@ -126,6 +126,28 @@ const SOCIAL_PAGE_META = {
 };
 SOCIAL_PAGE_META['/home'] = SOCIAL_PAGE_META['/'];
 
+// RETIRED 2026-11-25 (all-free conversion): features that cost money per
+// use are permanently off — AI chat/content (OpenAI), the AI support chat,
+// phone verification and Love Note SMS (Twilio), Credit/token purchases,
+// and subscription billing. Their routes answer 410 so no code path can
+// reach the providers or charge anyone.
+function retiredFeatureResponse() {
+  return new Response(JSON.stringify({
+    ok: false,
+    error: {
+      code: 'feature_retired',
+      message: 'This feature has been retired. One2OneLove is now 100% free — no signup, no card, no Credit.',
+    },
+  }), {
+    status: 410,
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'no-store',
+      'x-content-type-options': 'nosniff',
+    },
+  });
+}
+
 function escapeHtmlMeta(value='') {
   return String(value).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
@@ -291,9 +313,16 @@ async function handleFetchV2(request, env, ctx) {
     }
     if (url.pathname === '/api/epscie/admin-health') return handlePrivateAdminHealth(request,env);
 
-    // These handlers are confined to the prelaunch Neon clone by the branch binding.
+    // Founding Member Giveaway RETIRED 2026-11-25 (owner ruling,
+    // 2026-11-25 12:40 CT: "no credit prizes or offers"). The giveaway
+    // ran on signups + Game Credit + free SMS sends — all disabled — so
+    // its API (hero, status, claim) answers 410 like the other retired
+    // systems. The handler stays in worker/founding-perks.ts, and the
+    // prefix is also listed in the retired block below; re-activation
+    // is restoring this route. (This early return stays because the
+    // route predates the retired block in this handler.)
     if (url.pathname.startsWith('/api/founding-perks/')) {
-      return handleFoundingPerksRequest(request,env,url);
+      return retiredFeatureResponse();
     }
     if (url.pathname.startsWith('/api/what-should-they-do/')) {
       return handleWhatShouldTheyDoRequest(request,env,url);
@@ -337,6 +366,60 @@ async function handleFetchV2(request, env, ctx) {
     if (url.pathname === '/api/launch-readiness') {
       const response = await handleLaunchReadinessRequest(request, env, url);
       if (response) return response;
+    }
+
+    // Retired per-use-cost features (2026-11-25): refused before any
+    // handler, gate, or provider call. The Stripe billing webhook is the
+    // one exception — it stays live so legacy events still settle; it
+    // spends nothing and sells nothing.
+    //
+    // Founding Member Giveaway (owner ruling, 2026-11-25 12:40 CT:
+    // "no credit prizes or offers") is retired here too — its prefix
+    // joins this block, and the earlier /api/founding-perks/ route in
+    // this handler returns the same 410.
+    //
+    // Member system + Credit system (owner ruling, 2026-11-25 10:58 CT):
+    // "There are NO MEMBERS or CREDIT SYSTEM in the 100% FREE. Keep them
+    // disabled and I will re-activate them at a future date as needed."
+    // Auth/session issuance, signup, member profiles and onboarding,
+    // direct messages, Like Minded multiplayer, buddies, invites, and
+    // the member personal-data APIs (journals, memories, milestones,
+    // goals, calendar, custom date ideas) are therefore refused here
+    // too. The handlers, schemas and data stay in place untouched —
+    // re-activation is removing prefixes from this block. Guest mode is
+    // the only mode: personal features run on the browser-local guest
+    // store, and Chat Rooms / public Communities carry their own guest
+    // paths below. Review writes are refused the same way (reading
+    // reviews stays public).
+    if (
+      url.pathname.startsWith('/api/ai') ||
+      url.pathname.startsWith('/api/support-chat') ||
+      url.pathname.startsWith('/api/phone-verification') ||
+      url.pathname.startsWith('/api/tokens') ||
+      url.pathname === '/api/billing/change-plan' ||
+      (url.pathname.startsWith('/api/billing') && url.pathname !== '/api/billing/webhook') ||
+      url.pathname.startsWith('/api/auth') ||
+      url.pathname.startsWith('/api/founding-perks') ||
+      url.pathname.startsWith('/api/launch-signup') ||
+      url.pathname.startsWith('/api/professional-signup') ||
+      url.pathname.startsWith('/api/chat') ||
+      url.pathname.startsWith('/api/like-minded') ||
+      url.pathname.startsWith('/api/buddies') ||
+      url.pathname.startsWith('/api/invites/') ||
+      url.pathname.startsWith('/api/onboarding') ||
+      url.pathname.startsWith('/api/profile') ||
+      url.pathname.startsWith('/api/media/profile/') ||
+      url.pathname.startsWith('/api/journals') ||
+      url.pathname.startsWith('/api/memories') ||
+      url.pathname.startsWith('/api/media/memories/') ||
+      url.pathname.startsWith('/api/milestones') ||
+      url.pathname.startsWith('/api/media/milestones/') ||
+      url.pathname.startsWith('/api/goals') ||
+      url.pathname.startsWith('/api/calendar-events') ||
+      url.pathname.startsWith('/api/date-ideas') ||
+      (url.pathname.startsWith('/api/reviews') && request.method !== 'GET' && request.method !== 'HEAD')
+    ) {
+      return retiredFeatureResponse();
     }
 
     if (url.pathname.startsWith('/api/phone-verification')) {

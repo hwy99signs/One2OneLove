@@ -37,13 +37,13 @@ const UI = {
     keepPlaying:'Keep Playing', finish:'Finish Self-Check', yourAnswer:'Your answer', waiting:'Waiting for the other player…',
     room:'Game Room', roomCode:'Room code', copyInvite:'Copy Invite Link', copied:'Copied', player2:'Waiting for Player 2',
     createRoom:'Create Invitation', joinRoom:'Join a Room', join:'Join', codePlaceholder:'Enter room code',
-    signin:'Sign in to use multiplayer', signinBody:'Create a free verified O2OL account to play Like Minded for free forever.',
+    signin:'Multiplayer is switched off', signinBody:'One2OneLove is a free platform with no accounts right now, so Like Minded multiplayer is off. The Solo Self-Check is free for everyone — no account needed.',
     available:'Available now', lobbyEmpty:'No other players are available right now.', leaveLobby:'Leave Player Lobby',
     location:'General location', city:'City', state:'State / Region (optional)', country:'Country', enterLobby:'Enter Player Lobby',
     locationNote:'Only your first name and general location are shown. Never your street address or precise location.',
     inviteToPlay:'Invite to Play', block:'Block', report:'Report', score:'Like-Minded Score', matches:'matches',
     talk:'Talk About It', talkPrompt:'What made each of you choose that answer?', difference:'Different answers', match:'You matched', back:'Back to Relationship Games',
-    category:'Category', questionDepth:'Depth', reset:'Start Over', unavailable:'Multiplayer service is not available in this preview yet.', premium:'FREE FOREVER',premiumBody:"Like Minded is permanently FREE. Each session lasts 2 hours; you can start another for free whenever you like.",buyTokens:'Start a Free Session',startPremium:'Play FREE',
+    category:'Category', questionDepth:'Depth', reset:'Start Over', unavailable:'Multiplayer service is not available in this preview yet.', premium:'FREE DURING LAUNCH',premiumBody:"Like Minded is FREE during our launch period. Each session lasts 2 hours; you can start another for free whenever you like.",buyTokens:'Start a Free Session',startPremium:'Play FREE',
     categoriesList:['Relationship Goals','Communication','Values','Family','Lifestyle','Money & Ambition','Boundaries','Future Priorities','Fun Scenarios','Humor','Activities','Food & Travel','Entertainment','Daily Preferences','Wild Card']
   },
   es: {
@@ -64,13 +64,13 @@ const UI = {
     keepPlaying:'Seguir Jugando', finish:'Finalizar', yourAnswer:'Tu respuesta', waiting:'Esperando al otro jugador…',
     room:'Sala de Juego', roomCode:'Código', copyInvite:'Copiar Enlace', copied:'Copiado', player2:'Esperando al Jugador 2',
     createRoom:'Crear Invitación', joinRoom:'Unirse a una Sala', join:'Unirse', codePlaceholder:'Ingresa el código',
-    signin:'Inicia sesión para multijugador', signinBody:'Crea una cuenta O2OL gratuita y verificada para jugar gratis para siempre.',
+    signin:'El multijugador está desactivado', signinBody:'One2OneLove es una plataforma gratuita y sin cuentas por ahora, así que el multijugador de Like Minded está desactivado. La Autoevaluación en solitario es gratis para todos, sin cuenta.',
     available:'Disponibles ahora', lobbyEmpty:'No hay otros jugadores disponibles ahora.', leaveLobby:'Salir de la Sala',
     location:'Ubicación general', city:'Ciudad', state:'Estado / Región (opcional)', country:'País', enterLobby:'Entrar a la Sala',
     locationNote:'Solo se muestra tu nombre y ubicación general. Nunca tu dirección ni ubicación exacta.',
     inviteToPlay:'Invitar a Jugar', block:'Bloquear', report:'Reportar', score:'Puntuación Like-Minded', matches:'coincidencias',
     talk:'Hablar de Esto', talkPrompt:'¿Qué hizo que cada uno eligiera esa respuesta?', difference:'Respuestas diferentes', match:'Coincidieron', back:'Volver a Juegos',
-    category:'Categoría', questionDepth:'Profundidad', reset:'Empezar de Nuevo', unavailable:'El servicio multijugador aún no está disponible en esta vista previa.', premium:'GRATIS PARA SIEMPRE',premiumBody:"Like Minded es gratis para siempre. Cada sesión dura 2 horas; puedes iniciar otra sin pagar.",buyTokens:'Iniciar sesión gratis',startPremium:'Jugar GRATIS',
+    category:'Categoría', questionDepth:'Profundidad', reset:'Empezar de Nuevo', unavailable:'El servicio multijugador aún no está disponible en esta vista previa.', premium:'GRATIS DURANTE EL LANZAMIENTO',premiumBody:"Like Minded es gratis durante el lanzamiento. Cada sesión dura 2 horas; puedes iniciar otra sin pagar.",buyTokens:'Iniciar sesión gratis',startPremium:'Jugar GRATIS',
     categoriesList:['Metas de Relación','Comunicación','Valores','Familia','Estilo de Vida','Dinero y Ambición','Límites','Prioridades Futuras','Escenarios Divertidos','Humor','Actividades','Comida y Viajes','Entretenimiento','Preferencias Diarias','Comodín']
   },
   fr: {
@@ -91,13 +91,13 @@ const UI = {
     keepPlaying:'Continuer', finish:'Terminer', yourAnswer:'Votre réponse', waiting:'En attente de l’autre joueur…',
     room:'Salle de Jeu', roomCode:'Code', copyInvite:'Copier le Lien', copied:'Copié', player2:'En attente du Joueur 2',
     createRoom:'Créer une Invitation', joinRoom:'Rejoindre une Salle', join:'Rejoindre', codePlaceholder:'Entrez le code',
-    signin:'Connectez-vous pour le multijoueur', signinBody:'Créez un compte O2OL gratuit et vérifié pour jouer gratuitement pour toujours.',
+    signin:'Le multijoueur est désactivé', signinBody:'One2OneLove est une plateforme gratuite et sans comptes pour le moment, le multijoueur de Like Minded est donc désactivé. L’auto-évaluation en solo est gratuite pour tout le monde, sans compte.',
     available:'Disponibles maintenant', lobbyEmpty:'Aucun autre joueur n’est disponible.', leaveLobby:'Quitter le Salon',
     location:'Localisation générale', city:'Ville', state:'État / Région (facultatif)', country:'Pays', enterLobby:'Entrer dans le Salon',
     locationNote:'Seuls votre prénom et votre localisation générale sont visibles. Jamais votre adresse précise.',
     inviteToPlay:'Inviter à Jouer', block:'Bloquer', report:'Signaler', score:'Score Like-Minded', matches:'accords',
     talk:'En Parler', talkPrompt:'Pourquoi chacun de vous a-t-il choisi cette réponse ?', difference:'Réponses différentes', match:'Vous êtes d’accord', back:'Retour aux Jeux',
-    category:'Catégorie', questionDepth:'Profondeur', reset:'Recommencer', unavailable:'Le service multijoueur n’est pas encore disponible dans cet aperçu.', premium:'GRATUIT POUR TOUJOURS',premiumBody:"Like Minded est gratuit pour toujours. Chaque session dure 2 heures ; vous pouvez en commencer une autre gratuitement.",buyTokens:'Démarrer gratuitement',startPremium:'Jouer GRATUITEMENT',
+    category:'Catégorie', questionDepth:'Profondeur', reset:'Recommencer', unavailable:'Le service multijoueur n’est pas encore disponible dans cet aperçu.', premium:'GRATUIT PENDANT LE LANCEMENT',premiumBody:"Like Minded est gratuit pendant le lancement. Chaque session dure 2 heures ; vous pouvez en commencer une autre gratuitement.",buyTokens:'Démarrer gratuitement',startPremium:'Jouer GRATUITEMENT',
     categoriesList:['Objectifs Relationnels','Communication','Valeurs','Famille','Style de Vie','Argent & Ambition','Limites','Priorités Futures','Scénarios Amusants','Humour','Activités','Cuisine & Voyage','Divertissement','Préférences Quotidiennes','Joker']
   },
   it: {
@@ -118,13 +118,13 @@ const UI = {
     keepPlaying:'Continua', finish:'Termina', yourAnswer:'La tua risposta', waiting:'In attesa dell’altro giocatore…',
     room:'Stanza di Gioco', roomCode:'Codice', copyInvite:'Copia Link', copied:'Copiato', player2:'In attesa del Giocatore 2',
     createRoom:'Crea Invito', joinRoom:'Entra in una Stanza', join:'Entra', codePlaceholder:'Inserisci il codice',
-    signin:'Accedi per il multigiocatore', signinBody:'Crea un account O2OL gratuito e verificato per giocare gratis per sempre.',
+    signin:'Il multigiocatore è disattivato', signinBody:'One2OneLove è una piattaforma gratuita e senza account per ora, quindi il multigiocatore di Like Minded è disattivato. L’auto-valutazione in solitaria è gratuita per tutti, senza account.',
     available:'Disponibili ora', lobbyEmpty:'Nessun altro giocatore è disponibile.', leaveLobby:'Esci dalla Lobby',
     location:'Posizione generale', city:'Città', state:'Stato / Regione (opzionale)', country:'Paese', enterLobby:'Entra nella Lobby',
     locationNote:'Vengono mostrati solo nome e posizione generale. Mai indirizzo o posizione precisa.',
     inviteToPlay:'Invita a Giocare', block:'Blocca', report:'Segnala', score:'Punteggio Like-Minded', matches:'corrispondenze',
     talk:'Parlatene', talkPrompt:'Cosa ha portato ciascuno di voi a scegliere quella risposta?', difference:'Risposte diverse', match:'Corrispondenza', back:'Torna ai Giochi',
-    category:'Categoria', questionDepth:'Profondità', reset:'Ricomincia', unavailable:'Il servizio multigiocatore non è ancora disponibile in questa anteprima.', premium:'GRATIS PER SEMPRE',premiumBody:"Like Minded è gratis per sempre. Ogni sessione dura 2 ore; puoi avviarne un’altra gratuitamente.",buyTokens:'Inizia sessione gratis',startPremium:'Gioca GRATIS',
+    category:'Categoria', questionDepth:'Profondità', reset:'Ricomincia', unavailable:'Il servizio multigiocatore non è ancora disponibile in questa anteprima.', premium:'GRATIS DURANTE IL LANCIO',premiumBody:"Like Minded è gratis durante il lancio. Ogni sessione dura 2 ore; puoi avviarne un’altra gratuitamente.",buyTokens:'Inizia sessione gratis',startPremium:'Gioca GRATIS',
     categoriesList:['Obiettivi di Coppia','Comunicazione','Valori','Famiglia','Stile di Vita','Denaro & Ambizione','Confini','Priorità Future','Scenari Divertenti','Umorismo','Attività','Cibo & Viaggi','Intrattenimento','Preferenze Quotidiane','Jolly']
   },
   de: {
@@ -145,13 +145,13 @@ const UI = {
     keepPlaying:'Weiterspielen', finish:'Selbst-Check Beenden', yourAnswer:'Deine Antwort', waiting:'Warte auf die andere Person…',
     room:'Spielraum', roomCode:'Raumcode', copyInvite:'Einladungslink Kopieren', copied:'Kopiert', player2:'Warte auf Spieler 2',
     createRoom:'Einladung Erstellen', joinRoom:'Raum Beitreten', join:'Beitreten', codePlaceholder:'Raumcode eingeben',
-    signin:'Für Mehrspieler anmelden', signinBody:'Erstelle ein kostenloses verifiziertes O2OL-Konto und spiele für immer kostenlos.',
+    signin:'Mehrspieler ist deaktiviert', signinBody:'One2OneLove ist derzeit eine kostenlose Plattform ohne Konten, daher ist der Like-Minded-Mehrspieler deaktiviert. Der Solo-Selbst-Check ist für alle kostenlos — ganz ohne Konto.',
     available:'Jetzt verfügbar', lobbyEmpty:'Zurzeit sind keine anderen Spieler verfügbar.', leaveLobby:'Lobby Verlassen',
     location:'Allgemeiner Standort', city:'Stadt', state:'Bundesland / Region (optional)', country:'Land', enterLobby:'Lobby Betreten',
     locationNote:'Nur Vorname und allgemeiner Standort werden gezeigt. Niemals Straße oder genauer Standort.',
     inviteToPlay:'Zum Spielen Einladen', block:'Blockieren', report:'Melden', score:'Like-Minded Score', matches:'Treffer',
     talk:'Darüber Reden', talkPrompt:'Was hat euch jeweils zu dieser Antwort gebracht?', difference:'Unterschiedliche Antworten', match:'Ihr stimmt überein', back:'Zurück zu Spielen',
-    category:'Kategorie', questionDepth:'Tiefe', reset:'Neu Starten', unavailable:'Der Mehrspieler-Dienst ist in dieser Vorschau noch nicht verfügbar.', premium:'FÜR IMMER KOSTENLOS',premiumBody:"Like Minded ist für immer kostenlos. Jede Sitzung dauert 2 Stunden; neue Sitzungen sind ebenfalls kostenlos.",buyTokens:'Gratis-Sitzung starten',startPremium:'GRATIS spielen',
+    category:'Kategorie', questionDepth:'Tiefe', reset:'Neu Starten', unavailable:'Der Mehrspieler-Dienst ist in dieser Vorschau noch nicht verfügbar.', premium:'KOSTENLOS IN DER STARTPHASE',premiumBody:"Like Minded ist in der Startphase kostenlos. Jede Sitzung dauert 2 Stunden; neue Sitzungen sind ebenfalls kostenlos.",buyTokens:'Gratis-Sitzung starten',startPremium:'GRATIS spielen',
     categoriesList:['Beziehungsziele','Kommunikation','Werte','Familie','Lebensstil','Geld & Ehrgeiz','Grenzen','Zukunftsprioritäten','Spaßszenarien','Humor','Aktivitäten','Essen & Reisen','Unterhaltung','Alltagsvorlieben','Wildcard']
   }
 };
@@ -360,7 +360,12 @@ export default function LikeMinded() {
   // Renew them at no charge; never display a purchase or Credit dialog.
   const ensurePremiumAccess=async()=>{
     if(!isAuthenticated){
-      window.location.assign('/SignUp?source=like-minded&type=individual');
+      // Member system disabled (2026-11-25): there are no accounts, so
+      // Like Minded MULTIPLAYER is switched off for everyone (matches
+      // pair two member accounts; rooms, blocks and reports are keyed
+      // to accounts). Guests keep the browse/solo paths and see this
+      // notice. The multiplayer code stays for future re-activation.
+      setApiError(t.signinBody);
       return false;
     }
     if(gamePass&&new Date(gamePass.expires_at).getTime()>Date.now())return true;
@@ -482,7 +487,7 @@ export default function LikeMinded() {
   };
 
   const startSolo = async () => {
-    // Solo self-check is a permanently free game; keep multiplayer
+    // Solo self-check is a free during our launch period game; keep multiplayer
     // verification and pre-chat Credit entitlements unchanged.
     if(!(isGuestBrowseEnabled() && !isAuthenticated) && !(await ensurePremiumAccess()))return;
     setScreen('solo'); setQuestionNo(1); setSetNo(1); setSelected(null); setLocked(false); setCheckpoint(false);
@@ -741,7 +746,7 @@ export default function LikeMinded() {
               {!isAuthenticated ? (
                 <>
                   <h2 className="text-2xl font-black text-slate-950">{t.signin}</h2><p className="mt-2 text-sm leading-6 text-slate-600">{t.signinBody}</p>
-                  <Link to={createPageUrl('SignIn') + (roomCode ? ('?redirect=' + encodeURIComponent(createPageUrl('LikeMinded') + '?room=' + roomCode)) : '')} className="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-slate-950 px-5 py-4 font-black text-white">{t.signin}</Link>
+                  <button onClick={startSolo} className="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-slate-950 px-5 py-4 font-black text-white">{t.solo}</button>
                 </>
               ) : (
                 <>
@@ -826,7 +831,7 @@ export default function LikeMinded() {
         {modeHeader}
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
           {!isAuthenticated ? (
-            <div className="mx-auto max-w-xl rounded-[30px] bg-white p-8 text-center shadow-xl"><UserRound className="mx-auto h-12 w-12 text-violet-600"/><h1 className="mt-4 text-2xl font-black">{t.signin}</h1><p className="mt-2 text-slate-600">{t.signinBody}</p><Link to={createPageUrl('SignIn')} className="mt-6 inline-flex rounded-2xl bg-slate-950 px-6 py-4 font-black text-white">{t.signin}</Link></div>
+            <div className="mx-auto max-w-xl rounded-[30px] bg-white p-8 text-center shadow-xl"><UserRound className="mx-auto h-12 w-12 text-violet-600"/><h1 className="mt-4 text-2xl font-black">{t.signin}</h1><p className="mt-2 text-slate-600">{t.signinBody}</p><button onClick={startSolo} className="mt-6 inline-flex rounded-2xl bg-slate-950 px-6 py-4 font-black text-white">{t.solo}</button></div>
           ) : !inLobby ? (
             <div className="mx-auto max-w-xl rounded-[30px] bg-white p-8 shadow-xl">
               <Users className="h-10 w-10 text-violet-600"/><h1 className="mt-4 text-3xl font-black">{t.lobby}</h1><p className="mt-2 text-slate-600">{t.locationNote}</p>
@@ -900,7 +905,7 @@ export default function LikeMinded() {
           <div className="mx-auto mt-4 w-full max-w-5xl rounded-2xl border border-amber-300/30 bg-amber-300/10 p-4 text-left text-amber-50">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div><div className="inline-flex items-center gap-2 font-black"><Sparkles className="h-5 w-5"/>{t.premium}</div><p className="mt-1 text-xs leading-5 text-amber-50/80">{t.premiumBody}</p></div>
-              {!isAuthenticated && <Link to="/SignUp?source=like-minded&type=individual" className="rounded-xl bg-amber-300 px-4 py-2 text-sm font-black text-amber-950">{t.signin}</Link>}
+              {<span className="rounded-xl bg-amber-300 px-4 py-2 text-sm font-black text-amber-950">{t.signin}</span>}
             </div>
           </div>
 

@@ -146,16 +146,27 @@ export default function ClickToVoteCard({ language = 'en' }) {
       if (pending?.slug) {
         const pIdx = questions.findIndex((q) => q.slug === pending.slug);
         if (pIdx >= 0 && !map[pending.slug]) {
-          setIndex(pIdx);
-          setPendingChoice(pending.choice || null);
-          // Comment-saving (owner approval, 2026-10-10): a comment
-          // saved with the pending pick comes back into the box, so
-          // the Join / Sign-in trip doesn't cost the guest their
-          // words. Older records have no comment field — treated as
-          // empty. Only fills an empty box; the pending slug IS the
-          // displayed topic in this branch.
-          if (typeof pending.comment === 'string' && pending.comment) {
-            setComment((cur) => (cur ? cur : pending.comment.slice(0, 500)));
+          // NO MEMBERS (2026-11-25): a pick saved by the old join-first
+          // flow is simply cast now — no account trip. On failure the
+          // pick stays selected (with its saved comment back in the
+          // box) so a tap casts it. Older records have no comment
+          // field — treated as empty.
+          let cast = false;
+          if (pending.choice) {
+            try {
+              await castClickVote({ topicSlug: pending.slug, choice: pending.choice, comment: typeof pending.comment === 'string' ? pending.comment : '' });
+              map = { ...map, [pending.slug]: pending.choice };
+              if (alive) setBallots(map);
+              cast = true;
+              try { localStorage.removeItem(PENDING_KEY); } catch { /* private mode */ }
+            } catch { cast = false; }
+          }
+          if (!cast) {
+            setIndex(pIdx);
+            setPendingChoice(pending.choice || null);
+            if (typeof pending.comment === 'string' && pending.comment) {
+              setComment((cur) => (cur ? cur : pending.comment.slice(0, 500)));
+            }
           }
         }
       }
@@ -169,8 +180,8 @@ export default function ClickToVoteCard({ language = 'en' }) {
   }, [firstUnvoted, questions]);
 
   const allVoted = useMemo(
-    () => isMember && questions.every((q) => ballots[q.slug]),
-    [isMember, ballots, questions],
+    () => questions.every((q) => ballots[q.slug]),
+    [ballots, questions],
   );
   const question = questions[index];
   const myChoice = question ? ballots[question.slug] : null;
@@ -185,13 +196,8 @@ export default function ClickToVoteCard({ language = 'en' }) {
   const handleChoice = async (choiceKey) => {
     if (!question || casting) return;
     setError('');
-    if (!isMember) {
-      setPendingChoice(choiceKey);
-      // The comment rides in the same record (same 500-char cap) so
-      // it survives the Join / Sign-in trip alongside the pick.
-      try { localStorage.setItem(PENDING_KEY, JSON.stringify({ slug: question.slug, choice: choiceKey, comment: comment.slice(0, 500) })); } catch { /* private mode */ }
-      return;
-    }
+    // NO MEMBERS (owner ruling 2026-11-25): every pick casts immediately
+    // under the browser guest identity — there is no join/sign-in step.
     setCasting(true);
     const wasUpdate = Boolean(ballots[question.slug]);
     try {
@@ -330,21 +336,7 @@ export default function ClickToVoteCard({ language = 'en' }) {
             </div>
             {error && <p className="mt-1 text-center text-[13px] font-bold text-red-300" role="alert">{error}</p>}
 
-            {!isMember && pendingChoice && (
-              <div className="mt-1 flex flex-col gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-[13px] font-black text-[#f7f2e7]">{t.joinTitle}</p>
-                  <p className="text-[13px] text-[#f7f2e7]/75">{t.joinBody}</p>
-                </div>
-                <div className="flex shrink-0 gap-2">
-                  <button type="button" onClick={() => navigate('/SignUp')} className="rounded-lg border border-amber-400/60 bg-gradient-to-br from-[#8e2fc9] to-[#c2255c] px-3.5 py-2 text-[13px] font-black text-[#f7f2e7] shadow-sm">{t.join}</button>
-                  <button type="button" onClick={() => navigate('/SignIn')} className="rounded-lg border border-[#f7f2e7]/40 bg-transparent px-3.5 py-2 text-[13px] font-black text-[#f7f2e7]">{t.signIn}</button>
-                </div>
-              </div>
-            )}
-            {isMember && pendingChoice && !myChoice && (
-              <p className="mt-1 text-center text-[13px] font-bold text-amber-300">{t.castNow}</p>
-            )}
+
           </>
         )}
       </div>

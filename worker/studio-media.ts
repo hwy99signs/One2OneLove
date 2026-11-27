@@ -14,7 +14,7 @@ const EPISODES=[
     chatRoom:'studio-who-pays-for-the-first-date',
     posterPath:null,
     releasedAt:'2026-10-09T22:00:00.000Z',
-    // Owner-approved: both published O2OL Studio videos are free forever.
+    // Owner-approved: both published O2OL Studio videos are free (current shows stay free per the 2026-11-02 ruling; freeForever is the internal flag name).
     // Keep prior Credit unlock history intact; this media itself is public.
     freeForever:true,
   },

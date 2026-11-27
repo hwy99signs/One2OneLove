@@ -1,50 +1,41 @@
-import { apiRequest } from '@/lib/apiClient';
+import { loadCollection, insertRecord, updateRecord, deleteRecord, fileToDataUrl } from './guestStore';
+
+// Guest mode is the ONLY mode (owner ruling, 2026-11-25): there are no
+// members in the 100% free platform, so memories live in the
+// browser-local guest store and photos are kept as data URLs. This
+// service never calls the member API — the server memories API still
+// exists in the worker but is switched off (410) with the rest of the
+// member system, ready for future re-activation. The userKey argument
+// is accepted for call-site compatibility and ignored.
+const LOCAL = 'memories';
 
 export async function listMemories(_userKey) {
-  const payload = await apiRequest('/api/memories');
-  return payload?.memories || [];
+  return loadCollection(LOCAL);
 }
 
-export async function createMemory(userKey, data) {
-  if (!userKey || userKey === 'guest') throw new Error('Please sign in to create a memory.');
-  const payload = await apiRequest('/api/memories', {
-    method: 'POST',
-    body: data,
-  });
-  return payload?.memory || null;
+export async function createMemory(_userKey, data) {
+  return insertRecord(LOCAL, data || {});
 }
 
-export async function updateMemory(userKey, id, updates) {
-  if (!userKey || userKey === 'guest') throw new Error('Please sign in to update a memory.');
+export async function updateMemory(_userKey, id, updates) {
   if (!id) throw new Error('Memory ID is required.');
-  const payload = await apiRequest(`/api/memories/${encodeURIComponent(id)}`, {
-    method: 'PATCH',
-    body: updates,
-  });
-  return payload?.memory || null;
+  return updateRecord(LOCAL, id, updates || {});
 }
 
-export async function deleteMemory(userKey, id) {
-  if (!userKey || userKey === 'guest') throw new Error('Please sign in to delete a memory.');
+export async function deleteMemory(_userKey, id) {
   if (!id) throw new Error('Memory ID is required.');
-  await apiRequest(`/api/memories/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  deleteRecord(LOCAL, id);
   return id;
 }
 
-export async function uploadMemoryMedia(file, memoryId = null) {
+export async function uploadMemoryMedia(file, _memoryId = null) {
   if (!(file instanceof File)) throw new Error('Choose a photo or video to upload.');
-  const suffix = memoryId ? `?memoryId=${encodeURIComponent(memoryId)}` : '';
-  const payload = await apiRequest(`/api/memories/media${suffix}`, {
-    method: 'POST',
-    headers: { 'content-type': file.type || 'application/octet-stream' },
-    rawBody: file,
-  });
-  return payload?.url || null;
+  // Photos stay in the browser as data URLs — no server upload exists
+  // in guest mode.
+  return fileToDataUrl(file);
 }
 
-export async function deleteMemoryMedia(url) {
-  const match = String(url || '').match(/\/api\/media\/memories\/[0-9a-f-]{36}\/([0-9a-f-]{36})$/i);
-  if (!match) return false;
-  await apiRequest(`/api/memories/media/${match[1]}`, { method: 'DELETE' });
-  return true;
+export async function deleteMemoryMedia(_url) {
+  // Local data URLs need no server delete.
+  return false;
 }

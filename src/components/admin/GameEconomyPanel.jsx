@@ -13,7 +13,7 @@ export default function GameEconomyPanel(){
   return <div className="space-y-6">
     <div>
       <h2 className="text-2xl font-black text-slate-950">Games & Historical Credit Accounting</h2>
-      <p className="mt-1 text-sm text-slate-500">Games remain free forever. Historical Game Credit balances are not needed to play.</p>
+      <p className="mt-1 text-sm text-slate-500">Games remain free during our launch period. Historical Game Credit balances are not needed to play.</p>
     </div>
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {[['Issued',totals.issued],['Used',totals.used],['Expired',totals.expired],['Remaining',totals.remaining]].map(([label,value])=>
@@ -40,7 +40,7 @@ export default function GameEconomyPanel(){
       </div>
     </div>}
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <h3 className="text-lg font-black text-slate-900">Games — FREE FOREVER</h3>
+      <h3 className="text-lg font-black text-slate-900">Games — FREE DURING LAUNCH</h3>
       <p className="mt-2 text-sm text-slate-600">Game pricing promotions are retired. All current and future One2OneLove games stay free for members without Credit charges. Historical Game Credit balances are informational only.</p>
     </div>
     {(data?.registry||[]).length>0&&<div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">

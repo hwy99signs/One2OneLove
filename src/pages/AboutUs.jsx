@@ -194,7 +194,7 @@ export default function AboutUs() {
           <p className="text-gray-700 leading-relaxed text-lg max-w-4xl mx-auto mb-8">{t.feedback}</p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link to={createPageUrl("ContactUs")} className="px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold">{t.contact}</Link>
-            <Link to={createPageUrl("SignUp")} className="px-6 py-3 rounded-xl bg-pink-500 hover:bg-pink-600 text-white font-bold">{t.signup}</Link>
+            {/* No Sign Up button: the platform has no accounts (2026-11-25). */}
           </div>
         </section>
       </div>

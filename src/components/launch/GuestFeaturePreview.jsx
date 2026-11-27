@@ -35,7 +35,7 @@ const TITLES = {
  dates:{title:'Date Ideas for Couples',subtitle:'52 date ideas — one for every week of the year',icon:Sparkles,tone:'from-teal-600 via-emerald-600 to-cyan-700',card:'border-emerald-100'},
  podcasts:{title:'Relationship Podcasts',subtitle:'Discover podcasts by conversation category and episode title',icon:Headphones,tone:'from-violet-700 via-purple-700 to-indigo-800',card:'border-purple-100'},
  studio:{title:'O2OL Studio Show',subtitle:'Browse seasons and episode titles',icon:Film,tone:'from-fuchsia-700 via-purple-800 to-indigo-900',card:'border-fuchsia-100'},
- games:{title:'Relationship Games',subtitle:'Play together, laugh together, grow together — FREE FOREVER for members',icon:Gamepad2,tone:'from-emerald-600 via-teal-600 to-green-800',card:'border-green-100'},
+ games:{title:'Relationship Games',subtitle:'Play together, laugh together, grow together — FREE DURING LAUNCH for members',icon:Gamepad2,tone:'from-emerald-600 via-teal-600 to-green-800',card:'border-green-100'},
  articles:{title:'Relationship Library',subtitle:'Practical, plain-language articles for healthier relationships',icon:BookOpen,tone:'from-indigo-700 via-purple-700 to-pink-600',card:'border-indigo-100'},
  feature:{title:'One2OneLove Feature',subtitle:'Preview this feature, then create a free account to access it',icon:Heart,tone:'from-blue-700 via-indigo-700 to-violet-700',card:'border-blue-100'},
 };

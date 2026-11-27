@@ -66,11 +66,11 @@ export const FEATURE_CATEGORIES = [
   ]],
 ];
 const COPY = {
- en:{title:'Explore One2OneLove',subtitle:'Explore games, notes, date ideas, podcasts and more without signing up. Only paid services and private account actions require login.',search:'Search titles and categories',all:'All Categories',open:'Open',guest:'Create a free account or sign in to access this feature.',join:'Create Free Account',signin:'Sign In',close:'Close',empty:'No titles found. Try a different search or category.',loading:'Loading titles…',noPrice:'Browsing is free. Existing feature prices and promotions are unchanged.',browse:'Browse the Catalog'},
- es:{title:'Explora One2OneLove',subtitle:'Explora juegos, notas, ideas para citas y podcasts sin registrarte. Solo los servicios de pago y las funciones privadas requieren acceso.',search:'Buscar títulos y categorías',all:'Todas las categorías',open:'Abrir',guest:'Crea una cuenta gratis o inicia sesión para acceder.',join:'Crear cuenta gratis',signin:'Iniciar sesión',close:'Cerrar',empty:'No se encontraron títulos.',loading:'Cargando títulos…',noPrice:'Explorar es gratis. Los precios y promociones no cambian.',browse:'Explorar el catálogo'},
- fr:{title:'Découvrez One2OneLove',subtitle:'Découvrez jeux, notes, idées de rendez-vous et podcasts sans inscription. Seuls les services payants et les espaces privés nécessitent une connexion.',search:'Rechercher des titres',all:'Toutes les catégories',open:'Ouvrir',guest:'Créez un compte gratuit ou connectez-vous pour accéder.',join:'Créer un compte gratuit',signin:'Se connecter',close:'Fermer',empty:'Aucun titre trouvé.',loading:'Chargement des titres…',noPrice:'La consultation est gratuite. Les prix et promotions ne changent pas.',browse:'Parcourir le catalogue'},
- it:{title:'Esplora One2OneLove',subtitle:'Esplora giochi, messaggi, idee per appuntamenti e podcast senza registrarti. Solo i servizi a pagamento e le aree private richiedono l’accesso.',search:'Cerca titoli',all:'Tutte le categorie',open:'Apri',guest:'Crea un account gratuito o accedi per continuare.',join:'Crea account gratuito',signin:'Accedi',close:'Chiudi',empty:'Nessun titolo trovato.',loading:'Caricamento titoli…',noPrice:'La navigazione è gratuita. Prezzi e promozioni restano invariati.',browse:'Esplora il catalogo'},
- de:{title:'One2OneLove Entdecken',subtitle:'Entdecke Spiele, Liebesbotschaften, Date-Ideen und Podcasts ohne Registrierung. Nur bezahlte Dienste und private Bereiche benötigen eine Anmeldung.',search:'Titel durchsuchen',all:'Alle Kategorien',open:'Öffnen',guest:'Erstelle ein kostenloses Konto oder melde dich an, um fortzufahren.',join:'Kostenloses Konto erstellen',signin:'Anmelden',close:'Schließen',empty:'Keine Titel gefunden.',loading:'Titel werden geladen…',noPrice:'Das Stöbern ist kostenlos. Preise und Aktionen bleiben unverändert.',browse:'Katalog durchsuchen'},
+ en:{title:'Explore One2OneLove',subtitle:'Explore games, notes, date ideas, podcasts and more. Everything is free and open to everyone — no account, no card.',search:'Search titles and categories',all:'All Categories',open:'Open',guest:'This feature is free for everyone.',join:'',signin:'',close:'Close',empty:'No titles found. Try a different search or category.',loading:'Loading titles…',noPrice:'Everything in this catalog is free.',browse:'Browse the Catalog'},
+ es:{title:'Explora One2OneLove',subtitle:'Explora juegos, notas, ideas para citas, podcasts y más. Todo es gratis y está abierto para todos: sin cuenta y sin tarjeta.',search:'Buscar títulos y categorías',all:'Todas las categorías',open:'Abrir',guest:'Esta función es gratis para todos.',join:'',signin:'',close:'Cerrar',empty:'No se encontraron títulos.',loading:'Cargando títulos…',noPrice:'Todo en este catálogo es gratis.',browse:'Explorar el catálogo'},
+ fr:{title:'Découvrez One2OneLove',subtitle:'Découvrez jeux, notes, idées de rendez-vous, podcasts et plus encore. Tout est gratuit et ouvert à tous — sans compte ni carte.',search:'Rechercher des titres',all:'Toutes les catégories',open:'Ouvrir',guest:'Cette fonction est gratuite pour tout le monde.',join:'',signin:'',close:'Fermer',empty:'Aucun titre trouvé.',loading:'Chargement des titres…',noPrice:'Tout dans ce catalogue est gratuit.',browse:'Parcourir le catalogue'},
+ it:{title:'Esplora One2OneLove',subtitle:'Esplora giochi, note, idee per appuntamenti, podcast e altro. Tutto è gratuito e aperto a tutti: senza account e senza carta.',search:'Cerca titoli',all:'Tutte le categorie',open:'Apri',guest:'Questa funzione è gratuita per tutti.',join:'',signin:'',close:'Chiudi',empty:'Nessun titolo trovato.',loading:'Caricamento titoli…',noPrice:'Tutto in questo catalogo è gratuito.',browse:'Esplora il catalogo'},
+ de:{title:'One2OneLove Entdecken',subtitle:'Entdecke Spiele, Liebesbotschaften, Date-Ideen, Podcasts und mehr. Alles ist kostenlos und für alle offen — ohne Konto und ohne Karte.',search:'Titel durchsuchen',all:'Alle Kategorien',open:'Öffnen',guest:'Diese Funktion ist für alle kostenlos.',join:'',signin:'',close:'Schließen',empty:'Keine Titel gefunden.',loading:'Titel werden geladen…',noPrice:'Alles in diesem Katalog ist kostenlos.',browse:'Katalog durchsuchen'},
 };
 const pretty = (v) => String(v || 'General').replace(/([a-z])([A-Z])/g,'$1 $2').replace(/_/g,' ').replace(/\b\w/g,ch=>ch.toUpperCase());
 const featureToType = (v) => {
@@ -126,9 +126,10 @@ export default function PublicCatalog(){
  },[type,notes,dates,studio,currentLanguage]);
  const categories=useMemo(()=>['all',...new Set(items.map(i=>i.category))], [items]);
  const shown=useMemo(()=>items.filter(i=>(category==='all'||i.category===category)&&(!search.trim()||[i.title,i.category,i.group].join(' ').toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()))),[items,category,search]);
- const openItem=(item)=>{if(isAuthenticated||isGuestOpenRoute(item.target)){navigate(item.target);return}setSelected(item);};
+ // No accounts, no gates (2026-11-25): every catalog item opens directly
+ // for everyone. The old guest signup modal is gone with the member system.
+ const openItem=(item)=>{navigate(item.target);};
  const switchType=(value)=>setParams({feature:value});
- useEffect(()=>{if(!selected)return;const close=e=>{if(e.key==='Escape')setSelected(null)};window.addEventListener('keydown',close);return()=>window.removeEventListener('keydown',close)},[selected]);
  return <div className="min-h-[75vh] bg-gradient-to-br from-rose-50 via-white to-sky-50 px-4 py-10 text-slate-900">
   <div className="mx-auto max-w-7xl">
    <div className="rounded-3xl bg-gradient-to-r from-fuchsia-700 via-purple-700 to-blue-700 px-6 py-9 text-white shadow-xl sm:px-10">
@@ -151,18 +152,9 @@ export default function PublicCatalog(){
      <span className="text-xs font-black uppercase tracking-wide text-purple-600">{type==='notes'?(NOTE_CATEGORIES[item.category]||pretty(item.category)):pretty(item.category)}</span>
      <span className="mt-2 flex-1 text-base font-black leading-snug text-slate-900">{item.title}</span>
      {item.group&&<span className="mt-1 text-xs text-slate-500">{item.group}</span>}
-     <span className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-purple-700">{!isAuthenticated&&!isGuestOpenRoute(item.target)&&<LockKeyhole className="h-3.5 w-3.5"/>}{t.open}</span>
+     <span className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-purple-700">{t.open}</span>
     </button>)}
    </section>
   </div>
-  {selected&&<div data-catalog-signup-modal role="dialog" aria-modal="true" aria-label={t.guest} className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 px-4 py-6" onClick={e=>{if(e.target===e.currentTarget)setSelected(null)}}>
-   <div className="relative w-full max-w-md rounded-3xl bg-white p-7 text-center shadow-2xl">
-    <button type="button" aria-label={t.close} onClick={()=>setSelected(null)} className="absolute right-4 top-4 rounded-lg p-2 text-slate-600 hover:bg-slate-100"><X className="h-5 w-5"/></button>
-    <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-purple-100 text-purple-700"><LockKeyhole className="h-7 w-7"/></div>
-    <h2 className="mt-4 text-xl font-black">{selected.title}</h2>
-    <p className="mt-3 text-slate-600">{t.guest}</p>
-    <div className="mt-6 grid gap-3"><Link to={'/SignUp?return='+encodeURIComponent(selected.target)} className="inline-flex justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-700 to-pink-600 px-5 py-3 font-black text-white"><UserPlus className="h-5 w-5"/>{t.join}</Link><Link to={'/SignIn?return='+encodeURIComponent(selected.target)} className="rounded-xl border border-purple-200 px-5 py-3 font-black text-purple-800">{t.signin}</Link></div>
-   </div>
-  </div>}
  </div>;
 }

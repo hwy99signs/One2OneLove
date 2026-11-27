@@ -6,14 +6,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { isO2OLPromoFreeFeature } from '@/lib/o2olFreePromo2026';
 import { isGuestBrowseEnabled } from '@/lib/guestAccessPolicy';
 
-const FOUNDING_STRIP_COPY = {
-  en:{eyebrow:'FOUNDING MEMBER GIVEAWAY',body1:'The first 100 signups with a username, email and password get $10 in Game Credit AND 2 FREE Love Note sends.',body2:'The next 100 signups get $5 in Game Credit AND 1 FREE Love Note send.',monthly:'The first 100 also get $10 in Game Credit every month for 6 months.',future:'Future perks will also be awarded to these Founding Members.',requirements:'To claim: an email on your profile, a verified phone number, and at least $5 Credit in your account.',cta:'Join Free'},
-  es:{eyebrow:'OBSEQUIO PARA MIEMBROS FUNDADORES',body1:'Las primeras 100 inscripciones con usuario, correo y contraseña reciben $10 en Crédito de Juego Y 2 ENVÍOS DE NOTAS DE AMOR GRATIS.',body2:'Las siguientes 100 inscripciones reciben $5 en Crédito de Juego Y 1 ENVÍO DE NOTA DE AMOR GRATIS.',monthly:'Los primeros 100 también reciben $10 en Crédito de Juego cada mes durante 6 meses.',future:'También se otorgarán beneficios futuros a estos Miembros Fundadores.',requirements:'Para reclamar: un correo en tu perfil, un número de teléfono verificado y al menos $5 de Crédito en tu cuenta.',cta:'Únete Gratis'},
-  fr:{eyebrow:'CADEAU MEMBRES FONDATEURS',body1:'Les 100 premières inscriptions avec nom d’utilisateur, e-mail et mot de passe reçoivent 10 $ en Crédit de Jeu ET 2 ENVOIS DE NOTES D’AMOUR GRATUITS.',body2:'Les 100 inscriptions suivantes reçoivent 5 $ en Crédit de Jeu ET 1 ENVOI DE NOTE D’AMOUR GRATUIT.',monthly:'Les 100 premiers reçoivent aussi 10 $ en Crédit de Jeu chaque mois pendant 6 mois.',future:'Des avantages futurs seront également accordés à ces Membres Fondateurs.',requirements:'Pour réclamer : un e-mail dans votre profil, un numéro de téléphone vérifié et au moins 5 $ de Crédit dans votre compte.',cta:'Rejoindre Gratuitement'},
-  it:{eyebrow:'OMAGGIO MEMBRI FONDATORI',body1:'Le prime 100 iscrizioni con nome utente, email e password ricevono $10 in Credito di Gioco E 2 INVII DI NOTE D’AMORE GRATUITI.',body2:'Le successive 100 iscrizioni ricevono $5 in Credito di Gioco E 1 INVIO DI NOTA D’AMORE GRATUITO.',monthly:'I primi 100 ricevono anche $10 in Credito di Gioco ogni mese per 6 mesi.',future:'Vantaggi futuri saranno assegnati anche a questi Membri Fondatori.',requirements:'Per richiedere: un’email nel tuo profilo, un numero di telefono verificato e almeno $5 di Credito nel tuo account.',cta:'Iscriviti Gratis'},
-  de:{eyebrow:'GRÜNDUNGSMITGLIEDER-GESCHENK',body1:'Die ersten 100 Anmeldungen mit Benutzername, E-Mail und Passwort erhalten $10 Spiel-Credit UND 2 KOSTENLOSE LIEBESBOTSCAFT-SENDUNGEN.',body2:'Die nächsten 100 Anmeldungen erhalten $5 Spiel-Credit UND 1 KOSTENLOSE LIEBESBOTSCAFT-SENDUNG.',monthly:'Die ersten 100 erhalten außerdem $10 Spiel-Credit jeden Monat für 6 Monate.',future:'Zukünftige Vorteile werden auch an diese Gründungsmitglieder vergeben.',requirements:'Zum Einlösen: eine E-Mail in deinem Profil, eine verifizierte Telefonnummer und mindestens $5 Credit in deinem Konto.',cta:'Kostenlos Beitreten'}
-};
-
 const LOGO = '/assets/o2ol-approved-logo.png';
 const HERO = '/assets/o2ol-hero.png';
 const STUDIO_VIDEO = '/studio-media/season-1-episode-1.mp4';
@@ -26,11 +18,11 @@ const OPEN_HOUSE_COPY = {
 };
 
 const AMORA_COPY = {
-  en:{eyebrow:'MEET AMORA',title:'Your One2OneLove Relationship Coach',body:'Talk naturally with Amora about communication, conflict, boundaries, connection, expectations, or whatever is on your mind.',cta:'Talk with Amora',token:'Short $0.10 · Medium $0.15 · Long $0.20'},
-  es:{eyebrow:'CONOCE A AMORA',title:'Tu Coach de Relaciones One2OneLove',body:'Habla naturalmente con Amora sobre comunicación, conflictos, límites, conexión, expectativas o lo que tengas en mente.',cta:'Hablar con Amora',token:'Short $0.10 · Medium $0.15 · Long $0.20'},
-  fr:{eyebrow:'DÉCOUVREZ AMORA',title:'Votre Coach Relationnelle One2OneLove',body:'Parlez naturellement avec Amora de communication, conflit, limites, connexion, attentes ou de ce qui vous préoccupe.',cta:'Parler avec Amora',token:'Short $0.10 · Medium $0.15 · Long $0.20'},
-  it:{eyebrow:'CONOSCI AMORA',title:'La Tua Coach Relazionale One2OneLove',body:'Parla naturalmente con Amora di comunicazione, conflitti, confini, connessione, aspettative o di ciò che hai in mente.',cta:'Parla con Amora',token:'Short $0.10 · Medium $0.15 · Long $0.20'},
-  de:{eyebrow:'LERNE AMORA KENNEN',title:'Deine One2OneLove Beziehungscoachin',body:'Sprich natürlich mit Amora über Kommunikation, Konflikte, Grenzen, Verbindung, Erwartungen oder was dir gerade durch den Kopf geht.',cta:'Mit Amora sprechen',token:'Short $0.10 · Medium $0.15 · Long $0.20'}
+  en:{eyebrow:'MEET AMORA',title:'Your One2OneLove Relationship Coach',body:'Amora\'s AI chat has been retired — it cost money on every message. Everything else on One2OneLove is now 100% free: tools, games, Studio, podcasts and chat rooms, with no signup, no card and no Credit.',cta:'See what\'s free',token:'AI CHAT RETIRED — EVERYTHING ELSE IS FREE'},
+  es:{eyebrow:'CONOCE A AMORA',title:'Tu Coach de Relaciones One2OneLove',body:'El chat con IA de Amora se retiró: costaba dinero en cada mensaje. Todo lo demás en One2OneLove ahora es 100% gratis: herramientas, juegos, Studio, podcasts y salas de chat, sin registro, sin tarjeta y sin Crédito.',cta:'Ver qué es gratis',token:'CHAT CON IA RETIRADO — TODO LO DEMÁS ES GRATIS'},
+  fr:{eyebrow:'DÉCOUVREZ AMORA',title:'Votre Coach Relationnelle One2OneLove',body:'Le chat IA d\'Amora a été retiré — il coûtait de l\'argent à chaque message. Tout le reste sur One2OneLove est désormais 100 % gratuit : outils, jeux, Studio, podcasts et salons de discussion, sans inscription, sans carte et sans Crédit.',cta:'Voir ce qui est gratuit',token:'CHAT IA RETIRÉ — TOUT LE RESTE EST GRATUIT'},
+  it:{eyebrow:'CONOSCI AMORA',title:'La Tua Coach Relazionale One2OneLove',body:'La chat IA di Amora è stata ritirata: costava denaro a ogni messaggio. Tutto il resto su One2OneLove ora è gratuito al 100%: strumenti, giochi, Studio, podcast e sale chat, senza registrazione, senza carta e senza Credito.',cta:'Vedi cosa è gratis',token:'CHAT IA RITIRATA — TUTTO IL RESTO È GRATIS'},
+  de:{eyebrow:'LERNE AMORA KENNEN',title:'Deine One2OneLove Beziehungscoachin',body:'Amoras KI-Chat wurde eingestellt — er kostete bei jeder Nachricht Geld. Alles andere auf One2OneLove ist jetzt 100 % kostenlos: Tools, Spiele, Studio, Podcasts und Chaträume — ohne Anmeldung, ohne Karte und ohne Credit.',cta:'Sieh, was kostenlos ist',token:'KI-CHAT EINGESTELLT — ALLES ANDERE IST KOSTENLOS'}
 };
 
 const STUDIO_COPY = {
@@ -41,13 +33,13 @@ const STUDIO_COPY = {
   de:{eyebrow:'O2OL STUDIO SHOW',season:'Staffel 1 • Folge 1',title:'Wer sollte sich zuerst entschuldigen?',body:'Sieh dir Folge 1 KOSTENLOS an — das O2OL-Studio-Gespräch, das die Staffel eröffnete — und betrachte eine echte Beziehungsfrage aus mehreren Perspektiven.',watch:'Folge 1 Ansehen'}
 };
 
-// Both published O2OL Studio episodes are FREE FOREVER, with no account required.
+// Both published O2OL Studio episodes are FREE DURING LAUNCH, with no account required.
 const STUDIO_E2_COPY = {
-  en:{eyebrow:'O2OL STUDIO SHOW',badge:'NEW EPISODE',season:'Season 1 • Episode 2',title:'Who Pays for the First Date?',body:'Watch the latest O2OL Studio conversation FREE FOREVER. No signup or Credit required.',watch:'Watch Episode 2 FREE',lockNote:'FREE FOREVER • Watch anytime'},
-  es:{eyebrow:'O2OL STUDIO SHOW',badge:'NUEVO EPISODIO',season:'Temporada 1 • Episodio 2',title:'¿Quién paga en la primera cita?',body:'Mira la última conversación de O2OL Studio GRATIS PARA SIEMPRE. Sin registro ni Crédito.',watch:'Ver Episodio 2 GRATIS',lockNote:'GRATIS PARA SIEMPRE • Míralo cuando quieras'},
-  fr:{eyebrow:'O2OL STUDIO SHOW',badge:'NOUVEL ÉPISODE',season:'Saison 1 • Épisode 2',title:'Qui paie au premier rendez-vous ?',body:'Regardez le dernier épisode O2OL Studio GRATUITEMENT POUR TOUJOURS, sans inscription ni Crédit.',watch:'Voir l’Épisode 2 GRATUITEMENT',lockNote:'GRATUIT POUR TOUJOURS • À voir à tout moment'},
-  it:{eyebrow:'O2OL STUDIO SHOW',badge:'NUOVO EPISODIO',season:'Stagione 1 • Episodio 2',title:'Chi paga al primo appuntamento?',body:'Guarda l’ultimo episodio O2OL Studio GRATIS PER SEMPRE, senza registrazione né Credito.',watch:'Guarda Episodio 2 GRATIS',lockNote:'GRATIS PER SEMPRE • Guarda quando vuoi'},
-  de:{eyebrow:'O2OL STUDIO SHOW',badge:'NEUE FOLGE',season:'Staffel 1 • Folge 2',title:'Wer zahlt beim ersten Date?',body:'Sieh die neueste O2OL-Studio-Folge FÜR IMMER KOSTENLOS – ohne Anmeldung oder Credit.',watch:'Folge 2 GRATIS ansehen',lockNote:'FÜR IMMER KOSTENLOS • Jederzeit ansehen'}
+  en:{eyebrow:'O2OL STUDIO SHOW',badge:'NEW EPISODE',season:'Season 1 • Episode 2',title:'Who Pays for the First Date?',body:'Watch the latest O2OL Studio conversation FREE DURING LAUNCH. No signup or Credit required.',watch:'Watch Episode 2 FREE',lockNote:'FREE DURING LAUNCH • Watch anytime'},
+  es:{eyebrow:'O2OL STUDIO SHOW',badge:'NUEVO EPISODIO',season:'Temporada 1 • Episodio 2',title:'¿Quién paga en la primera cita?',body:'Mira la última conversación de O2OL Studio GRATIS DURANTE EL LANZAMIENTO. Sin registro ni Crédito.',watch:'Ver Episodio 2 GRATIS',lockNote:'GRATIS DURANTE EL LANZAMIENTO • Míralo cuando quieras'},
+  fr:{eyebrow:'O2OL STUDIO SHOW',badge:'NOUVEL ÉPISODE',season:'Saison 1 • Épisode 2',title:'Qui paie au premier rendez-vous ?',body:'Regardez le dernier épisode O2OL Studio GRATUITEMENT PENDANT LE LANCEMENT, sans inscription ni Crédit.',watch:'Voir l’Épisode 2 GRATUITEMENT',lockNote:'GRATUIT PENDANT LE LANCEMENT • À voir à tout moment'},
+  it:{eyebrow:'O2OL STUDIO SHOW',badge:'NUOVO EPISODIO',season:'Stagione 1 • Episodio 2',title:'Chi paga al primo appuntamento?',body:'Guarda l’ultimo episodio O2OL Studio GRATIS DURANTE IL LANCIO, senza registrazione né Credito.',watch:'Guarda Episodio 2 GRATIS',lockNote:'GRATIS DURANTE IL LANCIO • Guarda quando vuoi'},
+  de:{eyebrow:'O2OL STUDIO SHOW',badge:'NEUE FOLGE',season:'Staffel 1 • Folge 2',title:'Wer zahlt beim ersten Date?',body:'Sieh die neueste O2OL-Studio-Folge KOSTENLOS IN DER STARTPHASE – ohne Anmeldung oder Credit.',watch:'Folge 2 GRATIS ansehen',lockNote:'KOSTENLOS IN DER STARTPHASE • Jederzeit ansehen'}
 };
 const HOME_PROMO_TOOL_CODES = {
   MemoryLane:'memories_unlock',
@@ -114,8 +106,6 @@ export default function Home() {
   const [selectedTool, setSelectedTool] = useState(0);
   const toolIsFree = (page,status) => status === 'free' || isO2OLPromoFreeFeature(HOME_PROMO_TOOL_CODES[page]);
   const [publicStats, setPublicStats] = useState(null);
-  const [foundingOffer, setFoundingOffer] = useState(null);
-  const foundingStrip = FOUNDING_STRIP_COPY[currentLanguage] || FOUNDING_STRIP_COPY.en;
   const go = page => navigate(createPageUrl(page));
 
   useEffect(() => {
@@ -123,15 +113,6 @@ export default function Home() {
     fetch('/api/public-stats', { credentials:'same-origin', headers:{ accept:'application/json' } })
       .then(response => response.ok ? response.json() : null)
       .then(payload => { if (active && payload?.ok) setPublicStats(payload); })
-      .catch(() => {});
-    return () => { active = false; };
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-    fetch('/api/founding-perks/hero', { credentials:'same-origin', headers:{ accept:'application/json' } })
-      .then(response => response.ok ? response.json() : null)
-      .then(payload => { if (active && payload?.ok) setFoundingOffer(payload.hero || null); })
       .catch(() => {});
     return () => { active = false; };
   }, []);
@@ -177,24 +158,11 @@ export default function Home() {
         </div>
       </section>
 
-      {foundingOffer?.open && (
-        <section style={{ background:'linear-gradient(90deg,#a23be6 0%,#c630ca 55%,#db2a6e 100%)' }} className="border-y-2 border-amber-300 px-5 py-5 text-white">
-          <div className="mx-auto flex max-w-7xl flex-col items-center gap-3 text-center">
-            <div className="text-xs font-black uppercase tracking-[0.22em] text-amber-200">🎉 {foundingStrip.eyebrow}</div>
-            <p className="max-w-4xl text-lg font-extrabold leading-snug drop-shadow md:text-xl">
-              {foundingOffer.tier === 'first100' ? foundingStrip.body1 : foundingStrip.body2}
-              {foundingOffer.tier === 'first100' && foundingOffer.monthlyPerk ? ` ${foundingStrip.monthly}` : ''}
-              {foundingOffer.futurePerks ? ` ${foundingStrip.future}` : ''}
-            </p>
-            <p className="text-sm text-white/85">{foundingStrip.requirements}</p>
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <button type="button" data-analytics-id="home-founding-giveaway" data-analytics-destination="/SignUp" onClick={() => go('SignUp')} className="rounded-full bg-white px-5 py-2 text-sm font-black text-pink-700 shadow-lg transition hover:bg-slate-50">
-                {foundingStrip.cta}
-              </button>
-            </div>
-          </div>
-        </section>
-      )}
+      {/* Founding Member Giveaway strip RETIRED 2026-11-25 (owner ruling:
+          "no credit prizes or offers"). The strip component and its copy
+          are kept, unimported, in
+          src/components/launch/FoundingGiveawayStrip.jsx for possible
+          future re-activation; /api/founding-perks/* answers 410. */}
       <section className="bg-gradient-to-r from-purple-600 via-fuchsia-600 to-rose-600 px-5 py-7 text-white">
         <div className="mx-auto max-w-7xl">
           <h2 className="text-center text-3xl font-black md:text-4xl">🌍 {t.allInclusive} 🌍</h2>
@@ -222,7 +190,7 @@ export default function Home() {
               <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600">{amora.body}</p>
               <div className="mt-5 flex flex-wrap items-center gap-3">
                 <span className="rounded-full bg-gradient-to-r from-rose-500 to-fuchsia-600 px-5 py-2.5 text-sm font-black text-white shadow-md">{amora.cta}</span>
-                <span className="text-xs font-black uppercase tracking-wide text-amber-700">🪙 {amora.token}</span>
+                <span className="text-xs font-black uppercase tracking-wide text-emerald-700">{amora.token}</span>
               </div>
             </div>
           </button>

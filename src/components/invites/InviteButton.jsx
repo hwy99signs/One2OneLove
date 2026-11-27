@@ -6,6 +6,10 @@ import InviteSheet from './InviteSheet';
 const copy={en:'Invite someone to play',es:'Invita a alguien a jugar',fr:'Inviter quelqu’un à jouer',it:'Invita qualcuno a giocare',de:'Jemanden zum Spielen einladen'};
 export default function InviteButton({game,surface='game_button',className=''}) {
  const {currentLanguage}=useLanguage(),[open,setOpen]=useState(false);
+ // NO MEMBERS (owner ruling 2026-11-25): game invites belong to the member
+ // system, which is disabled in the free model — the invite button renders
+ // nothing. The sheet and its API stay in place for re-activation.
+ return null;
  return <>
   <button type="button" data-analytics-id={'invite-open-'+game} onClick={()=>setOpen(true)} className={`inline-flex min-h-11 min-w-0 items-center justify-center gap-2 whitespace-normal break-words rounded-xl bg-gradient-to-r from-fuchsia-500 to-purple-600 px-4 py-2.5 text-sm font-black text-white shadow-lg hover:from-fuchsia-600 hover:to-purple-700 ${className}`}><UserPlus size={18} className="shrink-0"/><span className="min-w-0 text-center">{copy[currentLanguage]||copy.en}</span></button>
   <InviteSheet open={open} onClose={()=>setOpen(false)} game={game} surface={surface}/>

@@ -1,40 +1,59 @@
-// One source of truth for the owner-approved temporary free promotion.
-// America/Chicago: Thursday, Oct 29, 2026 through Dec 31, 2026 at 11:59:59.999 PM CST.
-// Expiry is exclusive; all paid gates relock automatically on Jan 1, 2027.
-// Never modify the stored prices or write permanent entitlements for promo access.
-export const O2OL_FREE_PROMO_START = '2026-10-29T05:00:00.000Z'; // midnight CDT
-export const O2OL_FREE_PROMO_END_EXCLUSIVE = '2027-01-01T06:00:00.000Z'; // midnight CST
-export const O2OL_FREE_PROMO_MESSAGE = '100% FREE until Dec 31, 2026 — from Jan 1, standard prices return ($2.99 to unlock each feature). All games remain FREE FOREVER.';
+// One2OneLove is a free platform during its launch period (owner decision, 2026-11-25; wording rule 2026-11-27: never promise free-forever or no-card-ever — charging may return).
+//
+// This module used to describe the temporary Oct 29 – Dec 31, 2026 free
+// promotion (with a Jan 1, 2027 relock). That promotion is over because the
+// whole platform went free for good: every feature that remains is free for
+// everyone, no signup and no card required, and the per-use-cost features
+// (AI replies, AI content generation, AI reports, SMS sending) were retired
+// instead of charged for. The exports keep their historical names so existing
+// imports keep working, but the semantics are now the open launch period, not a dated window:
+// "promo active" always reads true and every listed feature is free during our launch period.
+// There is no relock date.
+export const O2OL_FREE_PROMO_START = '2026-10-29T05:00:00.000Z'; // historical: midnight CDT
+export const O2OL_FREE_PROMO_END_EXCLUSIVE = null; // no end date in code — ending the free period is an owner decision (100-user trigger, 2026-11-27)
+// RE-ACTIVATION RULE (owner ruling, 2026-11-27): subscription may be turned on when
+// One2OneLove reaches 100 users. Members who joined while it was free are
+// GRANDFATHERED FREE — charging applies to new joiners after the trigger only.
+export const O2OL_SUBSCRIPTION_TRIGGER_USERS = 100;
+export const O2OL_EARLY_MEMBERS_GRANDFATHERED_FREE = true;
+export const O2OL_FREE_PROMO_MESSAGE = 'One2OneLove is 100% FREE during our launch period — every feature is free for everyone. No signup, no card, no Credit.';
 
 export const O2OL_FREE_PROMO_MESSAGES = Object.freeze({
   en: O2OL_FREE_PROMO_MESSAGE,
-  es: '100% GRATIS hasta el 31 de diciembre de 2026 — desde el 1 de enero vuelven los precios habituales ($2.99 para desbloquear cada función). Todos los juegos siguen GRATIS PARA SIEMPRE.',
-  fr: '100 % GRATUIT jusqu’au 31 décembre 2026 — dès le 1er janvier, les tarifs habituels reviennent (2,99 $ pour débloquer chaque fonctionnalité). Tous les jeux restent GRATUITS POUR TOUJOURS.',
-  it: '100% GRATIS fino al 31 dicembre 2026 — dal 1° gennaio tornano i prezzi normali ($2.99 per sbloccare ogni funzione). Tutti i giochi restano GRATIS PER SEMPRE.',
-  de: '100 % KOSTENLOS bis 31. Dezember 2026 — ab 1. Januar gelten wieder die regulären Preise (2,99 $ zum Freischalten jeder Funktion). Alle Spiele bleiben FÜR IMMER KOSTENLOS.',
+  es: 'One2OneLove es 100% GRATIS durante nuestro período de lanzamiento — todas las funciones son gratuitas para todos. Sin registro, sin tarjeta, sin Crédito.',
+  fr: 'One2OneLove est 100 % GRATUIT pendant notre période de lancement — chaque fonctionnalité est gratuite pour tout le monde. Sans inscription, sans carte, sans Crédit.',
+  it: 'One2OneLove è 100% GRATIS durante il nostro periodo di lancio — ogni funzione è gratuita per tutti. Nessuna registrazione, nessuna carta, nessun Credito.',
+  de: 'One2OneLove ist 100 % KOSTENLOS während unserer Startphase — jede Funktion ist für alle kostenlos. Keine Anmeldung, keine Karte, kein Credit.',
 });
 export const freePromoMessage = (language = 'en') => O2OL_FREE_PROMO_MESSAGES[language] || O2OL_FREE_PROMO_MESSAGE;
 
+// Every feature that still exists on the platform is free. (AI and SMS
+// features are NOT listed: they were retired, not made free.)
 export const O2OL_FREE_PROMO_FEATURES = Object.freeze([
   'memories_unlock', 'journals_unlock', 'milestones_unlock', 'goals_unlock', 'calendar_unlock',
   'date_idea_unlock',
   'love_note_template_unlock', 'love_language_report', 'compatibility_report',
-  'relationship_pattern_report',
+  'relationship_pattern_report', 'premium_report', 'report_export',
+  'love_note_custom', 'love_note_schedule',
+  'studio_episode_unlock', 'podcast_episode_unlock',
+  'like_minded_session', 'scratch_game_session', 'premium_game_session',
+  'free_core', 'profile_photos', 'chat_presence', 'community_chat', 'communities', 'buddies',
 ]);
 
 const freeFeatureSet = new Set(O2OL_FREE_PROMO_FEATURES);
 
 export function isO2OLFreePromoActive(now = new Date()) {
-  const time = now instanceof Date ? now.getTime() : new Date(now).getTime();
-  return Number.isFinite(time) && time >= Date.parse(O2OL_FREE_PROMO_START)
-    && time < Date.parse(O2OL_FREE_PROMO_END_EXCLUSIVE);
+  // Free platform (2026-11-25): the free period has no coded end date; the owner ends it by decision.
+  void now;
+  return true;
 }
 export function isO2OLPromoFreeFeature(featureCode, now = new Date()) {
-  return isO2OLFreePromoActive(now) && freeFeatureSet.has(String(featureCode || ''));
+  void now;
+  return freeFeatureSet.has(String(featureCode || ''));
 }
 
-// Permanently free media stays free after the Dec 31, 2026 promotion.
-// All current/future One2OneLove games have their separate permanent-free rule.
+// Studio/podcast media features stay free under the current-shows-free ruling.
+// Games have their separate free-games rule in o2olGamePolicy.js.
 export const O2OL_PERMANENT_FREE_MEDIA_FEATURES = Object.freeze(['studio_episode_unlock','podcast_episode_unlock']);
 const permanentFreeMediaSet = new Set(O2OL_PERMANENT_FREE_MEDIA_FEATURES);
 export function isO2OLPermanentlyFreeMediaFeature(featureCode) {

@@ -1,4 +1,4 @@
-// Owner amendment (2026-10-29): every current and future O2OL game is FREE forever.
+// Owner rulings: games are free under the all-free launch (2026-11-25); wording rule 2026-11-27 — never promise FREE DURING LAUNCH; charging may be re-activated later.
 // Independent of the time-boxed non-game feature promotion and its Jan 1 relock.
 // Keep verified sign-in, play sessions and leaderboards; never charge Credit for games.
 export const PERMANENT_FREE_GAMES = true;
@@ -10,9 +10,9 @@ export function isO2OLPermanentFreeGameFeature(featureCode) {
   return LEGACY_GAME_FEATURES.has(code) || code.startsWith('game_') || code.endsWith('_game_session');
 }
 export const O2OL_GAME_FREE_LABELS = Object.freeze({
-  en:'ALL GAMES FREE FOREVER', es:'TODOS LOS JUEGOS GRATIS PARA SIEMPRE',
-  fr:'TOUS LES JEUX GRATUITS POUR TOUJOURS', it:'TUTTI I GIOCHI GRATIS PER SEMPRE',
-  de:'ALLE SPIELE FÜR IMMER KOSTENLOS',
+  en:'ALL GAMES FREE DURING LAUNCH', es:'TODOS LOS JUEGOS GRATIS DURANTE EL LANZAMIENTO',
+  fr:'TOUS LES JEUX GRATUITS PENDANT LE LANCEMENT', it:'TUTTI I GIOCHI GRATIS DURANTE IL LANCIO',
+  de:'ALLE SPIELE KOSTENLOS IN DER STARTPHASE',
 });
 export function permanentFreeGamesLabel(language='en'){
   return O2OL_GAME_FREE_LABELS[language] || O2OL_GAME_FREE_LABELS.en;

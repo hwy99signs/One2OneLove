@@ -9,7 +9,7 @@ test('both Studio video and podcast media stay free after the promotional window
     assert.equal(isO2OLPermanentlyFreeMediaFeature(code),true);
     assert.equal(isO2OLPromoFreeFeature(code,yearsLater),false);
     assert.equal(FEATURE_PRICE_BY_CODE[code].cents,0);
-    assert.match(FEATURE_PRICE_BY_CODE[code].priceLabel,/FREE FOREVER/);
+    assert.match(FEATURE_PRICE_BY_CODE[code].priceLabel,/FREE DURING LAUNCH/);
   }
 });
 test('permanently free media rule never opens paid AI or private content',()=>{

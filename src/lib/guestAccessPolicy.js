@@ -1,34 +1,32 @@
-// One2OneLove launch guest-access policy (owner decision, 2026-11-01).
+// One2OneLove guest-access policy (owner decision, 2026-11-25).
 //
-// Rule: anything a visitor can try once, that stores nothing personal, costs
-// nothing and is worth sharing stays open WITHOUT an account. Anything that
-// saves personal data, involves other people, costs money (AI, SMS, Credit)
-// or needs an inviter's personal link requires a free account.
+// The whole platform is free and open: no signup, no card, no Credit.
+// Guests can use every remaining feature — personal features run in
+// browser-local guest mode, and Chat Rooms / Communities accept guest
+// participation with a display name. The per-use-cost features (AI, SMS)
+// were retired rather than gated. Only the admin area stays behind its
+// own sign-in + MFA, which is enforced separately (AdminMfaGate / worker
+// admin gates), never by this policy.
 //
-// This replaces the temporary preview-hostname-only switch. The same rules
-// apply on the preview and on one2onelove.com so the preview shows exactly
-// what launches. Server APIs remain the authority for every protected action.
+// The historical exports keep their names so existing imports keep
+// working; the route set is retained for reference, but the check itself
+// now answers "open" for every non-admin route.
 
-// Master switch. Set to false to return to the 2026-10-11 "site locked behind
-// sign-up" behavior everywhere without touching individual pages.
+// Master switch, retained for emergencies. While true (the permanent
+// state), every non-admin route is guest-open.
 export const GUEST_BROWSE_ENABLED = true;
 
-// Free without signup: games, What Should They Do? voting, Studio videos,
-// podcasts, articles/support reading, quizzes (short result), browsing Date
-// Ideas and Love Note templates, invite landing pages, homepage and catalog.
+// Historical list of routes that were guest-open under the 2026-11-01
+// policy. Kept for reference; access no longer depends on membership in
+// this set.
 export const GUEST_OPEN_ROUTES = new Set([
   '/', '/home', '/catalog', '/featurepricing', '/pricing', '/premiumfeatures',
-  // Games (all permanently free)
   '/cooperativegames', '/games', '/pests', '/poolpingpong', '/scrabluko', '/ithoughtso',
   '/scratchgame', '/likeminded', '/whatshouldtheydo', '/whatshouldtheydoglobalpreview', '/leaderboard',
-  // Watch and listen (Studio and podcasts are free forever)
   '/o2olstudio', '/o2olstudio/episodes', '/onair', '/podcasts', '/podcast', '/podcastssupport',
-  // Read and learn
   '/articlessupport', '/blog', '/lgbtqsupport', '/couplesupport', '/counselingsupport',
   '/influencerssupport', '/meditation', '/coupleactivities', '/communicationpractice',
-  // Browse (saving, sending and custom items require an account)
   '/dateideas', '/lovenotes',
-  // Quizzes: take it and see a short result; full saved reports need an account
   '/lovelanguagequiz', '/relationshipquizzes',
 ]);
 
@@ -39,7 +37,8 @@ export function normalizeRoute(pathname) {
 export function isGuestOpenRoute(pathname) {
   if (!GUEST_BROWSE_ENABLED) return false;
   const route = normalizeRoute(pathname);
-  return GUEST_OPEN_ROUTES.has(route) || route.startsWith('/i/');
+  if (route === '/admin' || route.startsWith('/admin/') || route === '/adminaccess') return false;
+  return true;
 }
 
 // Feature-level check used by pages that render inside an open route.

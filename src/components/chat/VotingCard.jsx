@@ -105,7 +105,6 @@ export default function VotingCard({ question, language = 'en', isAuthenticated 
   const [submitting, setSubmitting] = useState(false);
   const [cast, setCast] = useState(null);
   const [justCast, setJustCast] = useState(false);
-  const [showSignIn, setShowSignIn] = useState(false);
 
   const closed = question.closesAt ? Date.parse(question.closesAt) <= Date.now() : false;
   const prioritiesTotal = useMemo(
@@ -139,11 +138,9 @@ export default function VotingCard({ question, language = 'en', isAuthenticated 
 
   const submit = async () => {
     if (!ready || submitting) return;
-    if (!isAuthenticated) {
-      setShowSignIn(true);
-      toast.error(v.signInPrompt);
-      return;
-    }
+    // NO MEMBERS (owner ruling 2026-11-25): everyone votes as a guest —
+    // the ballot is keyed by the browser guest identity (votingService
+    // sends the guest headers; worker/voting.ts accepts them).
     setSubmitting(true);
     try {
       const ballot = await castBallot({
@@ -246,13 +243,6 @@ export default function VotingCard({ question, language = 'en', isAuthenticated 
                 </label>
               </div>
             </div>
-
-            {showSignIn && !isAuthenticated && (
-              <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                <span>{v.signInPrompt}</span>
-                <Link to={createPageUrl('SignIn')} className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-amber-600 px-3 py-2 font-bold text-white"><LogIn size={15} />{v.signIn}</Link>
-              </div>
-            )}
 
             <button
               type="button"

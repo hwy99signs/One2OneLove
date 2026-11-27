@@ -7,45 +7,29 @@ import { Heart, Search, Shuffle, Send, X, MessageSquare, Facebook, Instagram, Tw
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import { getLoveNoteDeliveryReadiness, getLoveNotePriceQuote, listSentLoveNotes, recordSentLoveNote, sendLoveNoteSms, scheduleLoveNote } from "@/lib/loveNotesService";
+import { listSentLoveNotes, recordSentLoveNote, scheduleLoveNote } from "@/lib/loveNotesService";
 import { trackFeatureAction } from "@/lib/featureUsageService";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import ScheduledNotesManager from "../components/lovenotes/ScheduledNotesManager";
-import AIPersonalizationModal from "../components/lovenotes/AIPersonalizationModal";
 
 
 
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { getAiConfig } from "@/lib/aiService";
-import { getTokenWallet, isTokensRequiredError, isPhoneVerificationError, tokenRequiredDetails, listTokenUnlocks, unlockTokenContent } from "@/lib/tokenService";
 import { apiRequest } from "@/lib/apiClient";
-import { isO2OLPromoFreeFeature } from "@/lib/o2olFreePromo2026";
-import { isGuestBrowseEnabled } from '@/lib/guestAccessPolicy';
 
-const FREE_NOTE_ACCESS_COPY = {
-  en:{guest:'FREE through Dec 31 — tap to read without signup.',join:'Read for FREE',body:'This Love Note is FREE during the promotion. Open it without signing up. No Credit charge.',open:'Read'},
-  es:{guest:'GRATIS hasta el 31 de diciembre — lee sin registrarte.',join:'Leer GRATIS',body:'Esta Nota de Amor es GRATIS durante la promoción. Ábrela sin registrarte y sin pagar Crédito.',open:'Leer'},
-  fr:{guest:'GRATUIT jusqu’au 31 décembre — à lire sans inscription.',join:'Lire GRATUITEMENT',body:'Cette Note d’Amour est GRATUITE pendant l’offre. Lisez-la sans inscription ni Crédit.',open:'Lire'},
-  it:{guest:'GRATIS fino al 31 dicembre — leggi senza registrarti.',join:'Leggi GRATIS',body:'Questa Nota d’Amore è GRATIS durante la promozione. Leggila senza registrarti o pagare Credito.',open:'Leggi'},
-  de:{guest:'Bis 31. Dezember KOSTENLOS — ohne Anmeldung lesen.',join:'KOSTENLOS lesen',body:'Diese Liebesbotschaft ist während der Aktion KOSTENLOS. Lies sie ohne Anmeldung und ohne Credit.',open:'Lesen'}
-};
-const libraryAccessCopy = {
-  en: { bought:'Purchased — select to read your note.', permanent:'Permanently unlocked', promo:'FREE during the promo — select to read your note.', temporary:'Temporary free access · relocks Jan 1', locked:'Note text hidden until unlocked.', paid:'$0.49 Credit to unlock', unlock:'Unlock $0.49' },
-  es: { bought:'Comprada — selecciónala para leerla.', permanent:'Desbloqueada permanentemente', promo:'GRATIS durante la promoción — selecciónala para leerla.', temporary:'Acceso gratuito temporal · se bloquea el 1 de enero', locked:'Texto oculto hasta desbloquearlo.', paid:'$0.49 de Crédito para desbloquear', unlock:'Desbloquear $0.49' },
-  fr: { bought:'Achetée — sélectionnez-la pour la lire.', permanent:'Débloquée définitivement', promo:'GRATUITE pendant l’offre — sélectionnez-la pour la lire.', temporary:'Accès gratuit temporaire · reverrouillage le 1er janvier', locked:'Texte masqué avant déblocage.', paid:'0,49 $ de Crédit pour débloquer', unlock:'Débloquer pour 0,49 $' },
-  it: { bought:'Acquistata — selezionala per leggerla.', permanent:'Sbloccata definitivamente', promo:'GRATIS durante la promozione — selezionala per leggerla.', temporary:'Accesso gratis temporaneo · si blocca il 1° gennaio', locked:'Testo nascosto fino allo sblocco.', paid:'$0.49 di Credito per sbloccare', unlock:'Sblocca $0.49' },
-  de: { bought:'Gekauft — zum Lesen auswählen.', permanent:'Dauerhaft freigeschaltet', promo:'Während der Aktion KOSTENLOS — zum Lesen auswählen.', temporary:'Vorübergehend kostenlos · ab 1. Januar wieder gesperrt', locked:'Text bis zur Freischaltung verborgen.', paid:'Für $0.49 Credit freischalten', unlock:'Für $0.49 freischalten' },
+
+const FREE_CARD_COPY = {
+  en: 'Free — tap to read the full note.',
+  es: 'Gratis — toca para leer la nota completa.',
+  fr: 'Gratuit — touchez pour lire la note entière.',
+  it: 'Gratis — tocca per leggere la nota completa.',
+  de: 'Kostenlos — tippe, um die ganze Botschaft zu lesen.',
 };
 
 const LOVE_NOTE_MAX_CHARACTERS = 171;
 const clampLoveNote = (value) => Array.from(String(value || '')).slice(0, LOVE_NOTE_MAX_CHARACTERS).join('');
-// Total SMS body limit — title + note + signature line + sign-off — mirrored
-// from CREDIT_CONFIG.maxSmsBodyCharacters in worker/credit-config.ts; the
-// server enforces the same cap on the fully composed body.
-const SMS_BODY_MAX_CHARACTERS = 201;
-const SMS_SIGNOFF_TEXT = '❤️ One2OneLove';
 
 const translations = {
   en: {
@@ -87,21 +71,22 @@ const translations = {
     personalizedFor: "Personalized for",
     recipientPhone: "Recipient's Phone Number",
     recipientPhonePlaceholder: "(555) 123-4567",
-    recipientPhoneDesc: "One2OneLove SMS delivery uses Credit. The Credit cost is shown before sending. Recipient carrier rates may apply.",
+    recipientPhoneDesc: "Love Notes are sent in the app and shared from your own apps — free during our launch period.",
     schedulingOptions: "📅 Scheduling Options",
     sendNow: "Send Now",
     scheduleLater: "Schedule for Later",
     scheduleDate: "Schedule Date",
     scheduleTime: "Schedule Time",
     scheduleSuccess: "Love note scheduled successfully! 💕",
+    sentInApp: "Love note sent! 💕",
     viewScheduled: "View Scheduled Notes",
     howItWorks: "📱 How it works:",
-    howItWorksItem1: "• Your love note will be sent as a text message",
+    howItWorksItem1: "• Your love note is saved and sent right here in the app — free",
     howItWorksItem2: "• The recipient will see it came from Love Notes",
-    howItWorksItem3: "• They'll get a link to create their own account",
+    howItWorksItem3: "• Or share it from your own apps — WhatsApp, email and more",
     howItWorksItem4: "• Perfect for surprising your partner!",
     anonTitle: "Your name signs your note",
-    anonBody: "Your name appears at the foot of your note, so they know it's from you. Rather stay a secret admirer? Check 'Send Anonymous' and your note arrives with no name attached — just your title, your words, and a ❤️ One2OneLove sign-off.",
+    anonBody: "Rather stay a secret admirer? Check 'Send Anonymous' and your note arrives with no name attached — just your title, your words, and a ❤️ One2OneLove sign-off.",
     senderNameLimitNote: "Your name is included in the character limit of the note.",
     sendAnonymous: "Send Anonymous",
     signatureSignedAs: "Signed with your account first name:",
@@ -198,6 +183,7 @@ const translations = {
     scheduleDate: "Fecha de Programación",
     scheduleTime: "Hora de Programación",
     scheduleSuccess: "¡Nota de amor programada exitosamente! 💕",
+    sentInApp: "¡Nota de amor enviada! 💕",
     viewScheduled: "Ver Notas Programadas",
     pleaseSelectDateTime: "Por favor selecciona fecha y hora para programar",
     cancel: "Cancelar",
@@ -216,9 +202,9 @@ const translations = {
     personalizedFor: "Personalizado para",
     personalizationSaved: "¡Personalización guardada! 💕",
     howItWorks: "📱 Cómo funciona:",
-    howItWorksItem1: "• Tu nota de amor se enviará como mensaje de texto",
+    howItWorksItem1: "• Tu nota de amor se guarda y se envía aquí mismo en la app — gratis",
     howItWorksItem2: "• El destinatario verá que vino de Love Notes",
-    howItWorksItem3: "• Recibirá un enlace para crear su propia cuenta",
+    howItWorksItem3: "• O compártela desde tus propias apps — WhatsApp, correo y más",
     howItWorksItem4: "• ¡Perfecto para sorprender a tu pareja!",
     anonTitle: "Tu nombre firma tu nota",
     anonBody: "Tu nombre aparece al final de tu nota, para que sepan que viene de ti. ¿Prefieres seguir siendo un admirador secreto? Marca 'Enviar como anónimo' y tu nota llegará sin ningún nombre: solo tu título, tus palabras y la firma ❤️ One2OneLove.",
@@ -239,7 +225,7 @@ const translations = {
     copiedTikTok: "¡Copiado! Pega en TikTok",
     openingLinkedIn: "Abriendo LinkedIn...",
     openingEmail: "Abriendo email...",
-    recipientPhoneDesc: "La entrega SMS de One2OneLove usa Crédito. El costo en Crédito se muestra antes de enviar. Pueden aplicarse tarifas del operador del destinatario.",
+    recipientPhoneDesc: "Las Notas de Amor se envían en la app y se comparten desde tus propias apps — gratis durante el lanzamiento.",
     partnerNameDesc: 'Reemplaza "tú" y "tu" en las notas.',
     petNameDesc: 'Añadido a notas que contienen "amor".',
     specialPlaceDesc: "Añadido a notas de 'Recuerdos'.",
@@ -320,6 +306,7 @@ const translations = {
     scheduleDate: "Date de Programmation",
     scheduleTime: "Heure de Programmation",
     scheduleSuccess: "Note d'amour programmée avec succès! 💕",
+    sentInApp: "Note d’amour envoyée ! 💕",
     viewScheduled: "Voir Notes Programmées",
     pleaseSelectDateTime: "Veuillez sélectionner la date et l'heure de programmation",
     cancel: "Annuler",
@@ -338,9 +325,9 @@ const translations = {
     personalizedFor: "Personalizado para",
     personalizationSaved: "Personnalisation sauvegardée! 💕",
     howItWorks: "📱 Comment ça marche:",
-    howItWorksItem1: "• Votre note d'amour sera envoyée par SMS",
+    howItWorksItem1: "• Votre note d’amour est enregistrée et envoyée ici même dans l’application — gratuitement",
     howItWorksItem2: "• Le destinataire verra qu'elle vient de Love Notes",
-    howItWorksItem3: "• Il recevra un lien pour créer son propre compte",
+    howItWorksItem3: "• Ou partagez-la depuis vos propres applications — WhatsApp, e-mail et plus",
     howItWorksItem4: "• Parfait pour surprendre votre partenaire!",
     anonTitle: "Votre nom signe votre note",
     anonBody: "Votre nom apparaît au bas de votre note, pour qu’ils sachent qu’elle vient de vous. Vous préférez rester un admirateur secret ? Cochez « Envoyer anonymement » et votre note arrivera sans aucun nom : juste votre titre, vos mots et la signature ❤️ One2OneLove.",
@@ -361,7 +348,7 @@ const translations = {
     copiedTikTok: "Copié! Coller dans TikTok",
     openingLinkedIn: "Ouverture de LinkedIn...",
     openingEmail: "Ouverture de l'email...",
-    recipientPhoneDesc: "La livraison SMS One2OneLove utilise du Crédit. Le coût en Crédit est affiché avant l’envoi. Des frais opérateur peuvent s’appliquer au destinataire.",
+    recipientPhoneDesc: "Les Notes d’Amour sont envoyées dans l’application et partagées depuis vos propres applications — gratuitement pendant le lancement.",
     partnerNameDesc: 'Remplace "tu" et "ton" dans les notes.',
     petNameDesc: 'Ajouté aux notes contenant "amour".',
     specialPlaceDesc: "Ajouté aux notes de 'Souvenirs'.",
@@ -442,6 +429,7 @@ const translations = {
     scheduleDate: "Data di Programmazione",
     scheduleTime: "Ora di Programmazione",
     scheduleSuccess: "Nota d'amore programmata con successo! 💕",
+    sentInApp: "Nota d’amore inviata! 💕",
     viewScheduled: "Vedi Note Programmate",
     pleaseSelectDateTime: "Seleziona data e ora per la programmazione",
     cancel: "Annulla",
@@ -460,9 +448,9 @@ const translations = {
     personalizedFor: "Personalizzato per",
     personalizationSaved: "Personalizzazione salvata! 💕",
     howItWorks: "📱 Come funziona:",
-    howItWorksItem1: "• La tua nota d'amore sarà inviata come SMS",
+    howItWorksItem1: "• La tua nota d’amore viene salvata e inviata proprio qui nell’app — gratis",
     howItWorksItem2: "• Il destinatario vedrà che proviene da Love Notes",
-    howItWorksItem3: "• Riceverà un link per creare il proprio account",
+    howItWorksItem3: "• Oppure condividila dalle tue app — WhatsApp, email e altro",
     howItWorksItem4: "• Perfetto per sorprendere il tuo partner!",
     anonTitle: "Il tuo nome firma la tua nota",
     anonBody: "Il tuo nome compare in calce alla tua nota, così sapranno che viene da te. Preferisci restare un ammiratore segreto? Seleziona 'Invia in forma anonima' e la tua nota arriverà senza alcun nome: solo il titolo, le tue parole e la firma ❤️ One2OneLove.",
@@ -483,7 +471,7 @@ const translations = {
     copiedTikTok: "Copiato! Incolla su TikTok",
     openingLinkedIn: "Apertura LinkedIn...",
     openingEmail: "Apertura email...",
-    recipientPhoneDesc: "La consegna SMS One2OneLove usa Credito. Il costo in Credito viene mostrato prima dell’invio. Potrebbero applicarsi tariffe dell’operatore del destinatario.",
+    recipientPhoneDesc: "Le Note d’Amore si inviano nell’app e si condividono dalle tue app — gratis durante il lancio.",
     partnerNameDesc: 'Sostituisce "tu" e "tuo" nelle note.',
     petNameDesc: 'Aggiunto alle note contenenti "amore".',
     specialPlaceDesc: "Aggiunto alle note di 'Ricordi'.",
@@ -564,6 +552,7 @@ const translations = {
     scheduleDate: "Planungsdatum",
     scheduleTime: "Planungszeit",
     scheduleSuccess: "Liebesbotschaft erfolgreich geplant! 💕",
+    sentInApp: "Liebesbotschaft gesendet! 💕",
     viewScheduled: "Geplante Botschaften Ansehen",
     pleaseSelectDateTime: "Bitte wähle Datum und Uhrzeit für die Planung",
     cancel: "Abbrechen",
@@ -582,9 +571,9 @@ const translations = {
     personalizedFor: "Personalisiert für",
     personalizationSaved: "Personalisierung gespeichert! 💕",
     howItWorks: "📱 So funktioniert es:",
-    howItWorksItem1: "• Deine Liebesbotschaft wird als SMS gesendet",
+    howItWorksItem1: "• Deine Liebesbotschaft wird hier in der App gespeichert und gesendet — kostenlos",
     howItWorksItem2: "• Der Empfänger sieht, dass sie von Love Notes kam",
-    howItWorksItem3: "• Er erhält einen Link, um sein eigenes Konto zu erstellen",
+    howItWorksItem3: "• Oder teile sie aus deinen eigenen Apps — WhatsApp, E-Mail und mehr",
     howItWorksItem4: "• Perfekt, um deinen Partner zu überraschen!",
     anonTitle: "Dein Name unterschreibt deine Botschaft",
     anonBody: "Dein Name erscheint am Ende deiner Botschaft, damit sie wissen, dass sie von dir kommt. Lieber ein heimlicher Verehrer bleiben? Aktiviere 'Anonym senden', und deine Botschaft kommt ganz ohne Namen an — nur mit deinem Titel, deinen Worten und der Signatur ❤️ One2OneLove.",
@@ -605,7 +594,7 @@ const translations = {
     copiedTikTok: "Kopiert! In TikTok einfügen",
     openingLinkedIn: "Öffne LinkedIn...",
     openingEmail: "Öffne E-Mail...",
-    recipientPhoneDesc: "One2OneLove-SMS verwenden Credit. Die Credit-Kosten werden vor dem Senden angezeigt. Beim Empfänger können Mobilfunkgebühren anfallen.",
+    recipientPhoneDesc: "Liebesbotschaften werden in der App gesendet und aus deinen eigenen Apps geteilt — in der Startphase kostenlos.",
     partnerNameDesc: 'Ersetzt "du" und "dein" in Botschaften.',
     petNameDesc: 'Hinzugefügt zu Botschaften mit "Liebe".',
     specialPlaceDesc: "Hinzugefügt zu 'Erinnerungen' Botschaften.",
@@ -752,74 +741,6 @@ const matchesLoveNoteSearch = (note, query) => {
   });
 };
 
-const OPEN_HOUSE_LOVE_NOTE_CATEGORIES = new Set([
-  'morning',
-  'playful',
-  'appreciation',
-  'encouragement',
-  'goodLuck',
-  'holiday',
-  'workplace',
-]);
-
-const OPEN_HOUSE_LOVE_NOTES_COPY = {
-  en: {
-    badge: 'LIMITED-TIME OPEN HOUSE',
-    locked: 'LOCKED',
-    membersOnly: 'Members Only',
-    categoryTitle: 'More Love Notes are waiting inside',
-    categoryBody: 'Create a free verified One2OneLove account to unlock the complete Love Notes collection.',
-    sendTitle: 'Ready to send it?',
-    sendBody: 'Create a free verified account to participate. One2OneLove SMS delivery uses Credit; sharing through your own apps remains free.',
-    unlock: 'Create FREE Account',
-    signIn: 'Sign In',
-  },
-  es: {
-    badge: 'PUERTAS ABIERTAS POR TIEMPO LIMITADO',
-    locked: 'BLOQUEADO',
-    membersOnly: 'Solo miembros',
-    categoryTitle: 'Hay más Notas de Amor esperando dentro',
-    categoryBody: 'Crea una cuenta One2OneLove gratuita y verificada para desbloquear toda la colección de Notas de Amor.',
-    sendTitle: '¿Listo para enviarla?',
-    sendBody: 'Crea una cuenta gratuita y verificada para participar. El envío SMS de One2OneLove usa Crédito; compartir desde tus propias aplicaciones sigue siendo gratis.',
-    unlock: 'Crear Cuenta GRATIS',
-    signIn: 'Iniciar sesión',
-  },
-  fr: {
-    badge: 'PORTES OUVERTES À DURÉE LIMITÉE',
-    locked: 'VERROUILLÉ',
-    membersOnly: 'Membres uniquement',
-    categoryTitle: 'D’autres Notes d’Amour vous attendent',
-    categoryBody: 'Créez un compte One2OneLove gratuit et vérifié pour débloquer toute la collection de Notes d’Amour.',
-    sendTitle: 'Prêt à l’envoyer ?',
-    sendBody: 'Créez un compte gratuit et vérifié pour participer. L’envoi SMS One2OneLove utilise du Crédit; le partage via vos propres applications reste gratuit.',
-    unlock: 'Créer un Compte GRATUIT',
-    signIn: 'Se connecter',
-  },
-  it: {
-    badge: 'PORTE APERTE A TEMPO LIMITATO',
-    locked: 'BLOCCATO',
-    membersOnly: 'Solo membri',
-    categoryTitle: 'Ci sono altre Note d’Amore da scoprire',
-    categoryBody: 'Crea un account One2OneLove gratuito e verificato per sbloccare l’intera raccolta di Note d’Amore.',
-    sendTitle: 'Pronto a inviarla?',
-    sendBody: 'Crea un account gratuito e verificato per partecipare. L’invio SMS One2OneLove usa Credito; la condivisione tramite le tue app resta gratuita.',
-    unlock: 'Crea Account GRATUITO',
-    signIn: 'Accedi',
-  },
-  de: {
-    badge: 'ZEITLICH BEGRENZTER TAG DER OFFENEN TÜR',
-    locked: 'GESPERRT',
-    membersOnly: 'Nur für Mitglieder',
-    categoryTitle: 'Weitere Liebesnachrichten warten auf dich',
-    categoryBody: 'Erstelle ein kostenloses verifiziertes One2OneLove-Konto, um die vollständige Liebesnachrichten-Sammlung freizuschalten.',
-    sendTitle: 'Bereit zum Senden?',
-    sendBody: 'Erstelle ein kostenloses verifiziertes Konto. One2OneLove-SMS verwenden Credit; das Teilen über deine eigenen Apps bleibt kostenlos.',
-    unlock: 'KOSTENLOSES Konto Erstellen',
-    signIn: 'Anmelden',
-  },
-};
-
 function loveNotesCategoryTeaser(name) {
   return String(name || '').trim() || '•••';
 }
@@ -862,57 +783,16 @@ export default function LoveNotes() {
   const { user: currentUser } = useAuth();
   
   const allNotes = publicNoteCatalog?.notes || [];
-  const { data: purchasedNoteData } = useQuery({
-    queryKey:['love-note-purchases',currentLanguage,currentUser?.id],
-    queryFn:()=>listTokenUnlocks('love_note_template_unlock'),
-    enabled:Boolean(currentUser?.id),
-  });
-  const purchasedNoteKeys = new Set((purchasedNoteData?.unlocks||[]).map(x=>String(x.content_key)));
-  const libraryT = libraryAccessCopy[currentLanguage] || libraryAccessCopy.en;
-  const promoNoteLibraryFree = isO2OLPromoFreeFeature('love_note_template_unlock');
-  const freeNoteT = FREE_NOTE_ACCESS_COPY[currentLanguage] || FREE_NOTE_ACCESS_COPY.en;
-  const notePromoAccess = Boolean((purchasedNoteData?.unlocks || []).some(x => x.promo === true));
-  const [noteToUnlock,setNoteToUnlock] = useState(null);
-  const [noteUnlockError,setNoteUnlockError] = useState('');
-  const [noteUnlockBusy,setNoteUnlockBusy] = useState(false);
-  const notePriceCents = 49;
+  const freeCardT = FREE_CARD_COPY[currentLanguage] || FREE_CARD_COPY.en;
   const loadPrivateNote = async (note) => {
     const result=await apiRequest('/api/love-note-library/item?lang='+encodeURIComponent(currentLanguage)+'&id='+encodeURIComponent(note.id));
     return personalizeNote(result.note);
-  };
-  const openLibraryNote = async (note, send=false) => {
-    if(!(isGuestBrowseEnabled()&&promoNoteLibraryFree)&&!notePromoAccess&&!purchasedNoteKeys.has(String(note.id))){
-      setNoteToUnlock(note);setNoteUnlockError('');return;
-    }
-    try{
-      const full=await loadPrivateNote(note);
-      if(send)setSendModalNote(full);else setSelectedNote(full);
-    }catch(e){setNoteUnlockError(e?.message||'Unable to open Love Note.');setNoteToUnlock(note);}
-  };
-  const purchaseLibraryNote = async () => {
-    if(!noteToUnlock||noteUnlockBusy)return;
-    if(!currentUser?.id){window.location.href='/SignUp?return=/LoveNotes';return;}
-    setNoteUnlockBusy(true);setNoteUnlockError('');
-    try{
-      const note=noteToUnlock;
-      await unlockTokenContent({featureCode:'love_note_template_unlock',contentKey:String(note.id),source:'love_notes',idempotencyKey:'love-note:'+currentUser.id+':'+note.id});
-      await queryClient.invalidateQueries({queryKey:['love-note-purchases',currentLanguage,currentUser?.id]});
-      const full=await loadPrivateNote(note);
-      setNoteToUnlock(null);setSelectedNote(full);
-    }catch(e){
-      if(isTokensRequiredError(e))setNoteUnlockError('Add $0.49 Credit to unlock this Love Note.');
-      else setNoteUnlockError(e?.message||'Unable to unlock Love Note.');
-    }finally{setNoteUnlockBusy(false);}
-  };
-
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  };  const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedSubject, setSelectedSubject] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedNote, setSelectedNote] = useState(null);
   const [sendModalNote, setSendModalNote] = useState(null);
-  const [recipientPhone, setRecipientPhone] = useState('');
   const [sendAnonymous, setSendAnonymous] = useState(false);
-  const [signatureError, setSignatureError] = useState('');
   const [isScheduling, setIsScheduling] = useState(false);
   const [scheduleDate, setScheduleDate] = useState('');
   const [scheduleTime, setScheduleTime] = useState('');
@@ -922,7 +802,6 @@ export default function LoveNotes() {
     return local.toISOString().slice(0, 10);
   }, []);
   const [showScheduledNotes, setShowScheduledNotes] = useState(false);
-  const [showAIPersonalization, setShowAIPersonalization] = useState(false);
   const [showRandomCategoryPicker, setShowRandomCategoryPicker] = useState(false);
 
   const [showPersonalization, setShowPersonalization] = useState(false);
@@ -930,163 +809,29 @@ export default function LoveNotes() {
   const [petName, setPetName] = useState(localStorage.getItem('petName') || '');
   const [specialPlace, setSpecialPlace] = useState(localStorage.getItem('specialPlace') || '');
 
-  // Fetch current user
-  const hasMemberAccess = Boolean(currentUser?.id);
 
-  // Account first name — the ONLY signature source (owner, 2026-10-08).
-  // Signup collects one full-name field ("Your Name"); the first name is
-  // its first whitespace-delimited token. It is never a username and never
-  // derived from the email: mergeUser() in AuthContext falls back to the
-  // email prefix, and then to the literal 'Member', when no genuine name
-  // exists — both count as NO first name here, as does a stored value that
-  // is itself an email address. The server derives the same first name
-  // from the account record (public.users.name) and enforces the same
-  // rule, so this display always matches what will actually print.
-  const accountFirstName = useMemo(() => {
-    const fullName = String(currentUser?.name || '').replace(/\s+/g, ' ').trim();
-    if (!fullName || fullName.includes('@')) return '';
-    const emailPrefix = String(currentUser?.email || '').split('@')[0].trim();
-    if (emailPrefix && fullName.toLowerCase() === emailPrefix.toLowerCase()) return '';
-    if (fullName === 'Member') return '';
-    return fullName.split(' ')[0] || '';
-  }, [currentUser]);
-
-  useEffect(() => {
-    if (sendModalNote) {
-      setSendAnonymous(false);
-      setSignatureError('');
-    }
-  }, [sendModalNote]);
-
-  // Signature math — the same composed-body count the server enforces
-  // (worker/credit-config.ts smsBodyFor, code points via Array.from):
-  // signing adds the name plus 3 characters ("—", the space after it, and
-  // the line break before the ❤️ sign-off). The "\n\n" separators and the
-  // sign-off are part of every body, signed or not; Send Anonymous adds 0.
-  const effectiveSenderName = sendAnonymous ? '' : accountFirstName;
-  const signatureShare = !effectiveSenderName
-    ? 0
-    : Array.from(effectiveSenderName).length + 3;
-  const dialogBodyCharacters = sendModalNote
-    ? Array.from(sendModalNote.title || '').length + 2
-      + Array.from(sendModalNote.content || '').length + signatureShare + 2
-      + Array.from(SMS_SIGNOFF_TEXT).length
-    : 0;
-
-  const validateSignatureForSend = () => {
-    // HARD RULE (owner, 2026-10-08): "They cannot send messages without a
-    // first name." No first name on the account blocks the send outright —
-    // Send Anonymous does NOT bypass it — and the server rejects the same
-    // sends (403 first_name_required). This is the same rule, applied in
-    // the dialog before the request is made.
-    if (!accountFirstName) {
-      setSignatureError(t.signatureFirstNameRequired);
-      toast.error(t.signatureFirstNameRequired);
-      return false;
-    }
-    if (dialogBodyCharacters > SMS_BODY_MAX_CHARACTERS) {
-      setSignatureError(t.signatureOverLimit);
-      return false;
-    }
-    setSignatureError('');
-    return true;
-  };
-  const openHouseCopy = OPEN_HOUSE_LOVE_NOTES_COPY[currentLanguage] || OPEN_HOUSE_LOVE_NOTES_COPY.en;
-  const [showOpenHouseLock, setShowOpenHouseLock] = useState(false);
-  const [openHouseLockReason, setOpenHouseLockReason] = useState('category');
-
-  const aiPlanEligible = hasMemberAccess;
-
-  const { data: aiConfig } = useQuery({
-    queryKey: ['loveNotesAiConfig', currentUser?.id],
-    queryFn: getAiConfig,
-    enabled: !!currentUser?.id && aiPlanEligible,
-    staleTime: 5 * 60 * 1000,
-  });
+  // Sending is in-app and free for everyone (2026-11-25). The old
+  // account-signature rules existed for SMS body composition; SMS is
+  // retired, so a send is just the note plus an optional anonymous flag.
 
   const categories = useMemo(() => allCategories, [allCategories]);
-  const aiPersonalizationReady = aiPlanEligible && aiConfig?.configured === true;
 
   // Fetch user's partner identifier (email or phone) from profile or localStorage
   const partnerIdentifier = currentUser?.partner_email || localStorage.getItem('partnerEmail') || '';
 
   // Fetch sent love notes for limit tracking
   const { data: sentNotes = [] } = useQuery({
-    queryKey: ['sentLoveNotes', currentUser?.id],
-    queryFn: async () => {
-      if (!currentUser?.id) return [];
-      return await listSentLoveNotes();
-    },
-    enabled: !!currentUser?.id,
+    queryKey: ['sentLoveNotes', currentUser?.id || 'guest'],
+    queryFn: async () => listSentLoveNotes(),
     staleTime: 60 * 1000,
   });
-
-  const { data: deliveryReadiness } = useQuery({
-    queryKey: ['loveNoteDeliveryReadiness', currentUser?.id],
-    queryFn: getLoveNoteDeliveryReadiness,
-    enabled: !!currentUser?.id,
-    staleTime: 5 * 60 * 1000,
-  });
-  const scheduledSmsReady = deliveryReadiness?.scheduledSmsReady === true;
-
-  const { data: tokenWallet } = useQuery({
-    queryKey: ['o2olTokenWallet', currentUser?.id],
-    queryFn: getTokenWallet,
-    enabled: !!currentUser?.id,
-    staleTime: 10 * 1000,
-  });
-  const tokenBalance = Number(tokenWallet?.wallet?.balance || 0);
-  const formatCredit = (cents) => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(cents||0)/100);
-  const quotePhone = String(recipientPhone || '').replace(/[\s().-]/g, '');
-  const { data: priceQuote } = useQuery({
-    queryKey: ['loveNotePriceQuote', quotePhone],
-    queryFn: () => getLoveNotePriceQuote(quotePhone),
-    enabled: !!currentUser?.id && /^\+[1-9]\d{7,14}$/.test(quotePhone),
-    staleTime: 15 * 1000,
-    retry: false,
-  });
-  const tokenAccessError = (error) => {
-    if (!isTokensRequiredError(error)) return false;
-    const info = tokenRequiredDetails(error);
-    setOpenHouseLockReason('send');
-    setShowOpenHouseLock(true);
-    toast.message(`Add Credit to send — this Love Note requires ${formatCredit(info.required)} Credit. Your Credit balance is ${formatCredit(info.balance)}.`);
-    return true;
-  };
-  const phoneVerificationError = (error) => {
-    if (!isPhoneVerificationError(error)) return false;
-    // The server refuses every Love Note send until the account carries a
-    // verified phone number (the sender's FROM number; see
-    // worker/love-note-access.js). Route through the existing phone
-    // verification door once — the number is saved to the account — and
-    // land back here so the send can be completed.
-    toast.message(t.phoneVerifyRequired);
-    window.location.assign(`/VerifyPhone?redirect=${encodeURIComponent('/LoveNotes')}`);
-    return true;
-  };
-
 
 
   // Calculate usage limits
   
-  const distinctSocialPlatformsUsed = useMemo(() => {
-    const platforms = new Set();
-    sentNotes.forEach(note => {
-      if (note.recipient_type === 'social_media' && note.social_platform) {
-        platforms.add(note.social_platform);
-      }
-    });
-    return platforms;
-  }, [sentNotes]);
-  
-  const totalSocialPlatforms = 7; // whatsapp, facebook, instagram, twitter, tiktok, linkedin, email
-  const socialPlatformsRemainingCount = Math.max(0, totalSocialPlatforms - distinctSocialPlatformsUsed.size);
 
   const sendNoteMutation = useMutation({
-    mutationFn: async (data) => {
-      if (!currentUser?.id) throw new Error('User not authenticated');
-      return await recordSentLoveNote(data);
-    },
+    mutationFn: async (data) => recordSentLoveNote(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sentLoveNotes'] });
       queryClient.invalidateQueries({ queryKey: ['loveNoteUsage'] });
@@ -1094,24 +839,19 @@ export default function LoveNotes() {
   });
 
   const scheduleMutation = useMutation({
-    mutationFn: async (data) => {
-      if (!currentUser?.id) throw new Error('User not authenticated');
-      return await scheduleLoveNote(data);
-    },
+    mutationFn: async (data) => scheduleLoveNote(data),
     onSuccess: () => {
       trackFeatureAction('Love Notes', `love-note-category:${sendModalNote?.category || 'uncategorized'}`);
       queryClient.invalidateQueries({ queryKey: ['scheduledNotes'] });
       queryClient.invalidateQueries({ queryKey: ['loveNoteUsage'] });
-      queryClient.invalidateQueries({ queryKey: ['o2olTokenWallet'] });
       toast.success(t.scheduleSuccess);
       setSendModalNote(null);
-      setRecipientPhone('');
       setIsScheduling(false);
       setScheduleDate('');
       setScheduleTime('');
     },
     onError: (error) => {
-      if (!tokenAccessError(error) && !phoneVerificationError(error)) toast.error(error?.message || t.limitSMS);
+      toast.error(error?.message || t.limitSMS);
     }
   });
 
@@ -1171,18 +911,13 @@ export default function LoveNotes() {
     }
 
     return filtered;
-  }, [selectedCategory, selectedSubject, searchQuery, partnerName, petName, specialPlace, allNotes, hasMemberAccess]);
+  }, [selectedCategory, selectedSubject, searchQuery, partnerName, petName, specialPlace, allNotes]);
 
   const handleRandomNote = () => {
     setShowRandomCategoryPicker(true);
   };
 
   const handleRandomCategorySelect = (categoryId) => {
-    if (!hasMemberAccess && !OPEN_HOUSE_LOVE_NOTE_CATEGORIES.has(categoryId)) {
-      setOpenHouseLockReason('category');
-      setShowOpenHouseLock(true);
-      return;
-    }
 
     const categoryNotes = allNotes.filter(note => note.category === categoryId);
 
@@ -1201,38 +936,9 @@ export default function LoveNotes() {
     openLibraryNote(randomNote);
   };
 
-  const handleAIGeneratedNote = (generatedNote) => {
-    const rawContent = typeof generatedNote === 'string' ? generatedNote : generatedNote?.content || '';
-    const sanitizedContent = clampLoveNote(rawContent.replace(/\p{Extended_Pictographic}/gu, '').trim());
-    const aiNote = {
-      id: `ai-${Date.now()}`,
-      title: t.aiGeneratedNote,
-      content: sanitizedContent,
-      category: 'special',
-      tags: ['AI', 'Generated'],
-    };
-    setSelectedNote(aiNote);
-    setShowAIPersonalization(false);
-  };
-
   const handleScheduleNote = () => {
-    if (!hasMemberAccess) {
-      setOpenHouseLockReason('send');
-      setShowOpenHouseLock(true);
-      return;
-    }
-
-    if (!recipientPhone.trim()) {
-      toast.error(t.pleaseEnterPhone);
-      return;
-    }
-
     if (!scheduleDate || !scheduleTime) {
       toast.error(t.pleaseSelectDateTime);
-      return;
-    }
-
-    if (!validateSignatureForSend()) {
       return;
     }
 
@@ -1241,112 +947,51 @@ export default function LoveNotes() {
       note_content: sendModalNote.content,
       scheduled_date: scheduleDate,
       scheduled_time: scheduleTime,
-      recipient_phone: recipientPhone,
-      delivery_method: 'sms',
+      delivery_method: 'in_app',
       note_language: currentLanguage,
       send_anonymous: sendAnonymous,
       status: 'scheduled'
     });
   };
 
-  const checkLimitBeforeSend = (method, currentRecipientPhoneInput, targetPlatformIdentifier) => {
-    if (!hasMemberAccess || !currentUser) return null;
-
-    let recipientType = 'other';
-    let recipientIdentifier = currentRecipientPhoneInput || targetPlatformIdentifier;
-    let socialPlatform = undefined;
-
-    // 1. Check for Partner (if partnerIdentifier is defined and currentRecipientPhoneInput matches it)
-    // This is a placeholder logic as partnerIdentifier might be an email, not a phone.
-    // In a real app, you'd verify if the recipientPhone matches a linked partner's phone.
-    if (partnerIdentifier && currentRecipientPhoneInput === partnerIdentifier) {
-        recipientType = 'partner';
-    } else if (method === 'text') {
-        // SMS allowance is enforced server-side from the member's paid plan.
-        recipientType = 'sms';
-    } else {
-        // 3. Check for Social Media
-        const socialPlatforms = ['whatsapp', 'facebook', 'instagram', 'twitter', 'tiktok', 'linkedin', 'email'];
-        if (socialPlatforms.includes(method)) {
-            recipientType = 'social_media';
-            socialPlatform = method;
-            if (distinctSocialPlatformsUsed.has(method)) {
-                toast.error(t.limitSocial, { icon: <AlertCircle className="w-5 h-5" /> });
-                return null;
-            }
-        }
+  // Free in-app send + share-from-your-own-apps (2026-11-25). The SMS
+  // path is retired: One2OneLove no longer sends text messages. Sharing
+  // opens the visitor's own apps, which costs nothing.
+  const recordShare = async (note, method) => {
+    try {
+      await sendNoteMutation.mutateAsync({
+        note_title: note.title,
+        note_content: note.content,
+        recipient_type: method === 'in_app' ? 'in_app' : 'social_media',
+        recipient_identifier: method,
+        social_platform: method === 'in_app' ? undefined : method,
+        sent_date: new Date().toISOString(),
+        created_by: currentUser?.id || 'guest',
+        send_anonymous: sendAnonymous,
+      });
+    } catch (error) {
+      toast.error(error?.message || t.limitSMS);
+      return false;
     }
+    trackFeatureAction('Love Notes', `love-note-category:${note.category || 'uncategorized'}`);
+    return true;
+  };
 
-    return { type: recipientType, identifier: recipientIdentifier, social_platform: socialPlatform };
+  const handleSendInApp = async (note) => {
+    if (await recordShare(note, 'in_app')) {
+      toast.success(t.sentInApp);
+      setSendModalNote(null);
+      setSendAnonymous(false);
+    }
   };
 
   const handleSendVia = async (note, method) => {
-    if (!hasMemberAccess) {
-      setOpenHouseLockReason('send');
-      setShowOpenHouseLock(true);
-      return;
-    }
-
     const text = `${note.title}\n\n${note.content}\n\n❤️ From One 2 One Love`;
-    let currentRecipientPhoneInput = '';
-    const targetPlatformIdentifier = method;
-
-    if (method === 'text' || (method === 'whatsapp' && recipientPhone.trim())) {
-      if (method === 'text' && !recipientPhone.trim()) {
-        toast.error(t.pleaseEnterPhone);
-        return;
-      }
-      currentRecipientPhoneInput = recipientPhone;
-    }
-
-    const limitCheckResult = checkLimitBeforeSend(method, currentRecipientPhoneInput, targetPlatformIdentifier);
-    if (limitCheckResult === null) return;
-
-    if (method === 'text') {
-      if (!validateSignatureForSend()) return;
-      try {
-        const result = await sendLoveNoteSms({
-          note_title: note.title,
-          note_content: note.content,
-          recipient_phone: recipientPhone,
-          send_anonymous: sendAnonymous,
-        });
-        queryClient.invalidateQueries({ queryKey: ['sentLoveNotes'] });
-        queryClient.invalidateQueries({ queryKey: ['loveNoteUsage'] });
-        queryClient.invalidateQueries({ queryKey: ['o2olTokenWallet'] });
-        trackFeatureAction('Love Notes', `love-note-category:${note.category || 'uncategorized'}`);
-        toast.success(t.openingText);
-        setSendModalNote(null);
-        setRecipientPhone('');
-      } catch (error) {
-        if (!tokenAccessError(error) && !phoneVerificationError(error)) toast.error(error?.message || t.limitSMS);
-      }
-      return;
-    }
-
-    if (currentUser) {
-      try {
-        await sendNoteMutation.mutateAsync({
-          note_title: note.title,
-          note_content: note.content,
-          recipient_type: limitCheckResult.type,
-          recipient_identifier: limitCheckResult.identifier,
-          social_platform: limitCheckResult.social_platform,
-          sent_date: new Date().toISOString(),
-          created_by: currentUser.id,
-        });
-      } catch (error) {
-        // Share records are Love Note writes too: the same verified-phone
-        // gate applies, so route to verification instead of dying silently.
-        if (phoneVerificationError(error)) return;
-        throw error;
-      }
-      trackFeatureAction('Love Notes', `love-note-category:${note.category || 'uncategorized'}`);
-    }
+    if (!(await recordShare(note, method))) return;
 
     switch(method) {
       case 'whatsapp':
-        window.open(`https://wa.me/${recipientPhone ? recipientPhone : ''}?text=${encodeURIComponent(text)}`);
+        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
         toast.success(t.openingWhatsApp);
         setSendModalNote(null);
         break;
@@ -1431,51 +1076,6 @@ export default function LoveNotes() {
           )}
         </div>
 
-        {/* Love Note Credit */}
-        {currentUser && (
-          <Card className="max-w-3xl mx-auto mb-8 bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200">
-            <CardContent className="pt-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <Coins className="w-5 h-5 text-purple-500" />
-                One2OneLove Credit
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white rounded-xl p-4 shadow-sm">
-                  <div className="text-sm font-semibold text-gray-700">Credit Balance</div>
-                  <div className="mt-2 text-3xl font-black text-purple-600">{formatCredit(tokenBalance)}</div>
-                  <Link to="/Credit?return=/LoveNotes" className="mt-2 inline-flex text-xs font-black text-purple-700 hover:underline">Add Credit to Unlock</Link>
-                </div>
-                <div className="bg-white rounded-xl p-4 shadow-sm">
-                  <div className="text-sm font-semibold text-gray-700">One2OneLove SMS</div>
-                  {priceQuote ? (
-                    priceQuote.excluded ? (
-                      <>
-                        <div className="mt-2 text-3xl font-black text-gray-500">—</div>
-                        <div className="mt-1 text-xs text-gray-500">SMS is not offered to this destination. Sharing from your own apps below is free.</div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="mt-2 text-3xl font-black text-blue-600">{formatCredit(Number(priceQuote.tokenCost || 0))} <span className="text-sm">Credit / send</span></div>
-                        <div className="mt-1 text-xs text-gray-500">{priceQuote.regionLabel || 'Supported destination'} — the Credit cost is confirmed before One2OneLove sends the SMS.</div>
-                      </>
-                    )
-                  ) : (
-                    <>
-                      <div className="mt-2 text-xl font-black text-blue-600">Enter recipient number</div>
-                      <div className="mt-1 text-xs text-gray-500">The Credit cost will be shown before you send.</div>
-                    </>
-                  )}
-                </div>
-                <div className="bg-white rounded-xl p-4 shadow-sm">
-                  <div className="text-sm font-semibold text-gray-700">Share from Your Apps</div>
-                  <div className="mt-2 text-3xl font-black text-emerald-600">FREE</div>
-                  <div className="mt-1 text-xs text-gray-500">WhatsApp, email, social sharing and copy actions do not spend Credit.</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         <div className="flex flex-col md:flex-row gap-4 mb-8">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -1496,15 +1096,6 @@ export default function LoveNotes() {
               </button>
             )}
           </div>
-          {aiPersonalizationReady && (
-            <Button
-              onClick={() => setShowAIPersonalization(true)}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 h-12 px-6"
-            >
-              <Sparkles className="w-5 h-5 mr-2" />
-              {t.aiPersonalize || 'AI Personalize'}
-            </Button>
-          )}
           <Button
             onClick={handleRandomNote}
             className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 h-12 px-6"
@@ -1512,7 +1103,7 @@ export default function LoveNotes() {
             <Shuffle className="w-5 h-5 mr-2" />
             {t.randomNote}
           </Button>
-          {currentUser && (
+          {(
             <Button
               onClick={() => setShowScheduledNotes(!showScheduledNotes)}
               variant="outline"
@@ -1550,7 +1141,7 @@ export default function LoveNotes() {
                           key={category.id}
                           type="button"
                           onClick={() => handleRandomCategorySelect(category.id)}
-                          aria-label={locked ? `${openHouseCopy.locked}: ${openHouseCopy.membersOnly}` : category.name}
+                          aria-label={category.name}
                           className={`px-4 py-2 rounded-full font-medium border shadow-sm transition-all ${
                             locked
                               ? 'bg-slate-50 text-slate-600 border-slate-300 hover:border-purple-300'
@@ -1615,7 +1206,7 @@ export default function LoveNotes() {
                     setSelectedSubject('all');
                     setSearchQuery('');
                   }}
-                  aria-label={locked ? `${openHouseCopy.locked}: ${openHouseCopy.membersOnly}` : category.name}
+                  aria-label={category.name}
                   className={`px-4 py-2 rounded-full font-medium transition-all border ${
                     locked
                       ? 'bg-slate-50 text-slate-600 border-slate-300 hover:border-purple-300 shadow-sm'
@@ -1682,8 +1273,6 @@ export default function LoveNotes() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           <AnimatePresence>
             {displayedNotes.map((note) => {
-              const bought = purchasedNoteKeys.has(String(note.id));
-              const owned = notePromoAccess || bought;
               return (
               <motion.div
                 key={note.id}
@@ -1692,7 +1281,7 @@ export default function LoveNotes() {
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.2 }}
               >
-                <Card className={`h-full hover:shadow-xl transition-all duration-300 border-2 cursor-pointer ${owned ? 'bg-white border-pink-200' : 'bg-slate-100 border-slate-200'}`}
+                <Card className="h-full hover:shadow-xl transition-all duration-300 border-2 cursor-pointer bg-white border-pink-200"
                       onClick={() => openLibraryNote(note)}>
                   <CardHeader>
                     <CardTitle className="text-xl font-bold text-gray-900 font-kalam">
@@ -1701,9 +1290,8 @@ export default function LoveNotes() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-gray-500 leading-relaxed mb-4">
-                      {bought ? libraryT.bought : notePromoAccess ? libraryT.promo : promoNoteLibraryFree ? freeNoteT.guest : libraryT.locked}
+                      {freeCardT}
                     </p>
-                    <div className="flex items-center gap-2 mb-4 text-sm text-gray-500">{bought ? libraryT.permanent : notePromoAccess ? libraryT.temporary : promoNoteLibraryFree ? <><UserRound className="h-4 w-4"/>{freeNoteT.guest}</> : <><Lock className="w-4 h-4" /> {libraryT.paid}</>}</div>
                     <Button
                       className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
                       onClick={(e) => {
@@ -1711,8 +1299,8 @@ export default function LoveNotes() {
                         openLibraryNote(note,true);
                       }}
                     >
-                      {owned ? <Send className="w-4 h-4 mr-2" /> : promoNoteLibraryFree ? <UserRound className="w-4 h-4 mr-2"/> : <Lock className="w-4 h-4 mr-2" />}
-                      {owned ? t.send : promoNoteLibraryFree ? freeNoteT.open : libraryT.unlock}
+                      <Send className="w-4 h-4 mr-2" />
+                      {t.send}
                     </Button>
                   </CardContent>
                 </Card>
@@ -1722,20 +1310,6 @@ export default function LoveNotes() {
           </AnimatePresence>
         </div>
 
-        {noteToUnlock && (
-          <div className="fixed inset-0 z-[90] bg-black/60 flex items-center justify-center p-4" role="dialog" aria-modal="true">
-            <div className="max-w-md w-full rounded-2xl bg-white shadow-2xl p-6">
-              <h2 className="text-2xl font-bold">{noteToUnlock.title}</h2>
-              <p className="mt-3 text-gray-500">{promoNoteLibraryFree ? freeNoteT.body : 'The Love Note text is locked. Unlock this note for $0.49 Credit to read, copy, or share it. You will not be charged for viewing the title.'}</p>
-              {!promoNoteLibraryFree && <p className="mt-2 text-sm font-semibold">Each note is a one-time purchase for your account.</p>}
-              {noteUnlockError && <p role="alert" className="mt-3 text-red-700">{noteUnlockError}</p>}
-              <div className="mt-5 flex gap-3">
-                {promoNoteLibraryFree && !currentUser?.id ? <Link to="/SignUp?return=/LoveNotes"><Button>{freeNoteT.join}</Button></Link> : <Button disabled={noteUnlockBusy} onClick={purchaseLibraryNote}>{noteUnlockBusy?'Opening…':promoNoteLibraryFree?freeNoteT.open:'Unlock for $0.49'}</Button>}
-                <Button variant="outline" onClick={()=>{setNoteToUnlock(null);setNoteUnlockError('');}}>Cancel</Button>
-              </div>
-            </div>
-          </div>
-        )}
         {displayedNotes.length === 0 && (
           <div className="text-center py-12">
             <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -1746,63 +1320,7 @@ export default function LoveNotes() {
       </div>
 
       <AnimatePresence>
-        {showOpenHouseLock && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
-            onClick={() => setShowOpenHouseLock(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.94, opacity: 0, y: 10 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.94, opacity: 0, y: 10 }}
-              onClick={(event) => event.stopPropagation()}
-              className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-purple-100"
-              role="dialog"
-              aria-modal="true"
-            >
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-purple-100">
-                {openHouseLockReason === 'send'
-                  ? <Coins className="h-7 w-7 text-purple-700" />
-                  : promoNoteLibraryFree ? <UserRound className="h-7 w-7 text-emerald-700"/> : <Lock className="h-7 w-7 text-purple-700" />}
-              </div>
-              <div className="text-center">
-                <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-purple-700">{openHouseCopy.badge}</p>
-                <h3 className="text-2xl font-bold text-gray-900">
-                  {openHouseLockReason === 'send' ? openHouseCopy.sendTitle : openHouseCopy.categoryTitle}
-                </h3>
-                <p className="mt-3 text-sm leading-relaxed text-gray-600">
-                  {openHouseLockReason === 'send' ? openHouseCopy.sendBody : openHouseCopy.categoryBody}
-                </p>
-              </div>
-              <div className="mt-6 flex flex-col gap-2">
-                <Link
-                  to={currentUser ? '/Credit?return=/LoveNotes' : '/SignUp?open-house=love-notes&type=individual'}
-                  onClick={() => setShowOpenHouseLock(false)}
-                >
-                  <Button className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
-                    <Coins className="mr-2 h-4 w-4" />
-                    {currentUser ? 'Add Credit to Unlock' : openHouseCopy.unlock}
-                  </Button>
-                </Link>
-                <Link to="/SignIn" onClick={() => setShowOpenHouseLock(false)}>
-                  <Button variant="outline" className="w-full">{openHouseCopy.signIn}</Button>
-                </Link>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
 
-        {showAIPersonalization && aiPersonalizationReady && (
-          <AIPersonalizationModal
-            onClose={() => setShowAIPersonalization(false)}
-            onNoteGenerated={handleAIGeneratedNote}
-            currentLanguage={currentLanguage}
-            t={t}
-          />
-        )}
       </AnimatePresence>
 
       <AnimatePresence>
@@ -2003,9 +1521,7 @@ export default function LoveNotes() {
                   aria-label={t.closeSendDialog}
                   onClick={() => {
                     setSendModalNote(null);
-                    setRecipientPhone('');
                     setSendAnonymous(false);
-                    setSignatureError('');
                     setIsScheduling(false);
                     setScheduleDate('');
                     setScheduleTime('');
@@ -2026,69 +1542,26 @@ export default function LoveNotes() {
                   <p className="text-sm text-gray-700 leading-relaxed">
                     {sendModalNote.content}
                   </p>
-                  <div className={`mt-2 text-right text-xs ${dialogBodyCharacters > SMS_BODY_MAX_CHARACTERS ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>
-                    {dialogBodyCharacters}/{SMS_BODY_MAX_CHARACTERS}
-                  </div>
                 </div>
 
-                <div>
-                  <label htmlFor="love-note-recipient-phone" className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                    <Phone className="w-4 h-4" />
-                    {t.recipientPhone}
-                  </label>
-                  <Input
-                    id="love-note-recipient-phone"
-                    type="tel"
-                    placeholder={t.recipientPhonePlaceholder}
-                    value={recipientPhone}
-                    onChange={(e) => setRecipientPhone(e.target.value)}
-                    className="h-12"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    {hasMemberAccess ? t.recipientPhoneDesc : openHouseCopy.sendBody}
-                  </p>
-                </div>
 
                 <div>
-                  {accountFirstName ? (
-                    <p className="text-sm text-gray-700">
-                      <span className="font-semibold text-gray-900">{t.signatureSignedAs}</span>{' '}
-                      <span className={sendAnonymous ? 'line-through opacity-60' : 'font-semibold text-gray-900'}>{accountFirstName}</span>
-                    </p>
-                  ) : (
-                    <p className="flex items-start gap-1.5 text-sm font-medium text-red-600">
-                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                      {t.signatureFirstNameRequired}
-                    </p>
-                  )}
-                  <p className="text-xs text-gray-500 mt-1">
-                    {t.signatureSourceNote}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {t.senderNameLimitNote}
+                  <p className="text-xs text-gray-500">
+                    {t.recipientPhoneDesc}
                   </p>
                   <label htmlFor="love-note-send-anonymous" className="flex items-center gap-2 mt-3 text-sm text-gray-700 cursor-pointer">
                     <input
                       id="love-note-send-anonymous"
                       type="checkbox"
                       checked={sendAnonymous}
-                      onChange={(e) => {
-                        setSendAnonymous(e.target.checked);
-                        if (signatureError) setSignatureError('');
-                      }}
+                      onChange={(e) => setSendAnonymous(e.target.checked)}
                       className="h-4 w-4 accent-purple-600"
                     />
                     {t.sendAnonymous}
                   </label>
-                  {signatureError && accountFirstName && (
-                    <p className="flex items-center gap-1 text-xs text-red-600 mt-2">
-                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                      {signatureError}
-                    </p>
-                  )}
                 </div>
 
-                {scheduledSmsReady && (
+                {(
                   <div className="bg-purple-50 rounded-xl p-4">
                   <h4 className="flex items-center gap-2 text-sm font-bold text-purple-900 mb-3">
                     {t.schedulingOptions}
@@ -2238,9 +1711,7 @@ export default function LoveNotes() {
                   variant="outline"
                   onClick={() => {
                     setSendModalNote(null);
-                    setRecipientPhone('');
                     setSendAnonymous(false);
-                    setSignatureError('');
                     setIsScheduling(false);
                     setScheduleDate('');
                     setScheduleTime('');
@@ -2250,7 +1721,7 @@ export default function LoveNotes() {
                   {t.cancel}
                 </Button>
                 <Button
-                  onClick={() => isScheduling ? handleScheduleNote() : handleSendVia(sendModalNote, 'text')}
+                  onClick={() => isScheduling ? handleScheduleNote() : handleSendInApp(sendModalNote)}
                   disabled={scheduleMutation.isPending}
                   className="flex-1 h-12 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
                 >
